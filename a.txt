@@ -1,0 +1,15 @@
+Hola! Quiero que me ayudes en el desarrollo y la revisión de mi tesis sobre criptografía. Desarrollamos un ZK-bridge para Cardano (el único verificador que existe hasta ahora onchain es de groth16), y planeo los siguientes capítulos para presentarlo como tesis
+
+1. Primitivas criptográficas
+2. Aritmetización y construcción de un SNARK (Groth16)
+3: ZkBridge, su paper y demás explicaciones, light clients
+4. Introducción a Cardano y su modelo eUTXO, y sus limitaciones actuales que dificultan un bridge 5. Decisiones de diseño
+6. Implementación parte 1
+7. Mithril como light client de Cardano
+8. Implementación parte 2 (todo lo ZK)
+9. Resultados y discusión
+10. Conclusiones
+
+Por ahora, tengo desarrollado y pulido el capítulo 1 y parte del 2, que probablemente sean la parte más larga de la tesis, ya que busco que la tesis tenga adicionalmente un objetivo pedagógico de introducir al mundo de los zk-SNARKs a estudiantes de CS o matemática sin trasfondo criptográfico profundo. En particular, en el índice de la tesis podés ver qué hay hasta ahora. La siguiente sección a desarrollar sería la 2.7: KZG. La idea es que yo te vaya haciendo preguntas, o pedirte desarrollo textual o formal, o pedirte revisión de cómo está quedando una versión de una sección, etc. Te parece bien?
+
+Como archivo adjunto, incluyo el estado actual del PDF de la tesis. Contame tu opinión del proyecto y la tesis, y luego seguimos.

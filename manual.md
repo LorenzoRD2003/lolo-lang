@@ -19,7 +19,7 @@ Expresiones genéricas; su tipo concreto es decidido durante lowering a SSA IR.
 
 - `expr ::= var | const | unary_expr | binary_expr`
 - `unary_expr ::= neg | not`
-- `binary_expr ::= arithmetic_expr | comparison_expr`
+- `binary_expr ::= arithmetic_expr | comparison_expr | logical_expr`
 
 ### Tipos de AST
 
@@ -67,4 +67,18 @@ Luego se implementarán sus versiones inline.
 
 - Aritméticas: `arithmetic_expr ::= "add" expr expr | "sub" expr expr | "mul" expr expr | "div" expr expr`
 - Comparaciones: `comparison_expr ::= "eq" expr expr | "neq" expr expr | "gt" expr expr | "lt" expr expr | "gte" expr expr | "lte" expr expr`
-- Lógicas (TODO): Se añadiran operadores `and`, `or`, `xor`.
+- Lógicas: `logical_expr ::= "and" expr expr | "or" expr expr | "xor" expr expr`
+
+### Precedencia y asociatividad de operadores
+
+Las expresiones pueden agruparse mediante paréntesis, lo que incrementa su precedencia.
+
+| Nivel |              Operadores               | Asociatividad  |            Notas            |
+| :---: | :-----------------------------------: | :------------: | :-------------------------: |
+|   1   |             `neg`, `not`              |    Derecha     |     Operadores unarios      |
+|   2   |             `mul`, `div`              |   Izquierda    | Aritméticos multiplicativos |
+|   3   |             `add`, `sub`              |   Izquierda    |    Aritméticos aditivos     |
+|   4   | `eq`, `neq`, `gt`, `lt`, `gte`, `lte` | No asociativos |        Comparativos.        |
+|   5   |                 `and`                 |   Izquierda    |         Lógico AND          |
+|   6   |                 `or`                  |   Izquierda    |          Lógico OR          |
+|   7   |                 `xor`                 |   Izquierda    |         Lógico XOR          |
