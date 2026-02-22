@@ -82,3 +82,9 @@ Las expresiones pueden agruparse mediante paréntesis, lo que incrementa su prec
 |   5   |                 `and`                 |   Izquierda    |         Lógico AND          |
 |   6   |                 `or`                  |   Izquierda    |          Lógico OR          |
 |   7   |                 `xor`                 |   Izquierda    |         Lógico XOR          |
+
+## Whitespaces
+
+Los espacios entre tokens están permitidos, y no afectan la semántica del lenguaje. Tampoco forman parte del Span lógico del nodo (_únicamente delimitan tokens_).
+
+
