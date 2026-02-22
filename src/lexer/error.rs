@@ -1,44 +1,35 @@
 use std::error::Error;
 use std::fmt;
 
-// TODO: indicar linea y posicion en los errores
+use crate::common::span::Span;
 
-#[derive(Debug)]
-pub enum LexerError {
-  InvalidCharacter {
-    c: char,
-    line: usize,
-    column: usize,
-  },
-  IllFormedLiteral {
-    literal: String,
-    line: usize,
-    column: usize,
-  },
-  UnexpectedEOF {
-    line: usize,
-    column: usize,
-  },
+#[derive(Debug, Clone)]
+pub enum LexerErrorKind {
+  InvalidCharacter(char),
+  IllFormedLiteral(String),
+  UnterminatedToken,
+  UnexpectedEOF,
 }
 
+// La linea/columna al reportar el error se deriva del Span.
+#[derive(Debug, Clone)]
+pub struct LexerError {
+  pub(crate) kind: LexerErrorKind,
+  pub(crate) span: Span,
+}
+
+// Esto va a haber que cambiarlo. Porque LexerError describe que salio mal, pero en el modulo diagnostics decidimos como mostrarlo
 impl fmt::Display for LexerError {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    match self {
-      Self::InvalidCharacter { c, line, column } => write!(
-        f,
-        "Caracter inválido {c}, en la línea {line}, columna {column}."
-      ),
-      Self::IllFormedLiteral {
-        literal,
-        line,
-        column,
-      } => write!(
-        f,
-        "Literal mal formado {literal}, en la línea {line}, columna {column}."
-      ),
-      Self::UnexpectedEOF { line, column } => {
-        write!(f, "EOF inesperado, en la línea {line}, columna {column}.")
+    match &self.kind {
+      LexerErrorKind::InvalidCharacter(c) => {
+        write!(f, "Caracter inválido {c}, en la línea, columna.")
       }
+      LexerErrorKind::IllFormedLiteral(literal) => {
+        write!(f, "Literal mal formado {literal}, en la línea, columna.")
+      }
+      LexerErrorKind::UnterminatedToken => write!(f, "Token no terminado, en la línea, columna."),
+      LexerErrorKind::UnexpectedEOF => write!(f, "EOF inesperado, en la línea, columna."),
     }
   }
 }

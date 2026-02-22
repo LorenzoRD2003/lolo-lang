@@ -2,7 +2,7 @@
 
 use crate::common::span::Span;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum TokenKind {
   // Constants
   NumberLiteral,  // i32
@@ -46,6 +46,7 @@ pub enum TokenKind {
 
 // Token: Representa una ocurrencia concreta en el codigo fuente (contiene tipo + texto + span)
 // Son la interfaz que va a ser generada por el lexer
+#[derive(Debug, Clone)]
 pub struct Token {
   pub(crate) kind: TokenKind,
   // El lexema es exactamente el texto que se ve

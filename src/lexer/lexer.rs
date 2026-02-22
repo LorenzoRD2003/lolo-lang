@@ -5,7 +5,8 @@
 // Mientras mas tonto sea el lexer, mejor. si no, vienen los bugs.
 
 use crate::lexer::{
-  error::LexerError,
+  error::{LexerError, LexerErrorKind},
+  keywords::lookup_keyword,
   token::{Token, TokenKind},
 };
 
@@ -17,10 +18,9 @@ use crate::lexer::{
 pub struct Lexer<'a> {
   source: &'a str,
   // el estado primario del lexer es la posicion del puntero y el offset, nada mas
+  // fila/columna son para simplificar errores, son metadata derivada
   position: usize,
-  // fila/columna son para simplificar errores, son metadata derivada de position
-  line: usize,
-  column: usize,
+  next_token_cache: Option<Token>,
 }
 
 impl<'a> Lexer<'a> {
@@ -28,9 +28,26 @@ impl<'a> Lexer<'a> {
     Self {
       source,
       position: 0,
-      line: 1,
-      column: 1,
+      next_token_cache: None,
     }
+  }
+
+  // Devuelve el siguiente token sin avanzar (lookahead). Esto es util para parsers predictivos
+  // La idea es tener un token cacheado, y rellenarlo si es None usando `next()``
+  pub fn peek_token(&mut self) -> Option<&Token> {
+    if self.next_token_cache.is_none() {
+      // rellenamos el cache usando next
+      // En principio next() nunca devuelve None; EOF es un TokenKind
+      self.next_token_cache = self.next().and_then(Result::ok);
+    }
+    self.next_token_cache.as_ref()
+  }
+
+  // Indica si llegamos al final del input, pregunta "ya consumi todo?"
+  // No deberia ser un metodo de Token, porque EOF es solo un tipo de token,
+  // pero is_eof() depende de posicionar al lexer para saber si se termino
+  pub fn is_eof(&self) -> bool {
+    self.peek().is_none()
   }
 
   // Funcion auxiliar para obtener el caracter actual
@@ -52,16 +69,22 @@ impl<'a> Lexer<'a> {
   // la idea es que solamente se actualice `self.position` aca, reduciendo bugs
   fn advance(&mut self) -> Option<char> {
     let ch = self.current_char();
-    if let Some(c) = ch {
+    if let Some(_) = ch {
       // Observemos que EOF no rompe nada
       self.position += 1;
-      if c == '\n' {
-        self.line += 1;
-      } else {
-        self.column += 1;
-      }
     }
     ch
+  }
+
+  // Funcion auxiliar para consumir caracteres mientras valga cierto predicado
+  fn consume_while<F: Fn(char) -> bool>(&mut self, predicate: F) -> usize {
+    while let Some(c) = self.peek() {
+      if !predicate(c) {
+        break;
+      }
+      self.advance();
+    }
+    self.position
   }
 
   // Funcion auxiliar para hacer tokens. El lexer es quien los hace.
@@ -73,16 +96,36 @@ impl<'a> Lexer<'a> {
     }
   }
 
-  // Devuelve el siguiente token sin avanzar (lookahead)
-  fn peek_token(&self) -> Token {
-    todo!()
+  // Funcion auxiliar para lexear un numero y devolver el token indicado
+  fn lex_number_literal(&mut self) -> Result<Token, LexerError> {
+    let start = self.position;
+    self.consume_while(|c| c.is_ascii_digit());
+    if let Some(c) = self.peek() {
+      if is_identifier_start(c) {
+        // es un error de IllFormedLiteral. sigo consumiendo hasta llegar al final del literal
+        self.advance();
+        self.consume_while(is_identifier_continue);
+
+        return Err(LexerError {
+          kind: LexerErrorKind::IllFormedLiteral(self.source[start..self.position].to_string()),
+          span: start..self.position,
+        });
+      }
+    }
+
+    Ok(self.make_token(TokenKind::NumberLiteral, start))
   }
 
-  // Indica si llegamos al final del input, pregunta "ya consumi todo?"
-  // No deberia ser un metodo de Token, porque EOF es solo un tipo de token,
-  // pero is_eof() depende de posicionar al lexer para saber si se termino
-  fn is_eof(&self) -> bool {
-    todo!()
+  fn lex_identifier_or_keyword(&mut self) -> Token {
+    let start = self.position;
+    self.advance();
+    self.consume_while(is_identifier_continue);
+    let lexeme = &self.source[start..self.position];
+
+    // Aca voy a verificar las keywords con una HashMap, para hacer lookup en O(1) en vez de iterar la lista de keywords
+    let kind = lookup_keyword(lexeme);
+
+    self.make_token(kind, start)
   }
 }
 
@@ -106,7 +149,8 @@ impl<'a> Iterator for Lexer<'a> {
 
         // whitespace: no genera ningun token
         Some(c) if c.is_whitespace() => {
-          self.advance();
+          self.consume_while(char::is_whitespace);
+          continue;
         }
 
         // delimitadores: el mapeo es uno a uno. es consumir un solo token
@@ -143,17 +187,11 @@ impl<'a> Iterator for Lexer<'a> {
 
         // digitos: seguro el token deberia ser un NumberLiteral. hay que consumir todo el numero
         // no mezclar numeros con identificadores: "123abc" deberia dar error
-        Some(c) if c.is_ascii_digit() => {
-          // return Some(self.lex_number());
-          todo!()
-        }
+        Some(c) if c.is_ascii_digit() => return Some(self.lex_number_literal()),
 
         // Identifiers / Keywords
         // en particular, al terminar de parsear se verifica si el lexema obtenido es una keyword
-        Some(c) if is_identifier_start(c) => {
-          // return Some(self.lex_identifier_or_keyword());
-          todo!()
-        }
+        Some(c) if is_identifier_start(c) => return Some(Ok(self.lex_identifier_or_keyword())),
 
         // operadores: todavia no tenemos (serian +, -, *, ==, etc). pero irian aca
         // Regla fundamental: siempre intentar primero reconocer los operadores mas largos
@@ -161,10 +199,9 @@ impl<'a> Iterator for Lexer<'a> {
         // si llegamos hasta aca, es un caracter invalido
         Some(c) => {
           self.advance();
-          return Some(Err(LexerError::InvalidCharacter {
-            c,
-            line: self.line,
-            column: self.column,
+          return Some(Err(LexerError {
+            kind: LexerErrorKind::InvalidCharacter(c),
+            span: self.position..(self.position + 1),
           }));
         }
       }
