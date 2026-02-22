@@ -1,6 +1,8 @@
 use crate::ast::span::{Span, Spanned};
 
 // Los tipos de este archivo deben ser publicos, ya que los vamos a usar desde el parser / lowering / IR
+
+#[derive(Debug, Clone, PartialEq)]
 pub enum Expr {
   Var(VarId),
   Const(ConstValue),
@@ -10,27 +12,32 @@ pub enum Expr {
 
 pub type VarId = String; // Identificador de cada variable
 
+#[derive(Debug, Clone, PartialEq)]
 pub enum ConstValue {
   Int(i32),
   Bool(bool),
 }
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct UnaryExpr {
   op: UnaryOp,
   operand: Box<Expr>,
 }
 
+#[derive(Debug, Clone, PartialEq)]
 pub enum UnaryOp {
   Neg,
   Not,
 }
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct BinaryExpr {
   op: BinaryOp,
   lhs: Box<Expr>,
   rhs: Box<Expr>,
 }
 
+#[derive(Debug, Clone, PartialEq)]
 pub enum BinaryOp {
   // Arithmetic Binary Operations
   Add,

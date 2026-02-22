@@ -3,6 +3,7 @@ use crate::ast::{
   span::{Span, Spanned},
 };
 
+#[derive(Debug, Clone, PartialEq)]
 pub enum Stmt {
   Let {
     name: VarId,
@@ -20,6 +21,8 @@ pub enum Stmt {
   },
   Print(Expr),
 }
+
+pub type Block = Vec<Stmt>;
 
 impl Spanned for Stmt {
   fn span(&self) -> Span {
@@ -39,8 +42,6 @@ impl Spanned for Stmt {
     }
   }
 }
-
-pub type Block = Vec<Stmt>;
 
 impl Spanned for Block {
   fn span(&self) -> Span {
