@@ -1,7 +1,4 @@
-use crate::ast::{
-  expr::{Expr, VarId},
-  span::{Span, Spanned},
-};
+use crate::{ast::expr::{Expr, VarId}, common::span::{Span, Spanned}};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Stmt {

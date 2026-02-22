@@ -1,6 +1,7 @@
-use crate::ast::span::{Span, Spanned};
 
 // Los tipos de este archivo deben ser publicos, ya que los vamos a usar desde el parser / lowering / IR
+
+use crate::common::span::{Span, Spanned};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Expr {
