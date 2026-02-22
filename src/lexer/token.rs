@@ -38,6 +38,8 @@ pub enum TokenKind {
   LCurlyBrace,
   RCurlyBrace,
   Semicolon,
+  // Start of Program
+  Main,
   // End-Of-File
   EOF,
 }
@@ -45,8 +47,8 @@ pub enum TokenKind {
 // Token: Representa una ocurrencia concreta en el codigo fuente (contiene tipo + texto + span)
 // Son la interfaz que va a ser generada por el lexer
 pub struct Token {
-  kind: TokenKind,
+  pub(crate) kind: TokenKind,
   // El lexema es exactamente el texto que se ve
-  lexeme: String,
-  span: Span,
+  pub(crate) lexeme: String,
+  pub(crate) span: Span,
 }

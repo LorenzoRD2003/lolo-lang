@@ -23,7 +23,7 @@ Expresiones genéricas; su tipo concreto es decidido durante lowering a SSA IR.
 
 ### Tipos de AST
 
-- `var` / `const`: nodos genéricos. el tipo concreto será resuelto en SSA IR
+- `var` / `const`: nodos genéricos. el tipo concreto será resuelto en SSA IR. Las variables deben empezar con una letra o `_`.
 - `unary_expr` / `binary_expr`: contiene operandos deben ser compatibles según operación (i32/bool).
 
 ## Instrucciones (statements)
@@ -87,4 +87,14 @@ Las expresiones pueden agruparse mediante paréntesis, lo que incrementa su prec
 
 Los espacios entre tokens están permitidos, y no afectan la semántica del lenguaje. Tampoco forman parte del Span lógico del nodo (_únicamente delimitan tokens_).
 
+## Reglas de lexing
 
+Se aplica la siguiente jerarquía de reconocimiento:
+
+1. EOF.
+2. Whitespaces: No generan tokens, consumir caracteres hasta que deje de serlo
+3. Delimitadores: Son triviales: un solo caracter
+4. Literales: Suelen tener patrones claros. Un número empieza con un dígito, y un booleano es true/false.
+5. Identificadores / keywords
+6. Operadores: aun no tenemos, pero cuando sean +, -, ==, etc.
+7. Error
