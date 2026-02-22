@@ -1,5 +1,7 @@
-use super::expr::{Expr, VarId};
-use super::span::{Span, Spanned};
+use crate::ast::{
+  expr::{Expr, VarId},
+  span::{Span, Spanned},
+};
 
 pub enum Stmt {
   Let {

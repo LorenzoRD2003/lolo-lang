@@ -1,3 +1,3 @@
-use super::stmt::Block;
+use crate::ast::stmt::Block;
 
 pub type Program = Block;
