@@ -87,8 +87,7 @@ impl<'a, W: fmt::Write> Renderer<'a, W> {
     match diag.primary_span() {
       Some(span) => {
         let source = self.source_map.source();
-        let (line_start, column_start, line_end, column_end) =
-          self.source_map.span_to_line_column(span);
+        let (line_start, _, line_end, _) = self.source_map.span_to_line_column(span);
 
         writeln!(self.writer, "  |")?;
         for cur_line in line_start..=line_end {
