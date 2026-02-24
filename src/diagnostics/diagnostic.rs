@@ -32,7 +32,7 @@ pub(crate) struct Diagnostic {
   // donde esta el problema principal (si estuviera en el codigo)
   primary_span: Option<Span>,
   // informacion adicional del error
-  labels: Vec<Label>,
+  pub(crate) labels: Vec<Label>,
   // notas adicionales (para no sobrecargar las labels)
   pub(crate) notes: Vec<Note>,
 }

@@ -1,4 +1,7 @@
-use crate::{common::span::Span, diagnostics::diagnostic::Diagnostic};
+use crate::{
+  common::span::Span,
+  diagnostics::{diagnostic::Diagnostic, label::Label},
+};
 
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) enum LexerErrorKind {
@@ -17,16 +20,19 @@ pub struct LexerError {
 
 impl LexerError {
   pub(crate) fn to_diagnostic(&self) -> Diagnostic {
+    let Span { start, end } = self.span;
     match &self.kind {
       LexerErrorKind::InvalidCharacter(c) => {
         Diagnostic::error(format!("el lexer detecto un caracter invalido {c}"))
+          .with_label(Label::primary(start..end, None))
       }
       LexerErrorKind::IllFormedLiteral(lit) => {
         Diagnostic::error(format!("el lexer detecto un literal mal formado {lit}"))
+          .with_label(Label::primary(start..end, None))
       } // LexerErrorKind::UnexpectedEOF => {
         //   Diagnostic::error("el lexer detecto un EOF inesperado".into())
         // } // LexerErrorKind::UnterminatedToken => Diagnostic::error("token inconcluso".into()),
     }
-    .with_span(self.span.clone())
+    .with_span(start..end)
   }
 }

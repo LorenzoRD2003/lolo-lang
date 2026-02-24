@@ -154,8 +154,19 @@ impl<'a> Lexer<'a> {
 
     // Aca voy a verificar las keywords con una HashMap, para hacer lookup en O(1) en vez de iterar la lista de keywords
     let kind = lookup_keyword(lexeme);
-
     self.make_token(kind, start)
+  }
+
+  fn lex_operator(&mut self, c: char) -> Option<Token> {
+    let next_c = self.peek_next();
+    if let Some((kind, width)) = match_operator(c, next_c) {
+      let start = self.position;
+      for _ in 0..width {
+        self.advance();
+      }
+      return Some(self.make_token(kind, start));
+    }
+    None
   }
 }
 
@@ -232,13 +243,8 @@ impl<'a> Iterator for Lexer<'a> {
         // operadores: todavia no tenemos (serian +, -, *, ==, etc). pero irian aca
         // Regla fundamental: siempre intentar primero reconocer los operadores mas largos
         Some(c) => {
-          let next_c = self.peek_next();
-          if let Some((kind, width)) = match_operator(c, next_c) {
-            let start = self.position;
-            for _ in 0..width {
-              self.advance();
-            }
-            return Some(Ok(self.make_token(kind, start)));
+          if let Some(token) = self.lex_operator(c) {
+            return Some(Ok(token));
           }
           // si llegamos hasta aca, es un caracter invalido
           let err = LexerError {

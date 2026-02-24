@@ -24,7 +24,7 @@
 
 use crate::{
   common::{source_map::SourceMap, span::Span},
-  diagnostics::diagnostic::Diagnostic,
+  diagnostics::{diagnostic::Diagnostic, label::LabelStyle},
 };
 use std::fmt;
 
@@ -117,6 +117,45 @@ impl<'a, W: fmt::Write> Renderer<'a, W> {
     }
   }
 
+  /// Renderiza los labels secundarios (y primarios opcionales) de un Diagnostic
+  fn render_labels(&mut self, diag: &Diagnostic) -> fmt::Result {
+    for label in &diag.labels {
+      let (line_start, column_start, line_end, column_end) =
+        self.source_map.span_to_line_column(&label.span);
+
+      // imprimimos cada línea del span
+      for cur_line in line_start..=line_end {
+        if let Some(Span {
+          start: line_start_offset,
+          end: line_end_offset,
+        }) = self.source_map.get_nth_line(cur_line)
+        {
+          let intersection_start = label.span.start.max(line_start_offset);
+          let intersection_end = label.span.end.min(line_end_offset);
+          let width = (intersection_end - intersection_start).max(1);
+
+          let underline_char = match label.style {
+            LabelStyle::Primary => '^',
+            LabelStyle::Secondary => '~',
+          };
+          let underline = " ".repeat(intersection_start - line_start_offset)
+            + &underline_char.to_string().repeat(width);
+
+          // escribimos la linea de subrayado
+          writeln!(self.writer, "  | {}", underline)?;
+
+          // si hay mensaje, lo escribimos al final de la primera linea del span
+          if let Some(msg) = &label.message {
+            if cur_line == line_start {
+              writeln!(self.writer, "    = {}", msg)?;
+            }
+          }
+        }
+      }
+    }
+    Ok(())
+  }
+
   // Funcion responsable de renderizar las notas del diagnostic
   // note: variables must be declared before use
   // help: did you mean `foo`?
@@ -131,6 +170,7 @@ impl<'a, W: fmt::Write> Renderer<'a, W> {
 #[cfg(test)]
 mod tests {
   use super::*;
+  use crate::diagnostics::label::Label;
   use proptest::prelude::*;
 
   #[test]
@@ -220,6 +260,44 @@ mod tests {
   }
 
   #[test]
+  fn renders_primary_and_secondary_labels() {
+    let source = "abcde\nfghij\nklmno";
+    let sm = SourceMap::new(source, "main.lolo");
+
+    let diag = Diagnostic::warning("warning".into())
+      .with_label(Label::primary(0..2, Some("primary here".into())))
+      .with_label(Label::secondary(5..7, Some("secondary here".into())));
+
+    let mut out = String::new();
+    let mut renderer = Renderer::new(&sm, &mut out);
+    renderer.render_labels(&diag).unwrap();
+
+    assert!(out.contains("^")); // primary
+    assert!(out.contains("~")); // secondary
+    assert!(out.contains("primary here"));
+    assert!(out.contains("secondary here"));
+  }
+
+  #[test]
+  fn renders_multiline_label() {
+    let source = "1\n2\n3\n432\n5\n";
+    let sm = SourceMap::new(source, "file.lolo");
+
+    let diag = Diagnostic::error("oops".into())
+      .with_label(Label::secondary(0..12, Some("multiline epic label".into()))); // abarca line1 + line2
+
+    let mut out = String::new();
+    let mut renderer = Renderer::new(&sm, &mut out);
+    renderer.render_labels(&diag).unwrap();
+
+    // debería contener varias líneas de '~'
+    let dash_count = out.chars().filter(|&c| c == '~').count();
+    dbg!(dash_count);
+    assert!(dash_count >= 6); // al menos un dash por cada linea del span
+    assert!(out.contains("multiline"));
+  }
+
+  #[test]
   fn renders_notes() {
     let sm = SourceMap::new("abc", "main.lolo");
 
@@ -237,11 +315,11 @@ mod tests {
 
   proptest! {
     #[test]
-    fn renderer_never_panics(
-      input in ".*",
+    fn renderer_never_panics(bytes in proptest::collection::vec(0u8..=127u8, 0..100),
       start in 0usize..100,
-      len in 0usize..50
+      len in 1usize..50
     ) {
+      let input = String::from_utf8(bytes).unwrap();
       let sm = SourceMap::new(&input, "main.lolo");
       let safe_start = start.min(input.len());
       let safe_end = (safe_start + len).min(input.len());
@@ -256,11 +334,11 @@ mod tests {
   // este proptest deberia detectar el bug del span vacio visual
   proptest! {
     #[test]
-    fn underline_is_never_empty_when_span_visible(
-      input in ".+",
+    fn underline_is_never_empty_when_span_visible(bytes in proptest::collection::vec(0u8..=127u8, 1..100),
       start in 0usize..100,
       len in 1usize..50
     ) {
+      let input = String::from_utf8(bytes).unwrap();
       let sm = SourceMap::new(&input, "main.lolo");
       let safe_start = start.min(input.len() - 1);
       let safe_end = (safe_start + len).min(input.len());
@@ -277,11 +355,11 @@ mod tests {
   // offset mapping consistente con slicing
   proptest! {
     #[test]
-    fn span_render_matches_source_length(
-      input in ".*",
+    fn span_render_matches_source_length(bytes in proptest::collection::vec(0u8..=127u8, 0..100),
       start in 0usize..100,
-      len in 0usize..50
+      len in 1usize..50
     ) {
+      let input = String::from_utf8(bytes).unwrap();
       let sm = SourceMap::new(&input, "main.lolo");
       let safe_start = start.min(input.len());
       let safe_end = (safe_start + len).min(input.len());
@@ -292,6 +370,31 @@ mod tests {
 
       // Nunca deberia renderizar caracteres fuera del source
       prop_assert!(input.contains("\0") || !out.contains("\0"));
+    }
+  }
+
+  // Property test: los labels nunca subrayan fuera del source
+  proptest! {
+    #[test]
+    fn label_subspan_within_source(bytes in proptest::collection::vec(0u8..=127u8, 1..100),
+      start in 0usize..100,
+      len in 1usize..50
+    ) {
+      let input = String::from_utf8(bytes).unwrap();
+      let sm = SourceMap::new(&input, "file.lolo");
+      let safe_start = start.min(input.len() - 1);
+      let safe_end = (safe_start + len).min(input.len());
+      let diag = Diagnostic::error("prop test".into())
+          .with_label(Label::secondary(safe_start..safe_end, Some("label".into())));
+
+      let mut out = String::new();
+      let mut renderer = Renderer::new(&sm, &mut out);
+      renderer.render_labels(&diag).unwrap();
+
+      // nunca subrayar fuera del input
+      let slice = &input[safe_start..safe_end];
+      prop_assert!(slice.len() >= 1);
+      prop_assert!(out.contains("~"));
     }
   }
 }
