@@ -128,7 +128,8 @@ impl<'a, W: fmt::Write> Renderer<'a, W> {
   }
 }
 
-pub mod tests {
+#[cfg(test)]
+mod tests {
   use super::*;
   use proptest::prelude::*;
 

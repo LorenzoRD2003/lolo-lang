@@ -2,30 +2,29 @@
 
 use crate::common::span::Span;
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TokenKind {
   // Constants
   NumberLiteral,  // i32
   BooleanLiteral, // true/false
   // Variables
   Identifier,
-  // Unary operators
-  Neg,
-  Not,
-  // Binary operators
-  Add,
-  Sub,
-  Mul,
-  Div,
-  Eq,
-  Neq,
-  Lt,
-  Gt,
-  Lte,
-  Gte,
-  And,
-  Or,
-  Xor,
+  // operators
+  Bang,         // ! (not)
+  Plus,         // +
+  Minus,        // - (sub, neg)
+  Star,         // *
+  Slash,        // /
+  Equal,        // =
+  EqualEqual,   // ==
+  BangEqual,    // !=
+  Greater,      // >
+  Less,         // <
+  GreaterEqual, // >=
+  LessEqual,    // <=
+  AndAnd,       // &&
+  OrOr,         // ||
+  CaretCaret,   // ^^
   // Statements
   Let,
   Return,

@@ -14,29 +14,31 @@ pub static KEYWORDS: Lazy<HashMap<&'static str, TokenKind>> = Lazy::new(|| {
   m.insert("false", TokenKind::BooleanLiteral);
 
   // Statements
+  m.insert("main", TokenKind::Main);
   m.insert("let", TokenKind::Let);
   m.insert("if", TokenKind::If);
   m.insert("else", TokenKind::Else);
   m.insert("print", TokenKind::Print);
+  m.insert("return", TokenKind::Return);
 
   // Unary operators
-  m.insert("neg", TokenKind::Neg);
-  m.insert("not", TokenKind::Not);
+  m.insert("neg", TokenKind::Minus);
+  m.insert("not", TokenKind::Bang);
 
   // Arithmetic / comparison / logical operators
-  m.insert("add", TokenKind::Add);
-  m.insert("sub", TokenKind::Sub);
-  m.insert("mul", TokenKind::Mul);
-  m.insert("div", TokenKind::Div);
-  m.insert("eq", TokenKind::Eq);
-  m.insert("neq", TokenKind::Neq);
-  m.insert("lt", TokenKind::Lt);
-  m.insert("gt", TokenKind::Gt);
-  m.insert("lte", TokenKind::Lte);
-  m.insert("gte", TokenKind::Gte);
-  m.insert("and", TokenKind::And);
-  m.insert("or", TokenKind::Or);
-  m.insert("xor", TokenKind::Xor);
+  m.insert("add", TokenKind::Plus);
+  m.insert("sub", TokenKind::Minus);
+  m.insert("mul", TokenKind::Star);
+  m.insert("div", TokenKind::Slash);
+  m.insert("eq", TokenKind::EqualEqual);
+  m.insert("neq", TokenKind::BangEqual);
+  m.insert("lt", TokenKind::Less);
+  m.insert("gt", TokenKind::Greater);
+  m.insert("lte", TokenKind::LessEqual);
+  m.insert("gte", TokenKind::GreaterEqual);
+  m.insert("and", TokenKind::AndAnd);
+  m.insert("or", TokenKind::OrOr);
+  m.insert("xor", TokenKind::CaretCaret);
 
   m
 });

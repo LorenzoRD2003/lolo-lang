@@ -1,37 +1,32 @@
-use std::error::Error;
-use std::fmt;
+use crate::{common::span::Span, diagnostics::diagnostic::Diagnostic};
 
-use crate::common::span::Span;
-
-#[derive(Debug, Clone)]
-pub enum LexerErrorKind {
+#[derive(Debug, Clone, PartialEq)]
+pub(crate) enum LexerErrorKind {
   InvalidCharacter(char),
   IllFormedLiteral(String),
-  UnterminatedToken,
-  UnexpectedEOF,
+  // Para el lexer, un UnexpectedEOF es cuando necesita mas caracteres para terminar un Token. por ahora no tenemos ningun caso
+  // UnexpectedEOF,
+  // UnterminatedToken,
 }
 
-// La linea/columna al reportar el error se deriva del Span.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct LexerError {
   pub(crate) kind: LexerErrorKind,
   pub(crate) span: Span,
 }
 
-// Esto va a haber que cambiarlo. Porque LexerError describe que salio mal, pero en el modulo diagnostics decidimos como mostrarlo
-impl fmt::Display for LexerError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl LexerError {
+  pub(crate) fn to_diagnostic(&self) -> Diagnostic {
     match &self.kind {
       LexerErrorKind::InvalidCharacter(c) => {
-        write!(f, "Caracter inválido {c}, en la línea, columna.")
+        Diagnostic::error(format!("el lexer detecto un caracter invalido {c}"))
       }
-      LexerErrorKind::IllFormedLiteral(literal) => {
-        write!(f, "Literal mal formado {literal}, en la línea, columna.")
-      }
-      LexerErrorKind::UnterminatedToken => write!(f, "Token no terminado, en la línea, columna."),
-      LexerErrorKind::UnexpectedEOF => write!(f, "EOF inesperado, en la línea, columna."),
+      LexerErrorKind::IllFormedLiteral(lit) => {
+        Diagnostic::error(format!("el lexer detecto un literal mal formado {lit}"))
+      } // LexerErrorKind::UnexpectedEOF => {
+        //   Diagnostic::error("el lexer detecto un EOF inesperado".into())
+        // } // LexerErrorKind::UnterminatedToken => Diagnostic::error("token inconcluso".into()),
     }
+    .with_span(self.span.clone())
   }
 }
-
-impl Error for LexerError {}
