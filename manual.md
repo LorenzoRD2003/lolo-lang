@@ -73,15 +73,15 @@ Luego se implementarán sus versiones inline.
 
 Las expresiones pueden agruparse mediante paréntesis, lo que incrementa su precedencia.
 
-| Nivel |              Operadores               | Asociatividad  |            Notas            |
-| :---: | :-----------------------------------: | :------------: | :-------------------------: |
-|   1   |             `neg`, `not`              |    Derecha     |     Operadores unarios      |
-|   2   |             `mul`, `div`              |   Izquierda    | Aritméticos multiplicativos |
-|   3   |             `add`, `sub`              |   Izquierda    |    Aritméticos aditivos     |
-|   4   | `eq`, `neq`, `gt`, `lt`, `gte`, `lte` | No asociativos |        Comparativos.        |
-|   5   |                 `and`                 |   Izquierda    |         Lógico AND          |
-|   6   |                 `or`                  |   Izquierda    |          Lógico OR          |
-|   7   |                 `xor`                 |   Izquierda    |         Lógico XOR          |
+| Nivel |         Operadores textuales          |             Simbolos             | Asociatividad  |            Notas            |
+| :---: | :-----------------------------------: | :------------------------------: | :------------: | :-------------------------: |
+|   1   |             `neg`, `not`              |             `-`, `!`             |    Derecha     |     Operadores unarios      |
+|   2   |             `mul`, `div`              |             `*`, `/`             |   Izquierda    | Aritméticos multiplicativos |
+|   3   |             `add`, `sub`              |             `+`, `-`             |   Izquierda    |    Aritméticos aditivos     |
+|   4   | `eq`, `neq`, `gt`, `lt`, `gte`, `lte` | `==`, `!=`, `>`, `<`, `>=`, `<=` | No asociativos |        Comparativos.        |
+|   5   |                 `and`                 |               `&&`               |   Izquierda    |         Lógico AND          |
+|   6   |                 `or`                  |              `\|\|`              |   Izquierda    |          Lógico OR          |
+|   7   |                 `xor`                 |               `^^`               |   Izquierda    |         Lógico XOR          |
 
 ## Whitespaces
 
