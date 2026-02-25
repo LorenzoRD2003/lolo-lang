@@ -59,7 +59,7 @@ impl<'a> TokenStream<'a> {
   }
 
   /// Si el token actual es del kind indicado, lo consume y devuelve true; si no, devuelve false
-  pub(crate) fn match_kind(&mut self, kind: TokenKind) -> bool {
+  pub(crate) fn check_kind(&mut self, kind: TokenKind) -> bool {
     matches!(self.peek(), Some(token) if token.kind == kind)
   }
 }
@@ -102,7 +102,7 @@ mod tests {
   fn match_kind_returns_true_and_peeks() {
     let mut lexer = Lexer::new("+");
     let mut ts = TokenStream::new(&mut lexer);
-    assert!(ts.match_kind(TokenKind::Plus));
+    assert!(ts.check_kind(TokenKind::Plus));
     // peek ahora debe seguir viendo el mismo token porque match_kind no avanza
     assert_eq!(ts.peek().unwrap().kind, TokenKind::Plus);
   }
@@ -112,7 +112,7 @@ mod tests {
     let mut lexer = Lexer::new("-");
     let mut ts = TokenStream::new(&mut lexer);
     // peek sigue viendo el mismo token
-    assert!(!ts.match_kind(TokenKind::BangEqual));
+    assert!(!ts.check_kind(TokenKind::BangEqual));
     assert_eq!(ts.peek().unwrap().kind, TokenKind::Minus);
   }
 
@@ -178,7 +178,7 @@ mod tests {
       let mut lexer = Lexer::new(&input);
       let mut ts = TokenStream::new(&mut lexer);
       let initial_peek = ts.peek().cloned();
-      let _ = ts.match_kind(TokenKind::Plus); // tratar de coincidir con + arbitrario
+      let _ = ts.check_kind(TokenKind::Plus); // tratar de coincidir con + arbitrario
       let after_peek = ts.peek().cloned();
       // si no coincide, peek sigue igual
       if let (Some(init), Some(after)) = (initial_peek, after_peek) {

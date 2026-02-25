@@ -1,5 +1,4 @@
 use crate::{
-  common::span::Span,
   diagnostics::diagnostic::{Diagnosable, Diagnostic},
   lexer::token::Token,
 };
@@ -8,6 +7,7 @@ use crate::{
 pub(crate) enum ParserError {
   UnexpectedToken(Token),
   MissingToken,
+  ChainedAssociativeOperator(Token),
 }
 
 impl Diagnosable for ParserError {
@@ -19,6 +19,13 @@ impl Diagnosable for ParserError {
           .with_span(token.span.clone())
       }
       Self::MissingToken => Diagnostic::error("hay un token faltante en el token stream".into()),
+      Self::ChainedAssociativeOperator(token) => {
+        let lexeme = &token.lexeme;
+        Diagnostic::error(format!(
+          "los operadores de comparacion no son asociativos, como '{lexeme}'"
+        ))
+        .with_span(token.span.clone())
+      }
     }
   }
 }

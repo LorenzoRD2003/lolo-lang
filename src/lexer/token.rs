@@ -43,6 +43,47 @@ pub enum TokenKind {
   EOF,
 }
 
+impl TokenKind {
+  pub fn is_literal(&self) -> bool {
+    matches!(self, TokenKind::NumberLiteral | TokenKind::BooleanLiteral)
+  }
+
+  pub fn is_unary(&self) -> bool {
+    matches!(self, TokenKind::Bang | TokenKind::Minus)
+  }
+
+  pub fn is_binary(&self) -> bool {
+    matches!(
+      self,
+      TokenKind::Plus
+        | TokenKind::Minus
+        | TokenKind::Star
+        | TokenKind::Slash
+        | TokenKind::EqualEqual
+        | TokenKind::BangEqual
+        | TokenKind::Greater
+        | TokenKind::Less
+        | TokenKind::GreaterEqual
+        | TokenKind::LessEqual
+        | TokenKind::AndAnd
+        | TokenKind::OrOr
+        | TokenKind::CaretCaret
+    )
+  }
+
+  pub fn is_comparison(&self) -> bool {
+    matches!(
+      self,
+      TokenKind::EqualEqual
+        | TokenKind::BangEqual
+        | TokenKind::Greater
+        | TokenKind::Less
+        | TokenKind::GreaterEqual
+        | TokenKind::LessEqual
+    )
+  }
+}
+
 // Token: Representa una ocurrencia concreta en el codigo fuente (contiene tipo + texto + span)
 // Son la interfaz que va a ser generada por el lexer
 #[derive(Debug, Clone, PartialEq)]

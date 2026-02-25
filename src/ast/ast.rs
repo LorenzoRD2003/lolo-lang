@@ -22,8 +22,8 @@ impl Ast {
     }
   }
 
-  pub(crate) fn expr(&self, id: ExprId) -> &Expr {
-    &self.exprs[id]
+  pub(crate) fn expr(&self, id: ExprId) -> Expr {
+    self.exprs[id].clone()
   }
 
   pub(crate) fn span(&self, id: ExprId) -> Span {
@@ -34,5 +34,10 @@ impl Ast {
     self.exprs.push(expr);
     self.spans.push(span);
     self.exprs.len() - 1
+  }
+
+  pub(crate) fn update_span(&mut self, expr_id: ExprId, span: Span) -> ExprId {
+    self.spans[expr_id] = span;
+    expr_id
   }
 }
