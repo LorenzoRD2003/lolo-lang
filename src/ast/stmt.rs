@@ -1,47 +1,30 @@
-use crate::{ast::expr::{Expr, VarId}, common::span::{Span, Spanned}};
+use crate::ast::{
+  ast::{BlockId, ExprId, StmtId},
+  expr::VarId,
+};
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum Stmt {
+pub(crate) enum Stmt {
+  Expr(ExprId),
   Let {
     name: VarId,
-    value: Expr,
+    initializer: ExprId,
   },
-  Return(Expr),
+  Return(ExprId),
   If {
-    condition: Expr,
-    if_block: Block,
+    condition: ExprId,
+    if_block: BlockId,
   },
   IfElse {
-    condition: Expr,
-    if_block: Block,
-    else_block: Block,
+    condition: ExprId,
+    if_block: BlockId,
+    else_block: BlockId,
   },
-  Print(Expr),
+  Print(ExprId),
 }
 
-pub type Block = Vec<Stmt>;
-
-impl Spanned for Stmt {
-  fn span(&self) -> Span {
-    match &self {
-      Stmt::Let { name, value } => todo!(),
-      Stmt::Return(expr) => todo!(),
-      Stmt::If {
-        condition,
-        if_block,
-      } => todo!(),
-      Stmt::IfElse {
-        condition,
-        if_block,
-        else_block,
-      } => todo!(),
-      Stmt::Print(expr) => todo!(),
-    }
-  }
-}
-
-impl Spanned for Block {
-  fn span(&self) -> Span {
-    todo!()
-  }
+/// Block tambien va a ser arena-based
+#[derive(Debug, Clone, PartialEq)]
+pub(crate) struct Block {
+  pub(crate) stmts: Vec<StmtId>,
 }

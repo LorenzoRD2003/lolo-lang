@@ -1,3 +1,3 @@
 use crate::ast::stmt::Block;
 
-pub type Program = Block;
+pub(crate) type Program = Block;

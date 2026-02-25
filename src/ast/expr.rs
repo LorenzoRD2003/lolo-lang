@@ -61,14 +61,14 @@ impl UnaryOp {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct BinaryExpr {
+pub(crate) struct BinaryExpr {
   pub(crate) op: BinaryOp,
   pub(crate) lhs: ExprId,
   pub(crate) rhs: ExprId,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum BinaryOp {
+pub(crate) enum BinaryOp {
   // Arithmetic Binary Operations
   Add,
   Sub,
