@@ -1,7 +1,6 @@
-
 // Los tipos de este archivo deben ser publicos, ya que los vamos a usar desde el parser / lowering / IR
 
-use crate::common::span::{Span, Spanned};
+use crate::ast::ast::ExprId;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Expr {
@@ -22,7 +21,7 @@ pub enum ConstValue {
 #[derive(Debug, Clone, PartialEq)]
 pub struct UnaryExpr {
   op: UnaryOp,
-  operand: Box<Expr>,
+  operand: ExprId,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -34,8 +33,8 @@ pub enum UnaryOp {
 #[derive(Debug, Clone, PartialEq)]
 pub struct BinaryExpr {
   op: BinaryOp,
-  lhs: Box<Expr>,
-  rhs: Box<Expr>,
+  lhs: ExprId,
+  rhs: ExprId,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -56,39 +55,4 @@ pub enum BinaryOp {
   And,
   Or,
   Xor,
-}
-
-impl Spanned for Expr {
-  fn span(&self) -> Span {
-    match self {
-      Expr::Var(var_id) => var_id.span(),
-      Expr::Const(const_value) => const_value.span(),
-      Expr::Unary(unary_expr) => unary_expr.span(),
-      Expr::Binary(binary_expr) => binary_expr.span(),
-    }
-  }
-}
-
-impl Spanned for VarId {
-  fn span(&self) -> Span {
-    todo!()
-  }
-}
-
-impl Spanned for ConstValue {
-  fn span(&self) -> Span {
-    todo!()
-  }
-}
-
-impl Spanned for UnaryExpr {
-  fn span(&self) -> Span {
-    todo!()
-  }
-}
-
-impl Spanned for BinaryExpr {
-  fn span(&self) -> Span {
-    todo!()
-  }
 }

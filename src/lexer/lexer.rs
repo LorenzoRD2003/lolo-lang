@@ -5,7 +5,7 @@
 // Mientras mas tonto sea el lexer, mejor. si no, vienen los bugs.
 
 use crate::{
-  diagnostics::diagnostic::Diagnostic,
+  diagnostics::diagnostic::{Diagnosable, Diagnostic},
   lexer::{
     error::{LexerError, LexerErrorKind},
     keywords::lookup_keyword,
@@ -183,6 +183,8 @@ impl<'a> Iterator for Lexer<'a> {
     4. Emitir token
   */
   fn next(&mut self) -> Option<Self::Item> {
+    // borrar el cache actual
+    self.next_token_cache = None;
     loop {
       match self.current_char() {
         // EOF

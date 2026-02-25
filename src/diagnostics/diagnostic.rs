@@ -117,3 +117,7 @@ impl Diagnostic {
   //   matches!(self.severity, Severity::Note)
   // }
 }
+
+pub trait Diagnosable {
+  fn to_diagnostic(&self) -> Diagnostic;
+}

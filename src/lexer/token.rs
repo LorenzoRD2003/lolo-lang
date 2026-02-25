@@ -45,7 +45,7 @@ pub enum TokenKind {
 
 // Token: Representa una ocurrencia concreta en el codigo fuente (contiene tipo + texto + span)
 // Son la interfaz que va a ser generada por el lexer
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Token {
   pub(crate) kind: TokenKind,
   // El lexema es exactamente el texto que se ve

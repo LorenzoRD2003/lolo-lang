@@ -1,6 +1,9 @@
 use crate::{
   common::span::Span,
-  diagnostics::{diagnostic::Diagnostic, label::Label},
+  diagnostics::{
+    diagnostic::{Diagnosable, Diagnostic},
+    label::Label,
+  },
 };
 
 #[derive(Debug, Clone, PartialEq)]
@@ -18,8 +21,8 @@ pub struct LexerError {
   pub(crate) span: Span,
 }
 
-impl LexerError {
-  pub(crate) fn to_diagnostic(&self) -> Diagnostic {
+impl Diagnosable for LexerError {
+  fn to_diagnostic(&self) -> Diagnostic {
     let Span { start, end } = self.span;
     match &self.kind {
       LexerErrorKind::InvalidCharacter(c) => {

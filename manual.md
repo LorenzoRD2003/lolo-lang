@@ -73,15 +73,15 @@ Luego se implementarán sus versiones inline.
 
 Las expresiones pueden agruparse mediante paréntesis, lo que incrementa su precedencia.
 
-| Nivel |         Operadores textuales          |             Simbolos             | Asociatividad  |            Notas            |
-| :---: | :-----------------------------------: | :------------------------------: | :------------: | :-------------------------: |
-|   1   |             `neg`, `not`              |             `-`, `!`             |    Derecha     |     Operadores unarios      |
-|   2   |             `mul`, `div`              |             `*`, `/`             |   Izquierda    | Aritméticos multiplicativos |
-|   3   |             `add`, `sub`              |             `+`, `-`             |   Izquierda    |    Aritméticos aditivos     |
-|   4   | `eq`, `neq`, `gt`, `lt`, `gte`, `lte` | `==`, `!=`, `>`, `<`, `>=`, `<=` | No asociativos |        Comparativos.        |
-|   5   |                 `and`                 |               `&&`               |   Izquierda    |         Lógico AND          |
-|   6   |                 `or`                  |              `\|\|`              |   Izquierda    |          Lógico OR          |
-|   7   |                 `xor`                 |               `^^`               |   Izquierda    |         Lógico XOR          |
+| Binding power (`lbp`/`rbp`) |         Operadores textuales          |             Simbolos             | Asociatividad  |            Notas            |
+| :-------------------------: | :-----------------------------------: | :------------------------------: | :------------: | :-------------------------: |
+|            70/70            |             `neg`, `not`              |             `-`, `!`             |    Derecha     |     Operadores unarios      |
+|            60/61            |             `mul`, `div`              |             `*`, `/`             |   Izquierda    | Aritméticos multiplicativos |
+|            50/51            |             `add`, `sub`              |             `+`, `-`             |   Izquierda    |    Aritméticos aditivos     |
+|            40/41            | `eq`, `neq`, `gt`, `lt`, `gte`, `lte` | `==`, `!=`, `>`, `<`, `>=`, `<=` | No asociativos |        Comparativos.        |
+|            30/31            |                 `and`                 |               `&&`               |   Izquierda    |         Lógico AND          |
+|            20/21            |                 `or`                  |              `\|\|`              |   Izquierda    |          Lógico OR          |
+|            10/11            |                 `xor`                 |               `^^`               |   Izquierda    |         Lógico XOR          |
 
 ## Whitespaces
 
@@ -98,3 +98,21 @@ Se aplica la siguiente jerarquía de reconocimiento:
 5. Identificadores / keywords
 6. Operadores: aun no tenemos, pero cuando sean +, -, ==, etc.
 7. Error
+
+## Pratt Parsing
+
+Pratt parsing = Top-Down Operator Precedence Parsing. La idea central no es parsear por gramática explícita, sino por potencia de enlace (binding power). Cada Token generado por el lexer puede comportarse como:
+
+- _nud (null denotation)_, cuando aparece al inicio. ¿Qué significa este token si empieza una expresión?
+- _led (left denotation)_, cuando aparece con algo a la izquierda. ¿Qué significa este token si ya hay una expresión a la izquierda?
+
+Hay una sola función principal, `parse_expr(min_bp)`, la cual:
+
+1. Lee un token, ejecutando su función `nud()` y obteniendo un `lhs`.
+2. Mientras el siguiente token sea un operador y su binding power sea mayor que `min_bp`, se consume el operador y se ejecuta `led(lhs)`, obteniendo un nuevo `lhs`.
+
+Reglas del binding power (usadas para modificar la tabla anterior), para `lbp` (left binding power) y `rbp` (right binding power).
+
+- Para operadores asociativos a izquierda, `lbp = X, rbp = X + 1`.
+- Para operadores asociativos a derecha, `lbp = X, rbp = X`.
+- Para operadores no asociativos, `lbp = X, rbp = X + 1`, pero con restricción semántica (prohibimos encadenarlos).
