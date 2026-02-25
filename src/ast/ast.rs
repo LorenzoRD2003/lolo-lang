@@ -51,7 +51,7 @@ impl Ast {
     self.expr_arena[id.0].clone()
   }
 
-  pub(crate) fn span(&self, id: ExprId) -> Span {
+  pub(crate) fn expr_span(&self, id: ExprId) -> Span {
     self.expr_spans[id.0].clone()
   }
 
@@ -118,7 +118,7 @@ mod tests {
     let span = 0..3;
     let id = ast.add_expr(expr.clone(), span.clone());
     assert_eq!(ast.expr(id), expr);
-    assert_eq!(ast.span(id), span);
+    assert_eq!(ast.expr_span(id), span);
   }
 
   #[test]
@@ -129,7 +129,7 @@ mod tests {
     let expr = Expr::Const(ConstValue::Int(42));
     let id = ast.add_expr(expr, span1);
     ast.update_expr_span(id, span2.clone());
-    assert_eq!(ast.span(id), span2);
+    assert_eq!(ast.expr_span(id), span2);
   }
 
   #[test]
@@ -290,7 +290,7 @@ mod tests {
       for i in 0..exprs {
         let id = ast.add_expr(Expr::Const(ConstValue::Int(i as i32)), start..end);
         let _ = ast.expr(id);
-        let _ = ast.span(id);
+        let _ = ast.expr_span(id);
       }
       prop_assert_eq!(ast.expr_arena.len(), ast.expr_spans.len());
     }

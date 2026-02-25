@@ -7,14 +7,16 @@
 
 use crate::{
   ast::{
-    ast::{Ast, ExprId},
-    expr::{BinaryExpr, BinaryOp, ConstValue, Expr, UnaryExpr, UnaryOp},
+    ast::{Ast, ExprId, StmtId},
+    expr::{BinaryExpr, BinaryOp, ConstValue, Expr, UnaryExpr, UnaryOp, VarId},
+    stmt::Stmt,
   },
+  common::span::Span,
   diagnostics::diagnostic::{Diagnosable, Diagnostic},
   lexer::token::{Token, TokenKind},
   parser::{
     error::ParserError,
-    precedence::{ASSIGN_BP, UNARY_BP},
+    precedence::ASSIGN_BP,
     token_binding::{infix_binding_power, prefix_binding_power},
     token_stream::TokenStream,
   },
@@ -44,6 +46,24 @@ impl<'a> Parser<'a> {
   pub(crate) fn parse_expression(&mut self) -> Option<ExprId> {
     // Internamente llama a parse_expr_bp(...)
     self.parse_expr_bp(0)
+  }
+
+  /// Funcion de punto de entrada para parsear un Statement. Se introduce la expresion en el AST mediante su StmtId
+  pub(crate) fn parse_statement(&mut self) -> Option<StmtId> {
+    // decidir que tipo de statement es.
+    // uso peek() en vez de bump() porque el bump() lo uso al parsear en cada branch
+    let token = self.tokens.peek()?;
+    let (stmt, span) = match token.kind {
+      TokenKind::Let => self.parse_let_stmt()?,
+      TokenKind::Return => self.parse_return_stmt()?,
+      TokenKind::If => self.parse_if_stmt()?,
+      TokenKind::Print => self.parse_print_stmt()?,
+      _ => {
+        let expr_id = self.parse_expression()?;
+        (Stmt::Expr(expr_id), self.ast.expr_span(expr_id))
+      }
+    };
+    Some(self.ast.add_stmt(stmt, span))
   }
 
   /// El metodo esencial del Pratt parsing. Responsable de:
@@ -104,7 +124,7 @@ impl<'a> Parser<'a> {
             Some(
               self
                 .ast
-                .update_span(inner_expr_id, open_paren_start..close_paren_end),
+                .update_expr_span(inner_expr_id, open_paren_start..close_paren_end),
             )
           }
           Err(err) => {
@@ -123,7 +143,7 @@ impl<'a> Parser<'a> {
           op: UnaryOp::from_token(&token)?,
           operand: rhs_id,
         });
-        let rhs_end = self.ast.span(rhs_id).end;
+        let rhs_end = self.ast.expr_span(rhs_id).end;
         Some(self.ast.add_expr(expr, op_start..rhs_end))
       }
       _ => {
@@ -137,8 +157,8 @@ impl<'a> Parser<'a> {
   fn parse_infix(&mut self, lhs: ExprId, token: Token) -> Option<ExprId> {
     let (_, rbp) = infix_binding_power(token.kind)?;
     let rhs = self.parse_expr_bp(rbp)?;
-    let span_start = self.ast.span(lhs).start;
-    let span_end = self.ast.span(rhs).end;
+    let span_start = self.ast.expr_span(lhs).start;
+    let span_end = self.ast.expr_span(rhs).end;
 
     // los operadores de comparacion son no asociativos en lolo-lang. prohibir a < b < c
     // lo tengo que hacer a mano porque Pratt parsing no lo soporta
@@ -169,6 +189,40 @@ impl<'a> Parser<'a> {
   /// Convierte el error a Diagnostic, lo acumula en la lista de errores. El parser continua.
   fn emit_error(&mut self, err: &ParserError) {
     self.diagnostics.push(err.to_diagnostic())
+  }
+
+  fn parse_let_stmt(&mut self) -> Option<(Stmt, Span)> {
+    // Consumimos el `let`
+    let let_token = self.tokens.bump()?;
+    // Ahora deberiamos consumir un identificador. de otro modo estamos en problemas
+    // Igualmente, vamos a seguir parseando en vez de panickear
+    let token = self.tokens.peek()?;
+    let var = match self.tokens.expect(TokenKind::Identifier) {
+      Ok(token) => VarId(token.lexeme.clone()),
+      Err(err) => {
+        self.emit_error(&err);
+        VarId("que pongo aca".into())
+      }
+    };
+    // Ahora deberiamos consumir un =, de otro modo estamos en problemas
+    if let Err(err) = self.tokens.expect(TokenKind::Equal) {
+      self.emit_error(&err);
+    }
+
+
+    Some((Stmt::Expr(ExprId(1)), 1..2))
+  }
+
+  fn parse_return_stmt(&mut self) -> Option<(Stmt, Span)> {
+    todo!()
+  }
+
+  fn parse_if_stmt(&mut self) -> Option<(Stmt, Span)> {
+    todo!()
+  }
+
+  fn parse_print_stmt(&mut self) -> Option<(Stmt, Span)> {
+    todo!()
   }
 }
 
@@ -238,7 +292,7 @@ mod tests {
   fn unary_span_is_correct() {
     let (ast, expr_id) = parse_expr("-abc");
     let expr_id = expr_id.unwrap();
-    assert_eq!(ast.span(expr_id), 0..4); // "-abc" -> span completo
+    assert_eq!(ast.expr_span(expr_id), 0..4); // "-abc" -> span completo
   }
 
   #[test]
@@ -260,7 +314,7 @@ mod tests {
   fn paren_span_is_correct() {
     let (ast, expr_id) = parse_expr("(xy)");
     let expr_id = expr_id.unwrap();
-    assert_eq!(ast.span(expr_id), 0..4); // "(xy)" -> span completo
+    assert_eq!(ast.expr_span(expr_id), 0..4); // "(xy)" -> span completo
   }
 
   proptest! {
@@ -370,14 +424,14 @@ mod tests {
   fn binary_span_is_correct() {
     let (ast, expr_id) = parse_expr("abc + def");
     let expr_id = expr_id.unwrap();
-    assert_eq!(ast.span(expr_id), 0..9);
+    assert_eq!(ast.expr_span(expr_id), 0..9);
   }
 
   #[test]
   fn complex_span_is_correct() {
     let (ast, expr_id) = parse_expr("(a + b) * c");
     let expr_id = expr_id.unwrap();
-    assert_eq!(ast.span(expr_id), 0..11);
+    assert_eq!(ast.expr_span(expr_id), 0..11);
   }
 
   #[test]
@@ -424,7 +478,7 @@ mod tests {
       let input = format!("{a} + {b}");
       let (ast, expr_id) = parse_expr(&input);
       if let Some(id) = expr_id {
-        let span = ast.span(id);
+        let span = ast.expr_span(id);
         prop_assert!(span.start == 0);
         prop_assert!(span.end == input.len());
       }
@@ -440,7 +494,7 @@ mod tests {
       let input = String::from_utf8(bytes).unwrap_or_default();
       let (ast, expr_id) = parse_expr(&input);
       if let Some(id) = expr_id {
-        let span = ast.span(id);
+        let span = ast.expr_span(id);
         // Nunca fuera del source
         prop_assert!(span.start <= input.len());
         prop_assert!(span.end <= input.len());

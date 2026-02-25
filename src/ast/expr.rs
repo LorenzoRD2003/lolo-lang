@@ -30,7 +30,8 @@ impl Expr {
   }
 }
 
-pub type VarId = String; // Identificador de cada variable
+#[derive(Debug, Clone, PartialEq)]
+pub(crate) struct VarId(pub(crate) String); // Identificador de cada variable
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ConstValue {

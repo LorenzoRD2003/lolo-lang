@@ -8,24 +8,25 @@ pub(crate) enum ParserError {
   UnexpectedToken(Token),
   MissingToken,
   ChainedAssociativeOperator(Token),
+  // IdentifierExpected(Token),
+}
+
+impl ParserError {
+  fn token_error_fmt(token: &Token, template: &str) -> Diagnostic {
+    Diagnostic::error(template.replace("{}", &token.lexeme)).with_span(token.span.clone())
+  }
 }
 
 impl Diagnosable for ParserError {
   fn to_diagnostic(&self) -> Diagnostic {
     match &self {
-      Self::UnexpectedToken(token) => {
-        let lexeme = &token.lexeme;
-        Diagnostic::error(format!("se detecto un token inesperado '{lexeme}'"))
-          .with_span(token.span.clone())
-      }
+      Self::UnexpectedToken(token) => Self::token_error_fmt(token, "hubo un token inesperado '{}'"),
       Self::MissingToken => Diagnostic::error("hay un token faltante en el token stream".into()),
       Self::ChainedAssociativeOperator(token) => {
-        let lexeme = &token.lexeme;
-        Diagnostic::error(format!(
-          "los operadores de comparacion no son asociativos, como '{lexeme}'"
-        ))
-        .with_span(token.span.clone())
-      }
+        Self::token_error_fmt(token, "operadores de comparacion '{}' no son asociativos")
+      } // Self::IdentifierExpected(token) => {
+        //   Self::token_error_fmt(token, "se esperaba un identificador; se recibio '{}'")
+        // }
     }
   }
 }
