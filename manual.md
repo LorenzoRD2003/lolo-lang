@@ -116,3 +116,35 @@ Reglas del binding power (usadas para modificar la tabla anterior), para `lbp` (
 - Para operadores asociativos a izquierda, `lbp = X, rbp = X + 1`.
 - Para operadores asociativos a derecha, `lbp = X, rbp = X`.
 - Para operadores no asociativos, `lbp = X, rbp = X + 1`, pero con restricción semántica (prohibimos encadenarlos).
+
+## Módulo de Semántica `semantic`
+
+Este módulo responde preguntas como:
+
+- ¿Existe esta variable?
+- ¿Dónde fue declarada?
+- ¿Se redeclara ilegalmente?
+- ¿Qué identificador referencia este nodo?
+- ¿Qué scope aplica aquí?
+
+No evalúa tipos, no genera código, no modifica la estructura del AST. Produce metadata semántica y diagnostica errores.
+
+El AST representa estructura sintáctica, mientras que la metadata de este módulo representa significado semántico. Es decir, vamos a necesitar una estructura separada (la vamos a llamar `SemanticInfo`) donde viva la metadata semántica,
+que va a estar indexada por los IDs del AST (porque le tenemos que asociar un significado a cada expresión, cada statement, etc).
+
+¿Qué cosas queremos guardar de una expresion?
+
+- Para cada variable, qué símbolo representa.
+- En qué scope (`ScopeId`) vive. Para saber si es válida en cierto punto del programa o no.
+- Cuál es el tipo de la expresión (por ahora tenemos `Int`, `Bool`).
+- Cuál es la categoría de la expresión (o sea `ValueExpr`, `PlaceExpr`, `ConstantExpr`, etc.). Para saber si tiene un valor, es asignable, etc.
+- Información sobre si la expresión es evaluable en compile-time (esto en un futuro, aún no lo haremos).
+
+¿Qué cosas queremos guardar de un statement?
+
+- En qué scope (`ScopeId`) vive. Para saber si es válida en cierto punto del programa o no.
+- Si es un terminador de bloque.
+
+¿Qué cosas queremos guardar de un bloque?
+
+- Cuál es su scope asociado (`ScopeId`).
