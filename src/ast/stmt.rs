@@ -26,5 +26,23 @@ pub(crate) enum Stmt {
 /// Block tambien va a ser arena-based
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) struct Block {
-  pub(crate) stmts: Vec<StmtId>,
+  stmts: Vec<StmtId>,
+}
+
+impl Block {
+  pub(crate) fn new() -> Self {
+    Self { stmts: vec![] }
+  }
+
+  pub(crate) fn with_stmts(stmts: Vec<StmtId>) -> Self {
+    Self { stmts }
+  }
+
+  pub(crate) fn stmts(&self) -> Vec<StmtId> {
+    self.stmts.clone()
+  }
+
+  pub(crate) fn add_stmt(&mut self, stmt: StmtId) {
+    self.stmts.push(stmt)
+  }
 }

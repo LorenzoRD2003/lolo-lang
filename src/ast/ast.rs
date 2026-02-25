@@ -157,9 +157,7 @@ mod tests {
   fn test_add_and_retrieve_block() {
     let mut ast = Ast::empty();
     let span = 0..10;
-    let block = Block {
-      stmts: vec![StmtId(0), StmtId(1)],
-    };
+    let block = Block::with_stmts(vec![StmtId(0), StmtId(1)]);
     let id = ast.add_block(block.clone(), span.clone());
     assert_eq!(ast.block(id), block.clone());
     assert_eq!(ast.block_span(id), span);
@@ -170,9 +168,7 @@ mod tests {
     let mut ast = Ast::empty();
     let span1 = 0..10;
     let span2 = 3..15;
-    let block = Block {
-      stmts: vec![StmtId(0), StmtId(1)],
-    };
+    let block = Block::with_stmts(vec![StmtId(0), StmtId(1)]);
     let id = ast.add_block(block, span1);
     ast.update_block_span(id, span2.clone());
     assert_eq!(ast.block_span(id), span2);
@@ -192,13 +188,8 @@ mod tests {
     assert_eq!(ast.stmt(s1), Stmt::Expr(e1));
     assert_eq!(ast.stmt(s2), Stmt::Expr(e2));
 
-    let b1 = ast.add_block(
-      Block {
-        stmts: vec![s1, s2],
-      },
-      0..3,
-    );
-    assert_eq!(ast.block(b1).stmts, vec![s1, s2]);
+    let b1 = ast.add_block(Block::with_stmts(vec![s1, s2]), 0..3);
+    assert_eq!(ast.block(b1).stmts(), vec![s1, s2]);
   }
 
   #[test]
@@ -248,14 +239,9 @@ mod tests {
     let s1 = ast.add_stmt(Stmt::Expr(e1), 0..1);
     let s2 = ast.add_stmt(Stmt::Return(e1), 2..3);
 
-    let block = ast.add_block(
-      Block {
-        stmts: vec![s1, s2],
-      },
-      0..3,
-    );
+    let block = ast.add_block(Block::with_stmts(vec![s1, s2]), 0..3);
     // Cada StmtId dentro del Block debe existir, sino panickea
-    for stmt_id in &ast.block(block).stmts {
+    for stmt_id in &ast.block(block).stmts() {
       let _ = ast.stmt(*stmt_id);
     }
   }
@@ -267,12 +253,12 @@ mod tests {
     let e2 = ast.add_expr(Expr::Const(ConstValue::Int(2)), 2..3);
     let s1 = ast.add_stmt(Stmt::Expr(e1), 0..1);
     let s2 = ast.add_stmt(Stmt::Return(e2), 2..3);
-    let inner_block = ast.add_block(Block { stmts: vec![s1] }, 0..1);
-    let outer_block = ast.add_block(Block { stmts: vec![s2] }, 2..3);
+    let inner_block = ast.add_block(Block::with_stmts(vec![s1]), 0..1);
+    let outer_block = ast.add_block(Block::with_stmts(vec![s2]), 2..3);
 
     // Chequeo recursivo: todos los ExprId referenciados existen
     for block_id in &[inner_block, outer_block] {
-      for stmt_id in &ast.block(*block_id).stmts {
+      for stmt_id in &ast.block(*block_id).stmts() {
         match ast.stmt(*stmt_id) {
           Stmt::Expr(eid) | Stmt::Return(eid) | Stmt::Print(eid) => {
             let _ = ast.expr(eid);
@@ -315,7 +301,7 @@ mod tests {
       }
       for i in 0..blocks {
         let block_stmt_ids = stmt_ids[i*stmts_per_block..(i+1)*stmts_per_block].to_vec();
-        let id = ast.add_block(Block { stmts: block_stmt_ids }, start..end);
+        let id = ast.add_block(Block::with_stmts(block_stmt_ids), start..end);
         let _ = ast.block(id);
         let _ = ast.block_span(id);
       }

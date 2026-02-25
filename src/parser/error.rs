@@ -8,6 +8,7 @@ pub(crate) enum ParserError {
   UnexpectedToken(Token),
   MissingToken,
   ChainedAssociativeOperator(Token),
+  UnexpectedEOF(Token),
   // IdentifierExpected(Token),
 }
 
@@ -24,9 +25,8 @@ impl Diagnosable for ParserError {
       Self::MissingToken => Diagnostic::error("hay un token faltante en el token stream".into()),
       Self::ChainedAssociativeOperator(token) => {
         Self::token_error_fmt(token, "operadores de comparacion '{}' no son asociativos")
-      } // Self::IdentifierExpected(token) => {
-        //   Self::token_error_fmt(token, "se esperaba un identificador; se recibio '{}'")
-        // }
+      }
+      Self::UnexpectedEOF(token) => Self::token_error_fmt(token, "hubo un EOF inesperado"),
     }
   }
 }

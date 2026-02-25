@@ -7,9 +7,10 @@
 
 use crate::{
   ast::{
-    ast::{Ast, ExprId, StmtId},
+    ast::{Ast, BlockId, ExprId, StmtId},
     expr::{BinaryExpr, BinaryOp, ConstValue, Expr, UnaryExpr, UnaryOp, VarId},
-    stmt::Stmt,
+    program::Program,
+    stmt::{Block, Stmt},
   },
   common::span::Span,
   diagnostics::diagnostic::{Diagnosable, Diagnostic},
@@ -60,10 +61,48 @@ impl<'a> Parser<'a> {
       TokenKind::Print => self.parse_print_stmt()?,
       _ => {
         let expr_id = self.parse_expression()?;
+        self.expect_token(TokenKind::Semicolon);
         (Stmt::Expr(expr_id), self.ast.expr_span(expr_id))
       }
     };
     Some(self.ast.add_stmt(stmt, span))
+  }
+
+  pub(crate) fn parse_block(&mut self) -> Option<BlockId> {
+    // block ::== { stmt* }
+    let mut block = Block::new();
+    let lbrace = self.tokens.expect(TokenKind::LCurlyBrace).ok()?;
+    let span_start = lbrace.span.start;
+    loop {
+      // el bloque termina cuando encontramos el `}` correspondiente, o con un error si se teremina el archivo
+      let token = self.tokens.peek()?.clone();
+      let token_kind = token.kind;
+      if matches!(token_kind, TokenKind::EOF) {
+        self.emit_error(&ParserError::UnexpectedEOF(token));
+      }
+      if matches!(token_kind, TokenKind::RCurlyBrace | TokenKind::EOF) {
+        break;
+      }
+      // hay que parsear un statement
+      let stmt = self.parse_statement()?;
+      block.add_stmt(stmt);
+    }
+    // hay que avanzar una ultima vez porque estabamos haciendo peek()
+    let rbrace = self.tokens.expect(TokenKind::RCurlyBrace).ok()?;
+    let span_end = rbrace.span.end;
+    Some(self.ast.add_block(block, span_start..span_end))
+  }
+
+  pub(crate) fn parse_program(&mut self) -> Option<Program> {
+    // program ::= main block
+    let span_start = self.tokens.peek()?.span.start;
+    self.expect_token(TokenKind::Main);
+    let block = self.parse_block()?;
+    let span_end = self.ast.block_span(block).end;
+    Some(Program {
+      block,
+      span: span_start..span_end,
+    })
   }
 
   /// El metodo esencial del Pratt parsing. Responsable de:
@@ -107,7 +146,7 @@ impl<'a> Parser<'a> {
         Some(self.ast.add_expr(expr, span))
       }
       TokenKind::Identifier => {
-        let expr = Expr::Var(lexeme.clone());
+        let expr = Expr::Var(VarId(lexeme.clone()));
         Some(self.ast.add_expr(expr, span))
       }
       TokenKind::LParen => {
@@ -191,38 +230,91 @@ impl<'a> Parser<'a> {
     self.diagnostics.push(err.to_diagnostic())
   }
 
-  fn parse_let_stmt(&mut self) -> Option<(Stmt, Span)> {
-    // Consumimos el `let`
-    let let_token = self.tokens.bump()?;
-    // Ahora deberiamos consumir un identificador. de otro modo estamos en problemas
-    // Igualmente, vamos a seguir parseando en vez de panickear
-    let token = self.tokens.peek()?;
-    let var = match self.tokens.expect(TokenKind::Identifier) {
-      Ok(token) => VarId(token.lexeme.clone()),
-      Err(err) => {
-        self.emit_error(&err);
-        VarId("que pongo aca".into())
-      }
-    };
-    // Ahora deberiamos consumir un =, de otro modo estamos en problemas
-    if let Err(err) = self.tokens.expect(TokenKind::Equal) {
+  fn expect_token(&mut self, kind: TokenKind) {
+    if let Err(err) = self.tokens.expect(kind) {
       self.emit_error(&err);
     }
+  }
 
-
-    Some((Stmt::Expr(ExprId(1)), 1..2))
+  fn parse_let_stmt(&mut self) -> Option<(Stmt, Span)> {
+    // let <var> = <expr>;
+    // Consumimos el `let`
+    let span_start = self.tokens.peek()?.span.start;
+    self.expect_token(TokenKind::Let);
+    // Ahora deberiamos consumir un identificador
+    // Igualmente, vamos a seguir parseando en vez de panickear
+    let token = self.tokens.peek()?;
+    let var = VarId(token.lexeme.clone());
+    self.expect_token(TokenKind::Identifier);
+    // Ahora deberiamos consumir un `=`
+    self.expect_token(TokenKind::Equal);
+    // Ahora vamos a parsear una expresion
+    let expr_id = self.parse_expression()?;
+    // Ahora deberiamos consumir un `;`
+    let span_end = self.tokens.peek()?.span.end;
+    self.expect_token(TokenKind::Semicolon);
+    Some((
+      Stmt::Let {
+        name: var,
+        initializer: expr_id,
+      },
+      span_start..span_end,
+    ))
   }
 
   fn parse_return_stmt(&mut self) -> Option<(Stmt, Span)> {
-    todo!()
+    // return <expr>;
+    let span_start = self.tokens.peek()?.span.start;
+    self.expect_token(TokenKind::Return);
+    let expr_id = self.parse_expression()?;
+    let span_end = self.tokens.peek()?.span.end;
+    self.expect_token(TokenKind::Semicolon);
+    Some((Stmt::Return(expr_id), span_start..span_end))
   }
 
   fn parse_if_stmt(&mut self) -> Option<(Stmt, Span)> {
-    todo!()
+    // if expr { block } [ else { block } ]
+    let span_start = self.tokens.peek()?.span.start;
+    self.expect_token(TokenKind::If);
+    let condition = self.parse_expression()?;
+    // parsear el bloque if
+    let if_block = self.parse_block()?;
+    let mut span_end = self.ast.block_span(if_block).end;
+    // si hay un bloque else, lo tengo que parsear
+    if let Some(token) = self.tokens.peek()
+      && matches!(token.kind, TokenKind::Else)
+    {
+      self.expect_token(TokenKind::Else);
+      // parsear el bloque else
+      let else_block = self.parse_block()?;
+      span_end = self.ast.block_span(else_block).end;
+      Some((
+        Stmt::IfElse {
+          condition,
+          if_block,
+          else_block,
+        },
+        span_start..span_end,
+      ))
+    } else {
+      Some((
+        Stmt::If {
+          condition,
+          if_block,
+        },
+        span_start..span_end,
+      ))
+    }
   }
 
   fn parse_print_stmt(&mut self) -> Option<(Stmt, Span)> {
-    todo!()
+    // print <expr>;
+    let span_start = self.tokens.peek()?.span.start;
+    self.expect_token(TokenKind::Print);
+    let expr_id = self.parse_expression()?;
+    let span_end = self.tokens.peek()?.span.end;
+    self.expect_token(TokenKind::Semicolon);
+    Some((Stmt::Print(expr_id), span_start..span_end))
   }
 }
 
@@ -236,9 +328,32 @@ mod tests {
     let mut lexer = Lexer::new(input);
     let mut ts = TokenStream::new(&mut lexer);
     let mut parser = Parser::new(&mut ts);
-
     let expr = parser.parse_expr_bp(ASSIGN_BP);
     (parser.ast, expr)
+  }
+
+  fn parse_stmt(input: &str) -> (Ast, Option<StmtId>) {
+    let mut lexer = Lexer::new(input);
+    let mut ts = TokenStream::new(&mut lexer);
+    let mut parser = Parser::new(&mut ts);
+    let stmt = parser.parse_statement();
+    (parser.ast, stmt)
+  }
+
+  fn parse_block(input: &str) -> (Ast, Option<BlockId>) {
+    let mut lexer = Lexer::new(input);
+    let mut ts = TokenStream::new(&mut lexer);
+    let mut parser = Parser::new(&mut ts);
+    let block = parser.parse_block();
+    (parser.ast, block)
+  }
+
+  fn parse_program(input: &str) -> (Ast, Option<Program>) {
+    let mut lexer = Lexer::new(input);
+    let mut ts = TokenStream::new(&mut lexer);
+    let mut parser = Parser::new(&mut ts);
+    let program = parser.parse_program();
+    (parser.ast, program)
   }
 
   #[test]
@@ -259,7 +374,7 @@ mod tests {
   fn parses_identifier() {
     let (ast, expr_id) = parse_expr("x");
     let expr_id = expr_id.expect("expression expected");
-    assert_eq!(ast.expr(expr_id), Expr::Var("x".into()));
+    assert_eq!(ast.expr(expr_id), Expr::Var(VarId("x".into())));
   }
 
   #[test]
@@ -269,7 +384,7 @@ mod tests {
     match ast.expr(expr_id) {
       Expr::Unary(unary) => {
         assert_eq!(unary.op, UnaryOp::Neg);
-        assert_eq!(ast.expr(unary.operand), Expr::Var("x".into()));
+        assert_eq!(ast.expr(unary.operand), Expr::Var(VarId("x".into())));
       }
       _ => panic!("expected unary expression"),
     }
@@ -307,7 +422,7 @@ mod tests {
   fn parses_nested_parens() {
     let (ast, expr_id) = parse_expr("(((x)))");
     let expr_id = expr_id.expect("expression expected");
-    assert_eq!(ast.expr(expr_id), Expr::Var("x".into()));
+    assert_eq!(ast.expr(expr_id), Expr::Var(VarId("x".into())));
   }
 
   #[test]
@@ -315,14 +430,6 @@ mod tests {
     let (ast, expr_id) = parse_expr("(xy)");
     let expr_id = expr_id.unwrap();
     assert_eq!(ast.expr_span(expr_id), 0..4); // "(xy)" -> span completo
-  }
-
-  proptest! {
-    #[test]
-    fn parser_never_panics(bytes in proptest::collection::vec(0u8..=127u8, 0..50)) {
-      let input = String::from_utf8(bytes).unwrap_or_default();
-      let _ = parse_expr(&input);
-    }
   }
 
   #[test]
@@ -406,12 +513,12 @@ mod tests {
     match ast.expr(expr_id) {
       Expr::Binary(or) => {
         assert_eq!(or.op, BinaryOp::Or);
-        assert_eq!(ast.expr(or.lhs), Expr::Var("a".into()));
+        assert_eq!(ast.expr(or.lhs), Expr::Var(VarId("a".into())));
         match ast.expr(or.rhs) {
           Expr::Binary(and) => {
             assert_eq!(and.op, BinaryOp::And);
-            assert_eq!(ast.expr(and.lhs), Expr::Var("b".into()));
-            assert_eq!(ast.expr(and.rhs), Expr::Var("c".into()));
+            assert_eq!(ast.expr(and.lhs), Expr::Var(VarId("b".into())));
+            assert_eq!(ast.expr(and.rhs), Expr::Var(VarId("c".into())));
           }
           _ => panic!("expected AND on RHS"),
         }
@@ -469,43 +576,352 @@ mod tests {
     assert!(!parser.diagnostics.is_empty());
   }
 
-  proptest! {
-    #[test]
-    fn binary_expressions_have_valid_spans(
-      a in "[a-z]{1,5}",
-      b in "[a-z]{1,5}"
-    ) {
-      let input = format!("{a} + {b}");
-      let (ast, expr_id) = parse_expr(&input);
-      if let Some(id) = expr_id {
-        let span = ast.expr_span(id);
-        prop_assert!(span.start == 0);
-        prop_assert!(span.end == input.len());
-      }
-    }
+  #[test]
+  fn let_span_is_correct() {
+    let (ast, stmt_id) = parse_stmt("let x = abc;");
+    let stmt_id = stmt_id.unwrap();
+    assert_eq!(ast.stmt_span(stmt_id), 0..12);
+  }
 
-    /// El span siempre cubre exactamente la expresion parseada
-    /// Si el parser devuelve un ExprId, entonces el span debe estar contenido dentro del source
-    /// y el substring del span NO debe estar vacío
-    #[test]
-    fn parsed_expression_span_is_never_out_of_bounds(
-      bytes in proptest::collection::vec(0u8..=127u8, 0..80)
-    ) {
-      let input = String::from_utf8(bytes).unwrap_or_default();
-      let (ast, expr_id) = parse_expr(&input);
-      if let Some(id) = expr_id {
-        let span = ast.expr_span(id);
-        // Nunca fuera del source
-        prop_assert!(span.start <= input.len());
-        prop_assert!(span.end <= input.len());
-        // Nunca invertido
-        prop_assert!(span.start <= span.end);
-        // Span no vacio
-        prop_assert!(span.end - span.start > 0);
-        // Deteccion de spans inutiles
-        let snippet = &input[span.clone()];
-        prop_assert!(!snippet.trim().is_empty());
+  #[test]
+  fn parse_let_stmt_structure() {
+    let (ast, stmt_id) = parse_stmt("let x = abc;");
+    let stmt_id = stmt_id.unwrap();
+    match ast.stmt(stmt_id) {
+      Stmt::Let { name, initializer } => {
+        assert_eq!(name, VarId("x".into()));
+        assert!(matches!(ast.expr(initializer), Expr::Var(_)));
       }
+      _ => panic!("Expected Let"),
     }
+  }
+
+  #[test]
+  fn let_initializer_expression() {
+    let (ast, stmt_id) = parse_stmt("let x = a + b;");
+    let stmt_id = stmt_id.unwrap();
+    match ast.stmt(stmt_id) {
+      Stmt::Let { initializer, .. } => {
+        assert!(matches!(
+          ast.expr(initializer),
+          Expr::Binary(BinaryExpr {
+            op: BinaryOp::Add,
+            lhs: _,
+            rhs: _
+          })
+        ));
+      }
+      _ => panic!("Expected Let"),
+    }
+  }
+
+  #[test]
+  fn print_span_is_correct() {
+    let (ast, stmt_id) = parse_stmt("print abc;");
+    let stmt_id = stmt_id.unwrap();
+    assert_eq!(ast.stmt_span(stmt_id), 0..10);
+  }
+
+  #[test]
+  fn parse_print_stmt_structure() {
+    let (ast, stmt_id) = parse_stmt("print 123;");
+    let stmt_id = stmt_id.unwrap();
+    match ast.stmt(stmt_id) {
+      Stmt::Print(expr_id) => {
+        assert_eq!(ast.expr(expr_id), Expr::Const(ConstValue::Int(123)));
+      }
+      _ => panic!("Expected Print"),
+    }
+  }
+
+  #[test]
+  fn print_expression() {
+    let (ast, stmt_id) = parse_stmt("print a * b;");
+    let stmt_id = stmt_id.unwrap();
+    match ast.stmt(stmt_id) {
+      Stmt::Print(expr_id) => {
+        assert!(matches!(
+          ast.expr(expr_id),
+          Expr::Binary(BinaryExpr {
+            op: BinaryOp::Mul,
+            lhs: _,
+            rhs: _
+          })
+        ));
+      }
+      _ => panic!("Expected Print"),
+    }
+  }
+
+  #[test]
+  fn return_span_is_correct() {
+    let (ast, stmt_id) = parse_stmt("return abc;");
+    let stmt_id = stmt_id.unwrap();
+    assert_eq!(ast.stmt_span(stmt_id), 0..11);
+  }
+
+  #[test]
+  fn parse_return_stmt_structure() {
+    let (ast, stmt_id) = parse_stmt("return false;");
+    let stmt_id = stmt_id.unwrap();
+    match ast.stmt(stmt_id) {
+      Stmt::Return(expr_id) => {
+        assert_eq!(ast.expr(expr_id), Expr::Const(ConstValue::Bool(false)));
+      }
+      _ => panic!("Expected Return"),
+    }
+  }
+
+  #[test]
+  fn return_expression() {
+    let (ast, stmt_id) = parse_stmt("return a ^^ !b;");
+    let stmt_id = stmt_id.unwrap();
+    match ast.stmt(stmt_id) {
+      Stmt::Return(expr_id) => {
+        assert!(matches!(
+          ast.expr(expr_id),
+          Expr::Binary(BinaryExpr {
+            op: BinaryOp::Xor,
+            lhs: _,
+            rhs: _
+          })
+        ));
+      }
+      _ => panic!("Expected Return"),
+    }
+  }
+
+  #[test]
+  fn empty_block_span_is_correct() {
+    let (ast, block_id) = parse_block("{}");
+    let block_id = block_id.unwrap();
+    assert_eq!(ast.block_span(block_id), 0..2);
+  }
+
+  #[test]
+  fn block_span_is_correct() {
+    let (ast, block_id) = parse_block("{ a; b; }");
+    let block_id = block_id.unwrap();
+    assert_eq!(ast.block_span(block_id), 0..9);
+  }
+
+  #[test]
+  fn block_stmt_count() {
+    let (ast, block_id) = parse_block("{ a; b; c; }");
+    let block_id = block_id.unwrap();
+    assert_eq!(ast.block(block_id).stmts().len(), 3);
+  }
+
+  #[test]
+  fn block_stmt_order_is_preserved() {
+    let (ast, block_id) = parse_block("{ let a = 1; print b; return x; }");
+    let block_id = block_id.unwrap();
+    let stmts = ast.block(block_id).stmts();
+    assert!(matches!(ast.stmt(stmts[0]), Stmt::Let { .. }));
+    assert!(matches!(ast.stmt(stmts[1]), Stmt::Print(_)));
+    assert!(matches!(ast.stmt(stmts[2]), Stmt::Return(_)));
+  }
+
+  #[test]
+  fn if_span_is_correct() {
+    let (ast, stmt_id) = parse_stmt("if abc { def; }");
+    let stmt_id = stmt_id.unwrap();
+    assert_eq!(ast.stmt_span(stmt_id), 0..15);
+  }
+
+  #[test]
+  fn parse_if_stmt_structure() {
+    let (ast, stmt_id) = parse_stmt("if abc { def; fg; }");
+    let stmt_id = stmt_id.unwrap();
+    match ast.stmt(stmt_id) {
+      Stmt::If {
+        condition,
+        if_block,
+      } => {
+        assert!(matches!(ast.expr(condition), Expr::Var(VarId(_))));
+        assert_eq!(ast.block(if_block).stmts().len(), 2);
+      }
+      _ => panic!("Expected If"),
+    }
+  }
+
+  #[test]
+  fn if_condition_expression() {
+    let (ast, stmt_id) = parse_stmt("if a != b { c; }");
+    let stmt_id = stmt_id.unwrap();
+    match ast.stmt(stmt_id) {
+      Stmt::If { condition, .. } => {
+        assert!(matches!(
+          ast.expr(condition),
+          Expr::Binary(BinaryExpr {
+            op: BinaryOp::Neq,
+            lhs: _,
+            rhs: _
+          })
+        ));
+      }
+      _ => panic!("Expected If"),
+    }
+  }
+
+  #[test]
+  fn if_else_span_is_correct() {
+    let (ast, stmt_id) = parse_stmt("if abc { def; } else { ghi; }");
+    let stmt_id = stmt_id.unwrap();
+    assert_eq!(ast.stmt_span(stmt_id), 0..29);
+  }
+
+  #[test]
+  fn parse_if_else_stmt_structure() {
+    let (ast, stmt_id) = parse_stmt("if !x { def; } else { ghi; jkl; mno; }");
+    let stmt_id = stmt_id.unwrap();
+    match ast.stmt(stmt_id) {
+      Stmt::IfElse {
+        condition,
+        if_block,
+        else_block,
+      } => {
+        assert!(matches!(
+          ast.expr(condition),
+          Expr::Unary(UnaryExpr {
+            op: UnaryOp::Not,
+            operand: _
+          })
+        ));
+        assert_eq!(ast.block(if_block).stmts().len(), 1);
+        assert_eq!(ast.block(else_block).stmts().len(), 3);
+      }
+      _ => panic!("Expected IfElse"),
+    }
+  }
+
+  #[test]
+  fn if_without_else_is_not_if_else() {
+    let (ast, stmt_id) = parse_stmt("if abc { def; }");
+    let stmt_id = stmt_id.unwrap();
+    assert!(matches!(ast.stmt(stmt_id), Stmt::If { .. }));
+  }
+
+  #[test]
+  fn nested_if_parses_correctly() {
+    let (ast, stmt_id) = parse_stmt("if a { if b { c; } }");
+    let stmt_id = stmt_id.unwrap();
+    match ast.stmt(stmt_id) {
+      Stmt::If { if_block, .. } => {
+        let stmts = ast.block(if_block).stmts();
+        assert_eq!(stmts.len(), 1);
+        assert!(matches!(ast.stmt(stmts[0]), Stmt::If { .. }));
+      }
+      _ => panic!("Expected If"),
+    }
+  }
+
+  #[test]
+  fn parse_empty_program() {
+    let (_ast, program) = parse_program("main {}");
+    assert!(program.is_some());
+  }
+
+  #[test]
+  fn parse_program_with_statements() {
+    let (ast, program) = parse_program("main { a; b; }");
+    let block_id = program.unwrap().block;
+    assert_eq!(ast.block(block_id).stmts().len(), 2);
+  }
+
+  #[test]
+  fn program_span_is_correct() {
+    let (ast, program) = parse_program("main { a; }");
+    let Program { block, span } = program.unwrap();
+    assert_eq!(ast.block_span(block), 5..11);
+    assert_eq!(span, 0..11);
+  }
+
+  #[test]
+  fn program_requires_main() {
+    let (_ast, program) = parse_program("{ a; }");
+    assert!(program.is_none());
+  }
+
+  proptest! {
+      #[test]
+      fn parser_never_panics_and_generates_valid_spans(bytes in proptest::collection::vec(0u8..=127u8, 0..80), a in 0..3) {
+        let input = String::from_utf8(bytes).unwrap_or_default();
+        if a == 0 {
+          let (ast, stmt) = parse_stmt(&input);
+          if let Some(stmt_id) = stmt {
+            let span = ast.stmt_span(stmt_id);
+            prop_assert!(span.start <= span.end);
+          }
+        } else if a == 1 {
+          let (ast, expr) = parse_expr(&input);
+          if let Some(expr_id) = expr {
+            let span = ast.expr_span(expr_id);
+            prop_assert!(span.start <= span.end);
+          }
+        } else {
+          let (ast, block) = parse_block(&input);
+          if let Some(block_id) = block {
+            let span = ast.block_span(block_id);
+            prop_assert!(span.start <= span.end);
+          }
+        }
+      }
+
+      #[test]
+      fn binary_expressions_have_valid_spans(
+        a in "[a-z]{1,5}",
+        b in "[a-z]{1,5}"
+      ) {
+        let input = format!("{a} + {b}");
+        let (ast, expr_id) = parse_expr(&input);
+        if let Some(id) = expr_id {
+          let span = ast.expr_span(id);
+          prop_assert!(span.start == 0);
+          prop_assert!(span.end == input.len());
+        }
+      }
+
+      /// El span siempre cubre exactamente la expresion parseada
+      /// Si el parser devuelve un ExprId, entonces el span debe estar contenido dentro del source
+      /// y el substring del span NO debe estar vacío
+      #[test]
+      fn parsed_expression_span_is_never_out_of_bounds(
+        bytes in proptest::collection::vec(0u8..=127u8, 0..80)
+      ) {
+        let input = String::from_utf8(bytes).unwrap_or_default();
+        let (ast, expr_id) = parse_expr(&input);
+        if let Some(id) = expr_id {
+          let span = ast.expr_span(id);
+          // Nunca fuera del source
+          prop_assert!(span.start <= input.len());
+          prop_assert!(span.end <= input.len());
+          // Nunca invertido
+          prop_assert!(span.start <= span.end);
+          // Span no vacio
+          prop_assert!(span.end - span.start > 0);
+          // Deteccion de spans inutiles
+          let snippet = &input[span.clone()];
+          prop_assert!(!snippet.trim().is_empty());
+        }
+      }
+
+
+      #[test]
+      fn randomly_generated_programs_parse(stmt_count in 0usize..20) {
+        let mut program = String::from("main {");
+        for i in 0..stmt_count {
+          let stmt = match i % 4 {
+            0 => format!(" a{};", i),
+            1 => format!(" let x{} = a{};", i, i),
+            2 => format!(" print a{};", i),
+            _ => format!(" return a{};", i),
+          };
+          program.push_str(&stmt);
+        }
+        program.push_str("}");
+        let (_ast, parsed) = parse_program(&program);
+        prop_assert!(parsed.is_some());
+      }
   }
 }

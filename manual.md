@@ -5,8 +5,8 @@
 Por ahora, el programa estará completamente contenido dentro de una sola función `main`. Un bloque es simplemente una lista de statements.
 
 `program ::= main_block`
-`main_block ::= "main" "{" block "}"`
-`block ::= stmt*`
+`main_block ::= "main" "block"`
+`block ::= { stmt* }`
 
 ## Tipos de datos
 
@@ -46,7 +46,7 @@ Solamente puede aparecer al final de `main` o de algún bloque (dentro de un bra
 
 Genera bloques separados en SSA; phi nodes si se necesitan.
 
-`if_stmt ::= "if" expr "{" block "}" [ "else" "{" block "}" ]`
+`if_stmt ::= "if" expr block [ "else" block ]`
 
 ### Instrucción de print
 
