@@ -30,7 +30,7 @@ impl Expr {
   }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub(crate) struct VarId(pub(crate) String); // Identificador de cada variable
 
 #[derive(Debug, Clone, PartialEq)]

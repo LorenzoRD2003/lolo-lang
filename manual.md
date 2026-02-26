@@ -123,7 +123,7 @@ Este módulo responde preguntas como:
 
 - ¿Existe esta variable?
 - ¿Dónde fue declarada?
-- ¿Se redeclara ilegalmente?
+- ¿Se redeclara ilegalmente? Decisión de diseño: en lolo-lang el shadowing es legal, pero la redeclaración en el mismo scope es ilegal.
 - ¿Qué identificador referencia este nodo?
 - ¿Qué scope aplica aquí?
 
