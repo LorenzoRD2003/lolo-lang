@@ -5,7 +5,7 @@ use std::collections::HashMap;
 // Queremos un lookup O(1) para keywords en vez de iterar por un slice.
 // Como es estatico y conocido en tiempo de compilacion, podemos usar `once_cell::sync::Lazy`.
 
-// Tabla de keywords estatica
+/// Tabla de keywords estatica
 pub static KEYWORDS: Lazy<HashMap<&'static str, TokenKind>> = Lazy::new(|| {
   let mut m = HashMap::new();
 

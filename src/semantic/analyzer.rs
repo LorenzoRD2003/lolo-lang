@@ -346,7 +346,7 @@ mod tests {
       sem
         .diagnostics()
         .iter()
-        .any(|diag| diag.msg == String::from("variable 'x' indefinida"))
+        .any(|diag| diag.msg() == String::from("variable 'x' indefinida"))
     );
   }
 
@@ -431,7 +431,7 @@ mod tests {
       sem
         .diagnostics()
         .iter()
-        .any(|diag| diag.msg == String::from("division por cero encontrada"))
+        .any(|diag| diag.msg() == String::from("division por cero encontrada"))
     );
   }
 
@@ -457,7 +457,7 @@ mod tests {
       sem
         .diagnostics()
         .iter()
-        .any(|diag| diag.msg.contains("overflow"))
+        .any(|diag| diag.msg().contains("overflow"))
     );
   }
 
@@ -482,7 +482,7 @@ mod tests {
       sem
         .diagnostics()
         .iter()
-        .any(|d| d.msg.contains("mismatch de tipos"))
+        .any(|d| d.msg().contains("mismatch de tipos"))
     );
   }
 }

@@ -1,41 +1,25 @@
 use crate::{
   common::span::Span,
-  diagnostics::{
-    diagnostic::{Diagnosable, Diagnostic},
-    label::Label,
-  },
+  diagnostics::diagnostic::{Diagnosable, Diagnostic},
 };
 
 #[derive(Debug, Clone, PartialEq)]
-pub(crate) enum LexerErrorKind {
-  InvalidCharacter(char),
-  IllFormedLiteral(String),
-  // Para el lexer, un UnexpectedEOF es cuando necesita mas caracteres para terminar un Token. por ahora no tenemos ningun caso
-  // UnexpectedEOF,
-  // UnterminatedToken,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct LexerError {
-  pub(crate) kind: LexerErrorKind,
-  pub(crate) span: Span,
+pub enum LexerError {
+  InvalidCharacter(char, Span),
+  IllFormedLiteral(String, Span),
 }
 
 impl Diagnosable for LexerError {
   fn to_diagnostic(&self) -> Diagnostic {
-    let Span { start, end } = self.span;
-    match &self.kind {
-      LexerErrorKind::InvalidCharacter(c) => {
+    match &self {
+      Self::InvalidCharacter(c, span) => {
         Diagnostic::error(format!("el lexer detecto un caracter invalido {c}"))
-          .with_label(Label::primary(start..end, None))
+          .with_span(span.clone())
       }
-      LexerErrorKind::IllFormedLiteral(lit) => {
+      Self::IllFormedLiteral(lit, span) => {
         Diagnostic::error(format!("el lexer detecto un literal mal formado {lit}"))
-          .with_label(Label::primary(start..end, None))
-      } // LexerErrorKind::UnexpectedEOF => {
-        //   Diagnostic::error("el lexer detecto un EOF inesperado".into())
-        // } // LexerErrorKind::UnterminatedToken => Diagnostic::error("token inconcluso".into()),
+          .with_span(span.clone())
+      }
     }
-    .with_span(start..end)
   }
 }

@@ -65,7 +65,7 @@ pub enum UnaryOp {
 
 impl UnaryOp {
   pub(crate) fn from_token(token: &Token) -> Option<Self> {
-    match token.kind {
+    match token.kind() {
       TokenKind::Bang => Some(Self::Not),
       TokenKind::Minus => Some(Self::Neg),
       _ => None,
@@ -118,7 +118,7 @@ pub(crate) enum BinaryOp {
 
 impl BinaryOp {
   pub(crate) fn from_token(token: &Token) -> Option<Self> {
-    match token.kind {
+    match token.kind() {
       TokenKind::Plus => Some(Self::Add),
       TokenKind::Minus => Some(Self::Sub),
       TokenKind::Star => Some(Self::Mul),

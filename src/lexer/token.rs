@@ -88,8 +88,26 @@ impl TokenKind {
 // Son la interfaz que va a ser generada por el lexer
 #[derive(Debug, Clone, PartialEq)]
 pub struct Token {
-  pub(crate) kind: TokenKind,
+  kind: TokenKind,
   // El lexema es exactamente el texto que se ve
-  pub(crate) lexeme: String,
-  pub(crate) span: Span,
+  lexeme: String,
+  span: Span,
+}
+
+impl Token {
+  pub fn new(kind: TokenKind, lexeme: String, span: Span) -> Self {
+    Self { kind, lexeme, span }
+  }
+
+  pub fn kind(&self) -> TokenKind {
+    self.kind
+  }
+
+  pub fn lexeme(&self) -> &str {
+    &self.lexeme
+  }
+
+  pub fn span(&self) -> &Span {
+    &self.span
+  }
 }

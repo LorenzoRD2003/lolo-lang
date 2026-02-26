@@ -48,7 +48,7 @@ impl<'a> TokenStream<'a> {
   pub(crate) fn expect(&mut self, kind: TokenKind) -> Result<Token, ParserError> {
     match self.bump() {
       Some(token) => {
-        if token.kind == kind {
+        if token.kind() == kind {
           Ok(token)
         } else {
           Err(ParserError::UnexpectedToken(token))
@@ -60,7 +60,7 @@ impl<'a> TokenStream<'a> {
 
   /// Si el token actual es del kind indicado, lo consume y devuelve true; si no, devuelve false
   pub(crate) fn check_kind(&mut self, kind: TokenKind) -> bool {
-    matches!(self.peek(), Some(token) if token.kind == kind)
+    matches!(self.peek(), Some(token) if token.kind() == kind)
   }
 }
 
@@ -94,8 +94,8 @@ mod tests {
     let first = ts.bump().unwrap();
     let second = ts.bump().unwrap();
     assert_ne!(first, second);
-    assert_eq!(first.kind, TokenKind::Identifier);
-    assert_eq!(second.kind, TokenKind::Plus); // el segundo token es +
+    assert_eq!(first.kind(), TokenKind::Identifier);
+    assert_eq!(second.kind(), TokenKind::Plus); // el segundo token es +
   }
 
   #[test]
@@ -104,7 +104,7 @@ mod tests {
     let mut ts = TokenStream::new(&mut lexer);
     assert!(ts.check_kind(TokenKind::Plus));
     // peek ahora debe seguir viendo el mismo token porque match_kind no avanza
-    assert_eq!(ts.peek().unwrap().kind, TokenKind::Plus);
+    assert_eq!(ts.peek().unwrap().kind(), TokenKind::Plus);
   }
 
   #[test]
@@ -113,7 +113,7 @@ mod tests {
     let mut ts = TokenStream::new(&mut lexer);
     // peek sigue viendo el mismo token
     assert!(!ts.check_kind(TokenKind::BangEqual));
-    assert_eq!(ts.peek().unwrap().kind, TokenKind::Minus);
+    assert_eq!(ts.peek().unwrap().kind(), TokenKind::Minus);
   }
 
   #[test]
@@ -121,9 +121,9 @@ mod tests {
     let mut lexer = Lexer::new("+ -");
     let mut ts = TokenStream::new(&mut lexer);
     let token = ts.expect(TokenKind::Plus).unwrap();
-    assert_eq!(token.kind, TokenKind::Plus);
+    assert_eq!(token.kind(), TokenKind::Plus);
     // peek() ahora debe ver el siguiente token
-    assert_eq!(ts.peek().unwrap().kind, TokenKind::Minus);
+    assert_eq!(ts.peek().unwrap().kind(), TokenKind::Minus);
   }
 
   #[test]
@@ -132,11 +132,11 @@ mod tests {
     let mut ts = TokenStream::new(&mut lexer);
     let err = ts.expect(TokenKind::Minus).unwrap_err();
     match err {
-      ParserError::UnexpectedToken(token) => assert_eq!(token.kind, TokenKind::Plus),
+      ParserError::UnexpectedToken(token) => assert_eq!(token.kind(), TokenKind::Plus),
       _ => panic!("Expected UnexpectedToken"),
     }
     // peek() ahora debe ver el siguiente token
-    assert_eq!(ts.peek().unwrap().kind, TokenKind::Minus);
+    assert_eq!(ts.peek().unwrap().kind(), TokenKind::Minus);
   }
 
   #[test]
@@ -144,7 +144,7 @@ mod tests {
     let mut lexer = Lexer::new("");
     let mut ts = TokenStream::new(&mut lexer);
     let token = ts.expect(TokenKind::EOF).unwrap();
-    assert_eq!(token.kind, TokenKind::EOF);
+    assert_eq!(token.kind(), TokenKind::EOF);
   }
 
   #[test]
@@ -182,7 +182,7 @@ mod tests {
       let after_peek = ts.peek().cloned();
       // si no coincide, peek sigue igual
       if let (Some(init), Some(after)) = (initial_peek, after_peek) {
-        if init.kind != TokenKind::Plus {
+        if init.kind() != TokenKind::Plus {
           prop_assert_eq!(init, after);
         }
       }

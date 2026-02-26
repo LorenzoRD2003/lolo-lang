@@ -54,7 +54,7 @@ impl<'a> Parser<'a> {
     // decidir que tipo de statement es.
     // uso peek() en vez de bump() porque el bump() lo uso al parsear en cada branch
     let token = self.tokens.peek()?;
-    let (stmt, span) = match token.kind {
+    let (stmt, span) = match token.kind() {
       TokenKind::Let => self.parse_let_stmt()?,
       TokenKind::Return => self.parse_return_stmt()?,
       TokenKind::If => self.parse_if_stmt()?,
@@ -72,11 +72,11 @@ impl<'a> Parser<'a> {
     // block ::== { stmt* }
     let mut block = Block::new();
     let lbrace = self.tokens.expect(TokenKind::LCurlyBrace).ok()?;
-    let span_start = lbrace.span.start;
+    let span_start = lbrace.span().start;
     loop {
       // el bloque termina cuando encontramos el `}` correspondiente, o con un error si se teremina el archivo
       let token = self.tokens.peek()?.clone();
-      let token_kind = token.kind;
+      let token_kind = token.kind();
       if matches!(token_kind, TokenKind::EOF) {
         self.emit_error(&ParserError::UnexpectedEOF(token));
       }
@@ -89,20 +89,17 @@ impl<'a> Parser<'a> {
     }
     // hay que avanzar una ultima vez porque estabamos haciendo peek()
     let rbrace = self.tokens.expect(TokenKind::RCurlyBrace).ok()?;
-    let span_end = rbrace.span.end;
+    let span_end = rbrace.span().end;
     Some(self.ast.add_block(block, span_start..span_end))
   }
 
   pub(crate) fn parse_program(&mut self) -> Option<Program> {
     // program ::= main block
-    let span_start = self.tokens.peek()?.span.start;
+    let span_start = self.tokens.peek()?.span().start;
     self.expect_token(TokenKind::Main);
     let block = self.parse_block()?;
     let span_end = self.ast.block_span(block).end;
-    Some(Program {
-      block,
-      span: span_start..span_end,
-    })
+    Some(Program::new(block, span_start..span_end))
   }
 
   /// El metodo esencial del Pratt parsing. Responsable de:
@@ -116,7 +113,7 @@ impl<'a> Parser<'a> {
     // o el token no es operador, o el binding power es insuficiente
     loop {
       let token = self.tokens.peek()?;
-      let Some((lbp, _)) = infix_binding_power(token.kind) else {
+      let Some((lbp, _)) = infix_binding_power(token.kind()) else {
         break;
       };
       // este operador puede pegarse al lhs?
@@ -133,21 +130,21 @@ impl<'a> Parser<'a> {
   /// Maneja literales, identifiers, expresiones con parentesis, operadores unarios.
   fn parse_prefix(&mut self) -> Option<ExprId> {
     let token = self.tokens.bump()?;
-    let Token { kind, lexeme, span } = token.clone();
+    let (kind, lexeme, span) = (token.kind(), token.lexeme(), token.span());
     match kind {
       TokenKind::NumberLiteral => {
         let number = lexeme.parse::<i32>().ok()?;
         let expr = Expr::Const(ConstValue::Int32(number));
-        Some(self.ast.add_expr(expr, span))
+        Some(self.ast.add_expr(expr, span.clone()))
       }
       TokenKind::BooleanLiteral => {
         let boolean = lexeme.parse::<bool>().ok()?;
         let expr = Expr::Const(ConstValue::Bool(boolean));
-        Some(self.ast.add_expr(expr, span))
+        Some(self.ast.add_expr(expr, span.clone()))
       }
       TokenKind::Identifier => {
-        let expr = Expr::Var(VarId(lexeme.clone()));
-        Some(self.ast.add_expr(expr, span))
+        let expr = Expr::Var(VarId(lexeme.into()));
+        Some(self.ast.add_expr(expr, span.clone()))
       }
       TokenKind::LParen => {
         // Consumir `(` (con el bump ya lo hicimos)
@@ -158,7 +155,7 @@ impl<'a> Parser<'a> {
           Ok(rparen_token) => {
             // span(open_paren.start -> close_paren.end)
             let open_paren_start = span.start;
-            let close_paren_end = rparen_token.span.end;
+            let close_paren_end = rparen_token.span().end;
             // debo actualizar el span del nodo existente
             Some(
               self
@@ -194,14 +191,14 @@ impl<'a> Parser<'a> {
 
   /// Es el led. Responsable de construir los nodos binarios, mergear los spans, parsear RHS.
   fn parse_infix(&mut self, lhs: ExprId, token: Token) -> Option<ExprId> {
-    let (_, rbp) = infix_binding_power(token.kind)?;
+    let (_, rbp) = infix_binding_power(token.kind())?;
     let rhs = self.parse_expr_bp(rbp)?;
     let span_start = self.ast.expr_span(lhs).start;
     let span_end = self.ast.expr_span(rhs).end;
 
     // los operadores de comparacion son no asociativos en lolo-lang. prohibir a < b < c
     // lo tengo que hacer a mano porque Pratt parsing no lo soporta
-    match token.kind {
+    match token.kind() {
       kind if kind.is_comparison() => {
         // a < b < c tendriamos `(a < b)`` como expresion de comparacion, y `<` como token de comparacion
         if self.ast.expr(lhs).is_comparison() {
@@ -212,7 +209,7 @@ impl<'a> Parser<'a> {
     };
 
     // En cualquier caso, sigo parseando. Esto para mejorar el recovery.
-    match token.kind {
+    match token.kind() {
       kind if kind.is_binary() => {
         let expr = Expr::Binary(BinaryExpr {
           op: BinaryOp::from_token(&token)?,
@@ -239,19 +236,19 @@ impl<'a> Parser<'a> {
   fn parse_let_stmt(&mut self) -> Option<(Stmt, Span)> {
     // let <var> = <expr>;
     // Consumimos el `let`
-    let span_start = self.tokens.peek()?.span.start;
+    let span_start = self.tokens.peek()?.span().start;
     self.expect_token(TokenKind::Let);
     // Ahora deberiamos consumir un identificador
     // Igualmente, vamos a seguir parseando en vez de panickear
     let token = self.tokens.peek()?;
-    let var = VarId(token.lexeme.clone());
+    let var = VarId(token.lexeme().into());
     self.expect_token(TokenKind::Identifier);
     // Ahora deberiamos consumir un `=`
     self.expect_token(TokenKind::Equal);
     // Ahora vamos a parsear una expresion
     let expr_id = self.parse_expression()?;
     // Ahora deberiamos consumir un `;`
-    let span_end = self.tokens.peek()?.span.end;
+    let span_end = self.tokens.peek()?.span().end;
     self.expect_token(TokenKind::Semicolon);
     Some((
       Stmt::Let {
@@ -264,17 +261,17 @@ impl<'a> Parser<'a> {
 
   fn parse_return_stmt(&mut self) -> Option<(Stmt, Span)> {
     // return <expr>;
-    let span_start = self.tokens.peek()?.span.start;
+    let span_start = self.tokens.peek()?.span().start;
     self.expect_token(TokenKind::Return);
     let expr_id = self.parse_expression()?;
-    let span_end = self.tokens.peek()?.span.end;
+    let span_end = self.tokens.peek()?.span().end;
     self.expect_token(TokenKind::Semicolon);
     Some((Stmt::Return(expr_id), span_start..span_end))
   }
 
   fn parse_if_stmt(&mut self) -> Option<(Stmt, Span)> {
     // if expr { block } [ else { block } ]
-    let span_start = self.tokens.peek()?.span.start;
+    let span_start = self.tokens.peek()?.span().start;
     self.expect_token(TokenKind::If);
     let condition = self.parse_expression()?;
     // parsear el bloque if
@@ -282,7 +279,7 @@ impl<'a> Parser<'a> {
     let mut span_end = self.ast.block_span(if_block).end;
     // si hay un bloque else, lo tengo que parsear
     if let Some(token) = self.tokens.peek()
-      && matches!(token.kind, TokenKind::Else)
+      && matches!(token.kind(), TokenKind::Else)
     {
       self.expect_token(TokenKind::Else);
       // parsear el bloque else
@@ -309,10 +306,10 @@ impl<'a> Parser<'a> {
 
   fn parse_print_stmt(&mut self) -> Option<(Stmt, Span)> {
     // print <expr>;
-    let span_start = self.tokens.peek()?.span.start;
+    let span_start = self.tokens.peek()?.span().start;
     self.expect_token(TokenKind::Print);
     let expr_id = self.parse_expression()?;
-    let span_end = self.tokens.peek()?.span.end;
+    let span_end = self.tokens.peek()?.span().end;
     self.expect_token(TokenKind::Semicolon);
     Some((Stmt::Print(expr_id), span_start..span_end))
   }
@@ -825,16 +822,16 @@ mod tests {
   #[test]
   fn parse_program_with_statements() {
     let (ast, program) = parse_program("main { a; b; }");
-    let block_id = program.unwrap().block;
+    let block_id = program.unwrap().main_block();
     assert_eq!(ast.block(block_id).stmts().len(), 2);
   }
 
   #[test]
   fn program_span_is_correct() {
-    let (ast, program) = parse_program("main { a; }");
-    let Program { block, span } = program.unwrap();
-    assert_eq!(ast.block_span(block), 5..11);
-    assert_eq!(span, 0..11);
+    let (ast, program_opt) = parse_program("main { a; }");
+    let program = program_opt.unwrap();
+    assert_eq!(ast.block_span(program.main_block()), 5..11);
+    assert_eq!(program.span(), 0..11);
   }
 
   #[test]

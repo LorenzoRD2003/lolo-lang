@@ -25,16 +25,16 @@ type Note = String;
 
 #[derive(Debug, Clone)]
 pub(crate) struct Diagnostic {
-  // severidad del error
-  pub(crate) severity: Severity,
-  // que salio mal
-  pub(crate) msg: String,
-  // donde esta el problema principal (si estuviera en el codigo)
+  /// Severidad del error.
+  severity: Severity,
+  /// Que salio mal.
+  msg: String,
+  /// Donde esta el problema principal (si estuviera en el codigo).
   primary_span: Option<Span>,
-  // informacion adicional del error
-  pub(crate) labels: Vec<Label>,
-  // notas adicionales (para no sobrecargar las labels)
-  pub(crate) notes: Vec<Note>,
+  /// Informacion adicional del error.
+  labels: Vec<Label>,
+  /// Notas adicionales (para no sobrecargar las labels).
+  notes: Vec<Note>,
 }
 
 impl Diagnostic {
@@ -98,6 +98,22 @@ impl Diagnostic {
   // Primary span helper: va a ser util para el renderer
   pub(crate) fn primary_span(&self) -> Option<&Span> {
     self.primary_span.as_ref()
+  }
+
+  pub(crate) fn severity(&self) -> Severity {
+    self.severity
+  }
+
+  pub(crate) fn msg(&self) -> &str {
+    &self.msg
+  }
+
+  pub(crate) fn labels(&self) -> &[Label] {
+    &self.labels
+  }
+
+  pub(crate) fn notes(&self) -> &[String] {
+    &self.notes
   }
 
   // Severity helpers (para simplificar logica posterior)

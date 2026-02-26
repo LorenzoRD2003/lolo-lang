@@ -22,15 +22,15 @@ pub(crate) struct BlockId(pub(crate) usize);
 
 /// Esto es arena-based allocation
 /// por como escalaria en un futuro, es mejor que un Vec<(Expr, Span)>.
-/// Se debe cumplir el invariante de que los expr_arena, expr_spans esten asociados por el indice ExprId.
-/// Se debe cumplir el invariante de que los stmt_arena, stmt_spans esten asociados por el indice StmtId.
-/// Se debe cumplir el invariante de que los block_arena, block_spans esten asociados por el indice BlockId.
 #[derive(Debug, Clone)]
 pub struct Ast {
+  /// Se debe cumplir el invariante de que los expr_arena, expr_spans esten asociados por el indice ExprId.
   expr_arena: Vec<Expr>,
   expr_spans: Vec<Span>,
+  /// Se debe cumplir el invariante de que los stmt_arena, stmt_spans esten asociados por el indice StmtId.
   stmt_arena: Vec<Stmt>,
   stmt_spans: Vec<Span>,
+  /// Se debe cumplir el invariante de que los block_arena, block_spans esten asociados por el indice BlockId.
   block_arena: Vec<Block>,
   block_spans: Vec<Span>,
 }

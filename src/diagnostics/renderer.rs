@@ -28,12 +28,14 @@ use crate::{
 };
 use std::fmt;
 
+/// Renderizador usando spans.
+/// Configuracion visual (colores, ascii/unicode, compact/verbose) -> por ahora no.
+#[derive(Debug)]
 pub struct Renderer<'a, W: fmt::Write> {
-  // SourceMap, para poder traducir los spans
+  /// SourceMap, para poder traducir los spans.
   source_map: &'a SourceMap<'a>,
-  // output target, para indicar a donde van a renderizarse los mensajes
+  /// Output target, para indicar a donde van a renderizarse los mensajes.
   writer: W,
-  // configuracion visual (colores, ascii/unicode, compact/verbose) -> por ahora no
 }
 
 impl<'a, W: fmt::Write> Renderer<'a, W> {
@@ -52,7 +54,7 @@ impl<'a, W: fmt::Write> Renderer<'a, W> {
   // Funcion responsable de renderizar la parte superior del error
   // error: undefined variable
   fn render_header(&mut self, diag: &Diagnostic) -> fmt::Result {
-    writeln!(self.writer, "{}: {}", diag.severity, diag.msg)
+    writeln!(self.writer, "{}: {}", diag.severity(), diag.msg())
   }
 
   // Funcion responsable de renderizar la localizacion del error
@@ -119,7 +121,7 @@ impl<'a, W: fmt::Write> Renderer<'a, W> {
 
   /// Renderiza los labels secundarios (y primarios opcionales) de un Diagnostic
   fn render_labels(&mut self, diag: &Diagnostic) -> fmt::Result {
-    for label in &diag.labels {
+    for label in diag.labels() {
       let (line_start, column_start, line_end, column_end) =
         self.source_map.span_to_line_column(&label.span);
 
@@ -161,7 +163,7 @@ impl<'a, W: fmt::Write> Renderer<'a, W> {
   // help: did you mean `foo`?
   fn render_notes(&mut self, diag: &Diagnostic) -> fmt::Result {
     diag
-      .notes
+      .notes()
       .iter()
       .try_for_each(|note| writeln!(self.writer, "{}", note))
   }
