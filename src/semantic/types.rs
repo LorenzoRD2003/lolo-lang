@@ -6,3 +6,12 @@ pub(crate) enum Type {
   Int32,
   Bool,
 }
+
+impl Type {
+  pub(crate) fn to_string(&self) -> &str {
+    match &self {
+      Self::Int32 => "Int32",
+      Self::Bool => "Bool",
+    }
+  }
+}
