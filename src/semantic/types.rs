@@ -5,6 +5,8 @@
 pub(crate) enum Type {
   Int32,
   Bool,
+  /// `DefaultType` es para cuando hay un error a la hora de asignar un tipo a una expresion.
+  DefaultErrorType,
 }
 
 impl Type {
@@ -12,6 +14,7 @@ impl Type {
     match &self {
       Self::Int32 => "Int32",
       Self::Bool => "Bool",
+      Self::DefaultErrorType => "DefaultErrorType",
     }
   }
 }

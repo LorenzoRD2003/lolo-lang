@@ -68,7 +68,7 @@ impl Symbol {
 
   /// Devuelve el tipo de la variable (`Int32`/`Bool`)
   pub(crate) fn r#type(&self) -> Type {
-    todo!()
+    self.r#type
   }
 
   /// Devuelve el nombre del simbolo.

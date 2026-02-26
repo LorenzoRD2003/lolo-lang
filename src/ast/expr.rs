@@ -3,6 +3,7 @@
 use crate::{
   ast::ast::ExprId,
   lexer::token::{Token, TokenKind},
+  semantic::types::Type,
 };
 
 #[derive(Debug, Clone, PartialEq)]
@@ -59,6 +60,22 @@ impl UnaryOp {
       _ => None,
     }
   }
+
+  pub(crate) fn compatible_operand_type(&self) -> Type {
+    match self {
+      Self::Neg => Type::Int32,
+      Self::Not => Type::Bool,
+    }
+  }
+
+  /// Por ahora esta funcion no depende de los operandos.
+  /// En un futuro eso podria cambiar, e ir directamente en UnaryExpr
+  pub(crate) fn result_type(&self) -> Type {
+    match self {
+      Self::Neg => Type::Int32,
+      Self::Not => Type::Bool,
+    }
+  }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -105,6 +122,41 @@ impl BinaryOp {
       TokenKind::OrOr => Some(Self::Or),
       TokenKind::CaretCaret => Some(Self::Xor),
       _ => None,
+    }
+  }
+
+  /// Obtiene el tipo compatible para el LHS y el RHS.
+  /// Por ahora siempre es el mismo, pero puede cambiar en el futuro.
+  pub(crate) fn compatible_operand_types(&self) -> (Type, Type) {
+    match self {
+      Self::Add
+      | Self::Sub
+      | Self::Mul
+      | Self::Div
+      | Self::Eq
+      | Self::Neq
+      | Self::Gt
+      | Self::Lt
+      | Self::Gte
+      | Self::Lte => (Type::Int32, Type::Int32),
+      Self::And | Self::Or | Self::Xor => (Type::Bool, Type::Bool),
+    }
+  }
+
+  /// Por ahora esta funcion no depende de los operandos.
+  /// En un futuro eso podria cambiar, e ir directamente en BinaryExpr
+  pub(crate) fn result_type(&self) -> Type {
+    match self {
+      Self::Add | Self::Sub | Self::Mul | Self::Div => Type::Int32,
+      Self::Eq
+      | Self::Neq
+      | Self::Gt
+      | Self::Lt
+      | Self::Gte
+      | Self::Lte
+      | Self::And
+      | Self::Or
+      | Self::Xor => Type::Bool,
     }
   }
 }

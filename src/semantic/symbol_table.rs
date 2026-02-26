@@ -104,10 +104,7 @@ impl<'a> SymbolTable<'a> {
   /// Busca hacia arriba en la jerarquía de scopes hasta encontrar el símbolo.
   /// Permite hallar variables usadas pero no declaradas (si `resolve()` devuelve `None`).
   pub(crate) fn resolve(&self, name: &VarId) -> Option<SymbolId> {
-    match self.current_scope {
-      Some(scope) => self.scopes.resolve(name, scope),
-      None => None,
-    }
+    self.scopes.resolve(name, self.current_scope?)
   }
 }
 

@@ -1,4 +1,5 @@
 pub mod analyzer;
+pub mod category;
 pub mod context;
 pub mod error;
 pub mod scope;

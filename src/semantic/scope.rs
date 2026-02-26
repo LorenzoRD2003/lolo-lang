@@ -22,7 +22,6 @@ pub(crate) struct Scope {
 
 impl Scope {
   pub(crate) fn add_symbol(&mut self, name: &VarId, id: SymbolId) {
-    // TODO: actualizar esto cuando tenga hecha la SymbolTable
     self.symbols.insert(name.clone(), id);
   }
 
