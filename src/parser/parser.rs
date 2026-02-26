@@ -137,7 +137,7 @@ impl<'a> Parser<'a> {
     match kind {
       TokenKind::NumberLiteral => {
         let number = lexeme.parse::<i32>().ok()?;
-        let expr = Expr::Const(ConstValue::Int(number));
+        let expr = Expr::Const(ConstValue::Int32(number));
         Some(self.ast.add_expr(expr, span))
       }
       TokenKind::BooleanLiteral => {
@@ -360,7 +360,7 @@ mod tests {
   fn parses_number_literal() {
     let (ast, expr_id) = parse_expr("123");
     let expr_id = expr_id.expect("expression expected");
-    assert_eq!(ast.expr(expr_id), Expr::Const(ConstValue::Int(123)));
+    assert_eq!(ast.expr(expr_id), Expr::Const(ConstValue::Int32(123)));
   }
 
   #[test]
@@ -415,7 +415,7 @@ mod tests {
     let (ast, expr_id) = parse_expr("(123)");
     let expr_id = expr_id.expect("expression expected");
     // Clave, no crea un nodo adicional
-    assert_eq!(ast.expr(expr_id), Expr::Const(ConstValue::Int(123)));
+    assert_eq!(ast.expr(expr_id), Expr::Const(ConstValue::Int32(123)));
   }
 
   #[test]
@@ -440,12 +440,12 @@ mod tests {
     match ast.expr(expr_id) {
       Expr::Binary(add) => {
         assert_eq!(add.op, BinaryOp::Add);
-        assert_eq!(ast.expr(add.lhs), Expr::Const(ConstValue::Int(1)));
+        assert_eq!(ast.expr(add.lhs), Expr::Const(ConstValue::Int32(1)));
         match ast.expr(add.rhs) {
           Expr::Binary(mul) => {
             assert_eq!(mul.op, BinaryOp::Mul);
-            assert_eq!(ast.expr(mul.lhs), Expr::Const(ConstValue::Int(2)));
-            assert_eq!(ast.expr(mul.rhs), Expr::Const(ConstValue::Int(3)));
+            assert_eq!(ast.expr(mul.lhs), Expr::Const(ConstValue::Int32(2)));
+            assert_eq!(ast.expr(mul.rhs), Expr::Const(ConstValue::Int32(3)));
           }
           _ => panic!("expected multiplication on RHS"),
         }
@@ -628,7 +628,7 @@ mod tests {
     let stmt_id = stmt_id.unwrap();
     match ast.stmt(stmt_id) {
       Stmt::Print(expr_id) => {
-        assert_eq!(ast.expr(expr_id), Expr::Const(ConstValue::Int(123)));
+        assert_eq!(ast.expr(expr_id), Expr::Const(ConstValue::Int32(123)));
       }
       _ => panic!("Expected Print"),
     }

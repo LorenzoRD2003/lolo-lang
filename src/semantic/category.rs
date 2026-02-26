@@ -6,7 +6,7 @@
 pub(crate) struct ExprCategory(u8);
 
 impl ExprCategory {
-  /// La expresion se puede evaluar y se puede leer su valor, pero no es asignable ni conocida
+  /// La expresion se puede evaluar y se puede leer su valor, pero no es conocida
   /// en tiempo de compilacion.
   const VALUE: u8 = 0b00000001;
   /// La expresion puede ser asignable. Es todo lo que puede aparecer en el lado izquierdo de una asignacion.

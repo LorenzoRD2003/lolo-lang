@@ -1,5 +1,7 @@
 // Los tipos de este archivo deben ser publicos, ya que los vamos a usar desde el parser / lowering / IR
 
+use std::fmt::Display;
+
 use crate::{
   ast::ast::ExprId,
   lexer::token::{Token, TokenKind},
@@ -36,8 +38,17 @@ pub(crate) struct VarId(pub(crate) String); // Identificador de cada variable
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ConstValue {
-  Int(i32),
+  Int32(i32),
   Bool(bool),
+}
+
+impl Display for ConstValue {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    match self {
+      Self::Int32(x) => write!(f, "{}", x),
+      Self::Bool(b) => write!(f, "{}", b),
+    }
+  }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -158,5 +169,29 @@ impl BinaryOp {
       | Self::Or
       | Self::Xor => Type::Bool,
     }
+  }
+
+  pub(crate) fn to_string(&self) -> &str {
+    match self {
+      Self::Add => "+",
+      Self::Sub => "-",
+      Self::Mul => "*",
+      Self::Div => "/",
+      Self::Eq => "==",
+      Self::Neq => "!=",
+      Self::Gt => ">",
+      Self::Lt => "<",
+      Self::Gte => ">=",
+      Self::Lte => "<=",
+      Self::And => "&&",
+      Self::Or => "||",
+      Self::Xor => "^^",
+    }
+  }
+}
+
+impl Display for BinaryOp {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(f, "{}", self.to_string())
   }
 }

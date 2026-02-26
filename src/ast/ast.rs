@@ -114,7 +114,7 @@ mod tests {
   #[test]
   fn test_add_and_retrieve_expr() {
     let mut ast = Ast::empty();
-    let expr = Expr::Const(ConstValue::Int(420));
+    let expr = Expr::Const(ConstValue::Int32(420));
     let span = 0..3;
     let id = ast.add_expr(expr.clone(), span.clone());
     assert_eq!(ast.expr(id), expr);
@@ -126,7 +126,7 @@ mod tests {
     let mut ast = Ast::empty();
     let span1 = 0..3;
     let span2 = 1..5;
-    let expr = Expr::Const(ConstValue::Int(42));
+    let expr = Expr::Const(ConstValue::Int32(42));
     let id = ast.add_expr(expr, span1);
     ast.update_expr_span(id, span2.clone());
     assert_eq!(ast.expr_span(id), span2);
@@ -178,10 +178,10 @@ mod tests {
   fn test_multiple_exprs_stmts_blocks() {
     let mut ast = Ast::empty();
 
-    let e1 = ast.add_expr(Expr::Const(ConstValue::Int(1)), 0..1);
-    let e2 = ast.add_expr(Expr::Const(ConstValue::Int(2)), 2..3);
-    assert_eq!(ast.expr(e1), Expr::Const(ConstValue::Int(1)));
-    assert_eq!(ast.expr(e2), Expr::Const(ConstValue::Int(2)));
+    let e1 = ast.add_expr(Expr::Const(ConstValue::Int32(1)), 0..1);
+    let e2 = ast.add_expr(Expr::Const(ConstValue::Int32(2)), 2..3);
+    assert_eq!(ast.expr(e1), Expr::Const(ConstValue::Int32(1)));
+    assert_eq!(ast.expr(e2), Expr::Const(ConstValue::Int32(2)));
 
     let s1 = ast.add_stmt(Stmt::Expr(e1), 0..1);
     let s2 = ast.add_stmt(Stmt::Expr(e2), 2..3);
@@ -216,8 +216,8 @@ mod tests {
   #[test]
   fn all_stmt_expr_ids_are_valid() {
     let mut ast = Ast::empty();
-    let e1 = ast.add_expr(Expr::Const(ConstValue::Int(1)), 0..1);
-    let e2 = ast.add_expr(Expr::Const(ConstValue::Int(2)), 2..3);
+    let e1 = ast.add_expr(Expr::Const(ConstValue::Int32(1)), 0..1);
+    let e2 = ast.add_expr(Expr::Const(ConstValue::Int32(2)), 2..3);
     let s1 = ast.add_stmt(Stmt::Expr(e1), 0..1);
     let s2 = ast.add_stmt(Stmt::Return(e2), 2..3);
 
@@ -235,7 +235,7 @@ mod tests {
   #[test]
   fn all_block_stmt_ids_are_valid() {
     let mut ast = Ast::empty();
-    let e1 = ast.add_expr(Expr::Const(ConstValue::Int(1)), 0..1);
+    let e1 = ast.add_expr(Expr::Const(ConstValue::Int32(1)), 0..1);
     let s1 = ast.add_stmt(Stmt::Expr(e1), 0..1);
     let s2 = ast.add_stmt(Stmt::Return(e1), 2..3);
 
@@ -249,8 +249,8 @@ mod tests {
   #[test]
   fn all_expr_ids_in_nested_blocks_are_valid() {
     let mut ast = Ast::empty();
-    let e1 = ast.add_expr(Expr::Const(ConstValue::Int(1)), 0..1);
-    let e2 = ast.add_expr(Expr::Const(ConstValue::Int(2)), 2..3);
+    let e1 = ast.add_expr(Expr::Const(ConstValue::Int32(1)), 0..1);
+    let e2 = ast.add_expr(Expr::Const(ConstValue::Int32(2)), 2..3);
     let s1 = ast.add_stmt(Stmt::Expr(e1), 0..1);
     let s2 = ast.add_stmt(Stmt::Return(e2), 2..3);
     let inner_block = ast.add_block(Block::with_stmts(vec![s1]), 0..1);
@@ -274,7 +274,7 @@ mod tests {
     fn expr_span_indices_proptest(exprs in 0usize..100, start in 0usize..50, end in 51usize..100) {
       let mut ast = Ast::empty();
       for i in 0..exprs {
-        let id = ast.add_expr(Expr::Const(ConstValue::Int(i as i32)), start..end);
+        let id = ast.add_expr(Expr::Const(ConstValue::Int32(i as i32)), start..end);
         let _ = ast.expr(id);
         let _ = ast.expr_span(id);
       }

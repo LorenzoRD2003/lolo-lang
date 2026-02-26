@@ -1,7 +1,7 @@
 // Responsable de los errores semanticos.
 
 use crate::{
-  ast::expr::VarId,
+  ast::expr::{BinaryOp, ConstValue, VarId},
   common::span::Span,
   diagnostics::{
     diagnostic::{Diagnosable, Diagnostic},
@@ -12,29 +12,42 @@ use crate::{
 
 #[derive(Debug, Clone)]
 pub(crate) enum SemanticError {
-  /// Uso de variable inexistente
-  UndefinedVariable { name: VarId, span: Span },
+  /// Una operacion de suma/resta/multiplicacion hizo overflow en 32 bits
+  ArithmeticOverflow {
+    span: Span,
+    op: BinaryOp,
+    lhs: ConstValue,
+    rhs: ConstValue,
+  },
+  /// Intento de asignar a algo no asignable
+  InvalidAssignmentTarget { span: Span },
   /// Redeclaracion ilegal en el mismo scope
   RedeclaredVariable {
     name: VarId,
     span: Span,
     previous_span: Span,
   },
-  /// Intento de asignar a algo no asignable
-  InvalidAssignmentTarget { span: Span },
   /// Se espera un tipo y se recibe otro
   TypeMismatch {
     expected: Type,
     found: Type,
     span: Span,
   },
+  /// Uso de variable inexistente
+  UndefinedVariable { name: VarId, span: Span },
+  /// Intento de division por cero
+  ZeroDivision { span: Span },
 }
 
 impl Diagnosable for SemanticError {
   fn to_diagnostic(&self) -> Diagnostic {
     match self {
-      Self::UndefinedVariable { name, span } => {
-        Diagnostic::error(format!("variable '{}' indefinida", name.0)).with_span(span.clone())
+      Self::ArithmeticOverflow { span, op, lhs, rhs } => {
+        Diagnostic::error(format!("overflow evaluando {} {} {}", lhs, op, rhs))
+          .with_span(span.clone())
+      }
+      Self::InvalidAssignmentTarget { span } => {
+        Diagnostic::error("target de asignacion invalido".into()).with_span(span.clone())
       }
       Self::RedeclaredVariable {
         name,
@@ -57,9 +70,6 @@ impl Diagnosable for SemanticError {
           Some("declaración original aca".into()),
         ))
       }
-      Self::InvalidAssignmentTarget { span } => {
-        Diagnostic::error("target de asignacion invalido".into()).with_span(span.clone())
-      }
       Self::TypeMismatch {
         expected,
         found,
@@ -70,6 +80,12 @@ impl Diagnosable for SemanticError {
         found.to_string()
       ))
       .with_span(span.clone()),
+      Self::UndefinedVariable { name, span } => {
+        Diagnostic::error(format!("variable '{}' indefinida", name.0)).with_span(span.clone())
+      }
+      Self::ZeroDivision { span } => {
+        Diagnostic::error(format!("division por cero encontrada")).with_span(span.clone())
+      }
     }
   }
 }

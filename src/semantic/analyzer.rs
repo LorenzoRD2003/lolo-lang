@@ -8,78 +8,46 @@
 use crate::{
   ast::{
     ast::{Ast, BlockId, ExprId, StmtId},
-    expr::{ConstValue, Expr, UnaryOp},
+    expr::{BinaryOp, ConstValue, Expr, UnaryOp},
     program::Program,
   },
   diagnostics::diagnostic::{Diagnosable, Diagnostic},
   semantic::{
-    category::ExprCategory, error::SemanticError, scope::ScopeId, symbol::{self, SymbolId}, symbol_table::SymbolTable, types::Type
+    category::ExprCategory,
+    error::SemanticError,
+    scope::ScopeId,
+    semantic_info::{SemanticExprInfo, SemanticInfo},
+    symbol::SymbolId,
+    symbol_table::SymbolTable,
+    types::Type,
   },
 };
-use std::{any::Any, collections::HashMap};
 
 /// Estructura que transforma un AST puro en algo semanticamente enriquecido y chequeado.
 #[derive(Debug)]
-pub(crate) struct SemanticInfo<'a> {
-  /// El AST. Vamos a generar mucha metadata para el AST sin tocarlo.
+pub struct SemanticAnalyzer<'a> {
+  /// El AST. Forma parte del mundo sintactico, asi que si debe ser una referencia y no tomamos ownership.
+  /// Vamos a generar mucha metadata para el AST sin tocarlo.
   ast: &'a Ast,
-  /// Para insertar y resolver símbolos. Mantiene scopes activos y arena de scopes.
-  symbol_table: &'a mut SymbolTable<'a>,
+  /// La SymbolTable. Solamente tiene sentido en el contexto de un SemanticAnalyzer, por lo tanto
+  /// no es una referencia y tomamos ownership.
+  symbol_table: SymbolTable,
   /// Donde se van acumulando los errores encontrados durante el analisis semantico.
   diagnostics: Vec<Diagnostic>,
-  // Mapeos desde los IDs del AST a metadata semantica
-  /// ExprId -> SemanticExprInfo. La clave es el ID en el AST.
-  expr_info_by_id: HashMap<ExprId, SemanticExprInfo>,
-  /// StmtId -> SemanticStmtInfo. La clave es el ID en el AST.
-  stmt_info_by_id: HashMap<StmtId, SemanticStmtInfo>,
-  /// BlockId -> SemanticBlockInfo. La clave es el ID en el AST.
-  block_info_by_id: HashMap<BlockId, SemanticBlockInfo>,
+  /// Informacion semantica que va acumulando el analizador.
+  semantic_info: SemanticInfo,
 }
 
-impl<'a> SemanticInfo<'a> {
-  pub(crate) fn new(ast: &'a Ast, symbol_table: &'a mut SymbolTable<'a>) -> Self {
-    Self {
+impl<'a> SemanticAnalyzer<'a> {
+  pub(crate) fn new(ast: &'a Ast, symbol_table: SymbolTable) -> Self {
+    let mut analyzer = Self {
       ast,
       symbol_table,
       diagnostics: Vec::new(),
-      expr_info_by_id: HashMap::new(),
-      stmt_info_by_id: HashMap::new(),
-      block_info_by_id: HashMap::new(),
-    }
-  }
-
-  /// Obtiene la informacion semantica correspondiente a la expresion de ID ExprId.
-  pub(crate) fn expr_info(&self, expr_id: ExprId) -> &SemanticExprInfo {
-    self
-      .expr_info_by_id
-      .get(&expr_id)
-      .expect("ExprId no encontrado en el AST")
-  }
-
-  /// Obtiene la informacion semantica correspondiente al statement de ID StmtId.
-  pub(crate) fn stmt_info(&self, stmt_id: StmtId) -> &SemanticStmtInfo {
-    self
-      .stmt_info_by_id
-      .get(&stmt_id)
-      .expect("StmtId no encontrado en el AST")
-  }
-
-  /// Obtiene la informacion semantica correspondiente al bloque de ID BlockId.
-  pub(crate) fn block_info(&self, block_id: BlockId) -> &SemanticBlockInfo {
-    self
-      .block_info_by_id
-      .get(&block_id)
-      .expect("BlockId no encontrado en el AST")
-  }
-
-  /// Obtiene el simbolo para la variable de ID ExprId. Para otras expresiones, deberia devolver None.
-  pub(crate) fn symbol_for_var(&self, expr_id: ExprId) -> Option<SymbolId> {
-    self.expr_info(expr_id).symbol
-  }
-
-  /// Obtiene el scope en el que vive el statement de ID StmtId.
-  pub(crate) fn scope_for_stmt(&self, stmt_id: StmtId) -> ScopeId {
-    self.stmt_info(stmt_id).scope
+      semantic_info: SemanticInfo::new(),
+    };
+    analyzer.symbol_table.enter_global_scope();
+    analyzer
   }
 
   /// Obtiene el scope de analisis actual, usando la SymbolTable.
@@ -101,23 +69,35 @@ impl<'a> SemanticInfo<'a> {
   /// Agrega un diagnostic si es `UndefinedVariable`
   pub(crate) fn analyze_expr(&mut self, expr_id: ExprId) {
     // El objetivo es llegar a construir un SemanticExprInfo y agregarlo a expr_info_by_id
-    let symbol = self.symbol_for_var(expr_id);
+    let symbol = self.analyze_expr_symbol(expr_id);
     let r#type = self.analyze_expr_type(expr_id);
-    let category = self.analyze_expr_category(expr_id);
-    // let scope = self.symbol_table.scopes().;
-    let is_compile_time_constant = todo!();
-    // let semantic_expr_info =
-    //   SemanticExprInfo::new(symbol, r#type, category, scope, is_compile_time_constant);
-    // self.expr_info_by_id.insert(expr_id, semantic_expr_info);
+    let scope = self
+      .current_scope()
+      .expect("la expresion no vive en un scope");
+    let compile_time_constant = self.analyze_compile_time_constant(expr_id);
+    let category = self.analyze_expr_category(expr_id, compile_time_constant.is_some());
+    let semantic_expr_info =
+      SemanticExprInfo::new(symbol, r#type, category, scope, compile_time_constant);
+    self
+      .semantic_info
+      .insert_expr_info(expr_id, semantic_expr_info);
+  }
+
+  fn analyze_expr_symbol(&mut self, expr_id: ExprId) -> Option<SymbolId> {
+    let expr = self.ast.expr(expr_id);
+    match expr {
+      Expr::Var(name) => self.symbol_table.resolve(&name),
+      Expr::Const(_) | Expr::Unary(_) | Expr::Binary(_) => None,
+    }
   }
 
   fn analyze_expr_type(&mut self, expr_id: ExprId) -> Type {
     let expr = self.ast.expr(expr_id);
     let span = self.ast.expr_span(expr_id);
     match expr {
-      Expr::Const(ConstValue::Int(_)) => Type::Int32,
+      Expr::Const(ConstValue::Int32(_)) => Type::Int32,
       Expr::Const(ConstValue::Bool(_)) => Type::Bool,
-      Expr::Var(name) => match self.symbol_for_var(expr_id) {
+      Expr::Var(name) => match self.analyze_expr_symbol(expr_id) {
         Some(symbol_id) => self.symbol_table.symbol(symbol_id).r#type(),
         None => {
           self.emit_error(&SemanticError::UndefinedVariable { name, span });
@@ -165,16 +145,121 @@ impl<'a> SemanticInfo<'a> {
     }
   }
 
-  fn analyze_expr_category(&mut self, expr_id: ExprId) -> ExprCategory {
+  fn analyze_expr_category(
+    &mut self,
+    expr_id: ExprId,
+    is_compile_time_constant: bool,
+  ) -> ExprCategory {
+    let expr = self.ast.expr(expr_id);
+    match expr {
+      Expr::Const(_) => ExprCategory::constant().with(ExprCategory::value()),
+      Expr::Var(_) => ExprCategory::value().with(ExprCategory::place()),
+      Expr::Unary(_) | Expr::Binary(_) => {
+        let value_category = ExprCategory::value();
+        if is_compile_time_constant {
+          value_category.with(ExprCategory::constant())
+        } else {
+          value_category
+        }
+      }
+    }
+  }
+
+  fn analyze_compile_time_constant(&mut self, expr_id: ExprId) -> Option<ConstValue> {
     let expr = self.ast.expr(expr_id);
     let span = self.ast.expr_span(expr_id);
     match expr {
-      Expr::Const(_) => todo!(),
-      Expr::Var(_) => todo!(),
-      Expr::Unary(_) | Expr::Binary(_) => todo!(),
+      Expr::Const(v) => Some(v),
+      Expr::Var(_) => None, // En un futuro cuando implemente `const` esto puede cambiar.
+      // Todos los operadores que tenemos son puros asi que esto está bien
+      Expr::Unary(unary) => {
+        let value = self.analyze_compile_time_constant(unary.operand)?;
+        match (value, unary.op) {
+          (ConstValue::Int32(x), UnaryOp::Neg) => Some(ConstValue::Int32(-x)),
+          (ConstValue::Bool(b), UnaryOp::Not) => Some(ConstValue::Bool(!b)),
+          _ => None, // recordar que el type mismatch ya fue analizado antes
+        }
+      }
+      Expr::Binary(binary) => {
+        let lvalue = self.analyze_compile_time_constant(binary.lhs)?;
+        let rvalue = self.analyze_compile_time_constant(binary.rhs)?;
+        match (lvalue, binary.op, rvalue) {
+          (ConstValue::Int32(x), BinaryOp::Add, ConstValue::Int32(y)) => match x.checked_add(y) {
+            Some(res) => Some(ConstValue::Int32(res)),
+            None => {
+              self.emit_error(&SemanticError::ArithmeticOverflow {
+                span,
+                op: BinaryOp::Add,
+                lhs: ConstValue::Int32(x),
+                rhs: ConstValue::Int32(y),
+              });
+              None
+            }
+          },
+          (ConstValue::Int32(x), BinaryOp::Sub, ConstValue::Int32(y)) => match x.checked_sub(y) {
+            Some(res) => Some(ConstValue::Int32(res)),
+            None => {
+              self.emit_error(&SemanticError::ArithmeticOverflow {
+                span,
+                op: BinaryOp::Sub,
+                lhs: ConstValue::Int32(x),
+                rhs: ConstValue::Int32(y),
+              });
+              None
+            }
+          },
+          (ConstValue::Int32(x), BinaryOp::Mul, ConstValue::Int32(y)) => match x.checked_mul(y) {
+            Some(res) => Some(ConstValue::Int32(res)),
+            None => {
+              self.emit_error(&SemanticError::ArithmeticOverflow {
+                span,
+                op: BinaryOp::Mul,
+                lhs: ConstValue::Int32(x),
+                rhs: ConstValue::Int32(y),
+              });
+              None
+            }
+          },
+          (ConstValue::Int32(x), BinaryOp::Div, ConstValue::Int32(y)) => {
+            if y == 0 {
+              let rhs_span = self.ast.expr_span(binary.rhs);
+              self.emit_error(&SemanticError::ZeroDivision { span: rhs_span });
+              None
+            } else {
+              Some(ConstValue::Int32(x / y))
+            }
+          }
+          (ConstValue::Int32(x), BinaryOp::Eq, ConstValue::Int32(y)) => {
+            Some(ConstValue::Bool(x == y))
+          }
+          (ConstValue::Int32(x), BinaryOp::Neq, ConstValue::Int32(y)) => {
+            Some(ConstValue::Bool(x != y))
+          }
+          (ConstValue::Int32(x), BinaryOp::Gt, ConstValue::Int32(y)) => {
+            Some(ConstValue::Bool(x > y))
+          }
+          (ConstValue::Int32(x), BinaryOp::Lt, ConstValue::Int32(y)) => {
+            Some(ConstValue::Bool(x < y))
+          }
+          (ConstValue::Int32(x), BinaryOp::Gte, ConstValue::Int32(y)) => {
+            Some(ConstValue::Bool(x >= y))
+          }
+          (ConstValue::Int32(x), BinaryOp::Lte, ConstValue::Int32(y)) => {
+            Some(ConstValue::Bool(x <= y))
+          }
+          (ConstValue::Bool(p), BinaryOp::And, ConstValue::Bool(q)) => {
+            Some(ConstValue::Bool(p && q))
+          }
+          (ConstValue::Bool(p), BinaryOp::Or, ConstValue::Bool(q)) => {
+            Some(ConstValue::Bool(p || q))
+          }
+          (ConstValue::Bool(p), BinaryOp::Xor, ConstValue::Bool(q)) => {
+            Some(ConstValue::Bool(p ^ q))
+          }
+          _ => None,
+        }
+      }
     }
-
-    todo!()
   }
 
   /// Analiza un statement, chequeando redeclaraciones (Let)
@@ -189,68 +274,215 @@ impl<'a> SemanticInfo<'a> {
   pub(crate) fn analyze_program(&mut self, program: Program) {}
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub(crate) struct SemanticExprInfo {
-  /// Que simbolo representa la expresion (si aplica).
-  symbol: Option<SymbolId>,
-  /// Tipo de la expresion.
-  r#type: Type,
-  /// Categoria de la expresion.
-  category: ExprCategory,
-  /// Scope donde se evaluo la expresion.
-  scope: ScopeId,
-  /// Es una constante conocida en compile-time. Util para optimizaciones.
-  is_compile_time_constant: bool,
-}
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use crate::{
+    ast::expr::{BinaryExpr, UnaryExpr, VarId},
+    semantic::{category, scope::ScopeArena, symbol::Mutability},
+  };
+  use proptest::prelude::*;
 
-impl SemanticExprInfo {
-  pub(crate) fn new(
-    symbol: Option<SymbolId>,
-    r#type: Type,
-    category: ExprCategory,
-    scope: ScopeId,
-    is_compile_time_constant: bool,
-  ) -> Self {
-    Self {
-      symbol,
-      r#type,
-      category,
-      scope,
-      is_compile_time_constant,
-    }
+  // Helper para crear SemanticAnalyzer minimal
+  fn semantic_analyzer<'a>(ast: &'a Ast) -> SemanticAnalyzer<'a> {
+    let scope_arena = ScopeArena::new();
+    let symbol_table = SymbolTable::new(scope_arena);
+    SemanticAnalyzer::new(ast, symbol_table)
   }
-}
 
-#[derive(Debug, Clone, PartialEq)]
-pub(crate) struct SemanticStmtInfo {
-  /// Scope del statement.
-  scope: ScopeId,
-  /// Si el statement es terminador de bloque.
-  is_terminator: bool,
-  /// Simbolos declarados en esta expresion.
-  symbols_declared: Vec<SymbolId>,
-}
+  // Tests basicos por tipo de expresion
+  #[test]
+  fn analyze_const_expr() {
+    let mut ast = Ast::empty();
+    let expr_id = ast.add_expr(Expr::Const(ConstValue::Int32(42)), 0..2);
+    let mut sem = semantic_analyzer(&ast);
+    sem.analyze_expr(expr_id);
 
-impl SemanticStmtInfo {
-  pub(crate) fn new(scope: ScopeId, is_terminator: bool, symbols_declared: Vec<SymbolId>) -> Self {
-    Self {
-      scope,
-      is_terminator,
-      symbols_declared,
-    }
+    let info = sem.semantic_info.expr_info(expr_id);
+    assert_eq!(info.symbol(), None);
+    assert_eq!(info.r#type(), Type::Int32);
+    let category = info.category();
+    assert!(category.is_value() && category.is_constant() && !category.is_place());
+    assert_eq!(info.compile_time_constant(), Some(&ConstValue::Int32(42)));
+    assert!(sem.diagnostics().is_empty());
   }
-}
 
-#[derive(Debug, Clone, PartialEq)]
-pub(crate) struct SemanticBlockInfo {
-  /// Scope asociado al bloque.
-  scope: ScopeId,
-  /// El statement terminador del bloque.
-  terminator: StmtId,
-}
+  #[test]
+  fn analyze_var_expr_resolved() {
+    let mut ast = Ast::empty();
+    let var_id = VarId("x".into());
+    let expr_id = ast.add_expr(Expr::Var(var_id.clone()), 0..1);
+    let mut sem = semantic_analyzer(&ast);
+    sem.symbol_table.add_symbol(
+      &var_id,
+      Type::Bool,
+      Mutability::Mutable,
+      ast.expr_span(expr_id),
+    );
+    sem.analyze_expr(expr_id);
 
-impl SemanticBlockInfo {
-  pub(crate) fn new(scope: ScopeId, terminator: StmtId) -> Self {
-    Self { scope, terminator }
+    let info = sem.semantic_info.expr_info(expr_id);
+    assert!(info.symbol().is_some());
+    assert_eq!(info.r#type(), Type::Bool);
+    let category = info.category();
+    assert!(category.is_value() && category.is_place() && !category.is_constant());
+    assert!(info.compile_time_constant().is_none());
+    assert!(sem.diagnostics().is_empty());
+  }
+
+  #[test]
+  fn analyze_var_expr_unresolved() {
+    let mut ast = Ast::empty();
+    let expr_id = ast.add_expr(Expr::Var(VarId("x".into())), 0..1);
+    let mut sem = semantic_analyzer(&ast);
+
+    sem.analyze_expr(expr_id);
+    let info = sem.semantic_info.expr_info(expr_id);
+    assert_eq!(info.symbol(), None);
+    assert_eq!(info.r#type(), Type::DefaultErrorType);
+    assert!(info.compile_time_constant().is_none());
+    assert_eq!(sem.diagnostics().len(), 1);
+    assert!(
+      sem
+        .diagnostics()
+        .iter()
+        .any(|diag| diag.msg == String::from("variable 'x' indefinida"))
+    );
+  }
+
+  #[test]
+  fn analyze_unary_const_expr() {
+    let mut ast = Ast::empty();
+    let inner = ast.add_expr(Expr::Const(ConstValue::Int32(5)), 0..1);
+    let expr_id = ast.add_expr(
+      Expr::Unary(UnaryExpr {
+        op: UnaryOp::Neg,
+        operand: inner,
+      }),
+      0..2,
+    );
+    let mut sem = semantic_analyzer(&ast);
+
+    sem.analyze_expr(inner); // es importante que el analyzer lo haga en orden
+    sem.analyze_expr(expr_id);
+    let info = sem.semantic_info.expr_info(expr_id);
+    assert_eq!(info.r#type(), Type::Int32);
+    let category = info.category();
+    assert!(category.is_value() && !category.is_place() && category.is_constant());
+    assert_eq!(info.compile_time_constant(), Some(&ConstValue::Int32(-5)));
+    assert!(sem.diagnostics().is_empty());
+  }
+
+  #[test]
+  fn analyze_binary_const_expr() {
+    let mut ast = Ast::empty();
+    let lhs = ast.add_expr(Expr::Const(ConstValue::Int32(2)), 0..1);
+    let rhs = ast.add_expr(Expr::Const(ConstValue::Int32(3)), 2..3);
+    let expr_id = ast.add_expr(
+      Expr::Binary(BinaryExpr {
+        lhs,
+        op: BinaryOp::Add,
+        rhs,
+      }),
+      0..3,
+    );
+
+    let mut sem = semantic_analyzer(&ast);
+    sem.analyze_expr(lhs);
+    sem.analyze_expr(rhs);
+    sem.analyze_expr(expr_id);
+    let info = sem.semantic_info.expr_info(expr_id);
+    let category = info.category();
+    assert!(category.is_value() && !category.is_place() && category.is_constant());
+    assert_eq!(info.compile_time_constant(), Some(&ConstValue::Int32(5)));
+  }
+
+  #[test]
+  fn analyze_expr_scope_is_current_scope() {
+    let mut ast = Ast::empty();
+    let expr_id = ast.add_expr(Expr::Const(ConstValue::Int32(1)), 0..1);
+    let mut sem = semantic_analyzer(&ast);
+    let scope_id = sem.current_scope().unwrap();
+
+    sem.analyze_expr(expr_id);
+    let info = sem.semantic_info.expr_info(expr_id);
+    assert_eq!(info.scope(), scope_id);
+  }
+
+  #[test]
+  fn test_zero_division_error() {
+    let mut ast = Ast::empty();
+    let lhs = ast.add_expr(Expr::Const(ConstValue::Int32(42)), 0..1);
+    let rhs = ast.add_expr(Expr::Const(ConstValue::Int32(0)), 2..3);
+    let expr_id = ast.add_expr(
+      Expr::Binary(BinaryExpr {
+        lhs,
+        rhs,
+        op: BinaryOp::Div,
+      }),
+      0..3,
+    );
+    let mut sem = semantic_analyzer(&ast);
+
+    sem.analyze_expr(expr_id);
+    let info = sem.semantic_info.expr_info(expr_id);
+    assert!(info.compile_time_constant().is_none());
+    assert!(
+      sem
+        .diagnostics()
+        .iter()
+        .any(|diag| diag.msg == String::from("division por cero encontrada"))
+    );
+  }
+
+  #[test]
+  fn test_arithmetic_overflow_error() {
+    let mut ast = Ast::empty();
+    let lhs = ast.add_expr(Expr::Const(ConstValue::Int32(i32::MAX)), 0..1);
+    let rhs = ast.add_expr(Expr::Const(ConstValue::Int32(2)), 2..3);
+    let expr_id = ast.add_expr(
+      Expr::Binary(BinaryExpr {
+        lhs,
+        rhs,
+        op: BinaryOp::Mul,
+      }),
+      0..3,
+    );
+    let mut sem = semantic_analyzer(&ast);
+
+    sem.analyze_expr(expr_id);
+    let info = sem.semantic_info.expr_info(expr_id);
+    assert!(info.compile_time_constant().is_none());
+    assert!(
+      sem
+        .diagnostics()
+        .iter()
+        .any(|diag| diag.msg.contains("overflow"))
+    );
+  }
+
+  #[test]
+  fn test_type_mismatch_error() {
+    let mut ast = Ast::empty();
+    let lhs = ast.add_expr(Expr::Const(ConstValue::Bool(false)), 0..1);
+    let rhs = ast.add_expr(Expr::Const(ConstValue::Bool(true)), 2..3);
+    let expr_id = ast.add_expr(
+      Expr::Binary(BinaryExpr {
+        lhs,
+        rhs,
+        op: BinaryOp::Sub,
+      }),
+      0..3,
+    );
+    let mut sem = semantic_analyzer(&ast);
+
+    sem.analyze_expr(expr_id);
+    assert_eq!(sem.diagnostics().len(), 2);
+    assert!(
+      sem
+        .diagnostics()
+        .iter()
+        .any(|d| d.msg.contains("mismatch de tipos"))
+    );
   }
 }
