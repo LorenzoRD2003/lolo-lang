@@ -7,7 +7,7 @@ use crate::ast::{
 pub(crate) enum Stmt {
   Expr(ExprId),
   Let {
-    name: VarId,
+    var: ExprId, // va a tener que ser una variable o damos un error
     initializer: ExprId,
   },
   Return(ExprId),
@@ -38,8 +38,8 @@ impl Block {
     Self { stmts }
   }
 
-  pub(crate) fn stmts(&self) -> Vec<StmtId> {
-    self.stmts.clone()
+  pub(crate) fn stmts(&self) -> &[StmtId] {
+    &self.stmts
   }
 
   pub(crate) fn add_stmt(&mut self, stmt: StmtId) {

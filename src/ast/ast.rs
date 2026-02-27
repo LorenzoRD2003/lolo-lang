@@ -241,7 +241,7 @@ mod tests {
 
     let block = ast.add_block(Block::with_stmts(vec![s1, s2]), 0..3);
     // Cada StmtId dentro del Block debe existir, sino panickea
-    for stmt_id in &ast.block(block).stmts() {
+    for stmt_id in ast.block(block).stmts() {
       let _ = ast.stmt(*stmt_id);
     }
   }
@@ -258,7 +258,7 @@ mod tests {
 
     // Chequeo recursivo: todos los ExprId referenciados existen
     for block_id in &[inner_block, outer_block] {
-      for stmt_id in &ast.block(*block_id).stmts() {
+      for stmt_id in ast.block(*block_id).stmts() {
         match ast.stmt(*stmt_id) {
           Stmt::Expr(eid) | Stmt::Return(eid) | Stmt::Print(eid) => {
             let _ = ast.expr(eid);

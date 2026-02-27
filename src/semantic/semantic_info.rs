@@ -73,6 +73,10 @@ impl SemanticInfo {
   pub(crate) fn insert_block_info(&mut self, block_id: BlockId, info: SemanticBlockInfo) {
     self.block_info_by_id.insert(block_id, info);
   }
+
+  pub(crate) fn stmt_info_by_id(&self) -> &HashMap<StmtId, SemanticStmtInfo> {
+    &self.stmt_info_by_id
+  }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -131,19 +135,24 @@ impl SemanticExprInfo {
 pub(crate) struct SemanticStmtInfo {
   /// Scope del statement.
   scope: ScopeId,
-  /// Si el statement es terminador de bloque.
-  is_terminator: bool,
-  /// Simbolos declarados en esta expresion.
-  symbols_declared: Vec<SymbolId>,
+  /// Simbolo declarado en esta expresion (si es una asignacion de variable).
+  symbol_declared: Option<SymbolId>,
 }
 
 impl SemanticStmtInfo {
-  pub(crate) fn new(scope: ScopeId, is_terminator: bool, symbols_declared: Vec<SymbolId>) -> Self {
+  pub(crate) fn new(scope: ScopeId, symbol_declared: Option<SymbolId>) -> Self {
     Self {
       scope,
-      is_terminator,
-      symbols_declared,
+      symbol_declared,
     }
+  }
+
+  pub(crate) fn scope(&self) -> ScopeId {
+    self.scope
+  }
+
+  pub(crate) fn symbol_declared(&self) -> Option<SymbolId> {
+    self.symbol_declared
   }
 }
 
@@ -151,12 +160,20 @@ impl SemanticStmtInfo {
 pub(crate) struct SemanticBlockInfo {
   /// Scope asociado al bloque.
   scope: ScopeId,
-  /// El statement terminador del bloque.
-  terminator: StmtId,
+  /// El statement terminador del bloque. Es `None`` si y solo si el bloque esta vacio.
+  terminator: Option<StmtId>,
 }
 
 impl SemanticBlockInfo {
-  pub(crate) fn new(scope: ScopeId, terminator: StmtId) -> Self {
+  pub(crate) fn new(scope: ScopeId, terminator: Option<StmtId>) -> Self {
     Self { scope, terminator }
+  }
+
+  pub(crate) fn scope(&self) -> ScopeId {
+    self.scope
+  }
+
+  pub(crate) fn terminator(&self) -> Option<StmtId> {
+    self.terminator
   }
 }

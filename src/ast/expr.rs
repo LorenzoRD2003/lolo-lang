@@ -17,6 +17,17 @@ pub enum Expr {
 }
 
 impl Expr {
+  pub(crate) fn is_var(&self) -> bool {
+    matches!(self, Expr::Var(_))
+  }
+
+  pub(crate) fn get_var_name(&self) -> Option<VarId> {
+    match self {
+      Expr::Var(id) => Some(id.clone()),
+      _ => None,
+    }
+  }
+
   pub(crate) fn is_comparison(&self) -> bool {
     matches!(
       self,

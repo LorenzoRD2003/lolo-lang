@@ -109,9 +109,15 @@ impl<'a> Parser<'a> {
   /// "Parseame una expresion cuya precedencia minima sea `min_bp`"
   fn parse_expr_bp(&mut self, min_bp: u8) -> Option<ExprId> {
     let mut lhs = self.parse_prefix()?;
+    // si es una asignacion a una variable, la devolvemos
+    if self.tokens.peek()?.kind() == TokenKind::Equal {
+      return matches!(self.ast.expr(lhs), Expr::Var(_)).then_some(lhs);
+    }
     // Mientras el siguiente token pueda extender la expresion...
     // o el token no es operador, o el binding power es insuficiente
+    let mut i = 5;
     loop {
+      i = i + 1;
       let token = self.tokens.peek()?;
       let Some((lbp, _)) = infix_binding_power(token.kind()) else {
         break;
@@ -234,15 +240,21 @@ impl<'a> Parser<'a> {
   }
 
   fn parse_let_stmt(&mut self) -> Option<(Stmt, Span)> {
-    // let <var> = <expr>;
+    // let <var_expr> = <expr>;
     // Consumimos el `let`
     let span_start = self.tokens.peek()?.span().start;
     self.expect_token(TokenKind::Let);
     // Ahora deberiamos consumir un identificador
     // Igualmente, vamos a seguir parseando en vez de panickear
-    let token = self.tokens.peek()?;
-    let var = VarId(token.lexeme().into());
-    self.expect_token(TokenKind::Identifier);
+    let token = self.tokens.peek()?.clone();
+    let var_expr_id = self.parse_expression()?;
+    dbg!(3);
+    if !self.ast.expr(var_expr_id).is_var() {
+      dbg!(4);
+      self.emit_error(&ParserError::IdentifierExpected(token));
+      dbg!(5);
+    }
+    dbg!(6);
     // Ahora deberiamos consumir un `=`
     self.expect_token(TokenKind::Equal);
     // Ahora vamos a parsear una expresion
@@ -252,7 +264,7 @@ impl<'a> Parser<'a> {
     self.expect_token(TokenKind::Semicolon);
     Some((
       Stmt::Let {
-        name: var,
+        var: var_expr_id,
         initializer: expr_id,
       },
       span_start..span_end,
@@ -585,8 +597,8 @@ mod tests {
     let (ast, stmt_id) = parse_stmt("let x = abc;");
     let stmt_id = stmt_id.unwrap();
     match ast.stmt(stmt_id) {
-      Stmt::Let { name, initializer } => {
-        assert_eq!(name, VarId("x".into()));
+      Stmt::Let { var, initializer } => {
+        assert_eq!(ast.expr(var), Expr::Var(VarId("x".into())));
         assert!(matches!(ast.expr(initializer), Expr::Var(_)));
       }
       _ => panic!("Expected Let"),
@@ -713,7 +725,8 @@ mod tests {
   fn block_stmt_order_is_preserved() {
     let (ast, block_id) = parse_block("{ let a = 1; print b; return x; }");
     let block_id = block_id.unwrap();
-    let stmts = ast.block(block_id).stmts();
+    let block = ast.block(block_id);
+    let stmts = block.stmts();
     assert!(matches!(ast.stmt(stmts[0]), Stmt::Let { .. }));
     assert!(matches!(ast.stmt(stmts[1]), Stmt::Print(_)));
     assert!(matches!(ast.stmt(stmts[2]), Stmt::Return(_)));
@@ -805,7 +818,8 @@ mod tests {
     let stmt_id = stmt_id.unwrap();
     match ast.stmt(stmt_id) {
       Stmt::If { if_block, .. } => {
-        let stmts = ast.block(if_block).stmts();
+        let block = ast.block(if_block);
+        let stmts = block.stmts();
         assert_eq!(stmts.len(), 1);
         assert!(matches!(ast.stmt(stmts[0]), Stmt::If { .. }));
       }

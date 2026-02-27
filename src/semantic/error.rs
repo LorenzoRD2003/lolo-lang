@@ -19,6 +19,10 @@ pub(crate) enum SemanticError {
     lhs: ConstValue,
     rhs: ConstValue,
   },
+  /// Se esperaba una PlaceExpr (a la hora de recibir un valor).
+  ExpectedPlaceExpression { span: Span },
+  /// Se esperaba una ValueExpr (a la hora de emitir un valor).
+  ExpectedValueExpression { span: Span },
   /// Intento de asignar a algo no asignable
   InvalidAssignmentTarget { span: Span },
   /// Redeclaracion ilegal en el mismo scope
@@ -44,6 +48,14 @@ impl Diagnosable for SemanticError {
     match self {
       Self::ArithmeticOverflow { span, op, lhs, rhs } => {
         Diagnostic::error(format!("overflow evaluando {} {} {}", lhs, op, rhs))
+          .with_span(span.clone())
+      }
+      Self::ExpectedPlaceExpression { span } => {
+        Diagnostic::error("se esperaba una place expression (para recibir un valor)".into())
+          .with_span(span.clone())
+      }
+      Self::ExpectedValueExpression { span } => {
+        Diagnostic::error("se esperaba una place expression (para emitir un valor)".into())
           .with_span(span.clone())
       }
       Self::InvalidAssignmentTarget { span } => {
