@@ -12,16 +12,16 @@
 use crate::common::span::Span;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub(crate) enum LabelStyle {
+pub enum LabelStyle {
   Primary,
   Secondary,
 }
 
 #[derive(Debug, Clone)]
-pub(crate) struct Label {
-  pub(crate) span: Span,
-  pub(crate) message: Option<String>,
-  pub(crate) style: LabelStyle,
+pub struct Label {
+  pub span: Span,
+  pub message: Option<String>,
+  pub style: LabelStyle,
 }
 
 impl Label {

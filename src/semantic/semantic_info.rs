@@ -9,7 +9,7 @@ use crate::{
 };
 
 #[derive(Debug, Clone)]
-pub(crate) struct SemanticInfo {
+pub struct SemanticInfo {
   // Mapeos desde los IDs del AST a metadata semantica
   /// ExprId -> SemanticExprInfo. La clave es el ID en el AST.
   expr_info_by_id: HashMap<ExprId, SemanticExprInfo>,
@@ -20,7 +20,7 @@ pub(crate) struct SemanticInfo {
 }
 
 impl SemanticInfo {
-  pub(crate) fn new() -> Self {
+  pub fn new() -> Self {
     Self {
       expr_info_by_id: HashMap::new(),
       stmt_info_by_id: HashMap::new(),
@@ -29,7 +29,7 @@ impl SemanticInfo {
   }
 
   /// Obtiene la informacion semantica correspondiente a la expresion de ID ExprId.
-  pub(crate) fn expr_info(&self, expr_id: ExprId) -> &SemanticExprInfo {
+  pub fn expr_info(&self, expr_id: ExprId) -> &SemanticExprInfo {
     self
       .expr_info_by_id
       .get(&expr_id)
@@ -37,7 +37,7 @@ impl SemanticInfo {
   }
 
   /// Obtiene la informacion semantica correspondiente al statement de ID StmtId.
-  pub(crate) fn stmt_info(&self, stmt_id: StmtId) -> &SemanticStmtInfo {
+  pub fn stmt_info(&self, stmt_id: StmtId) -> &SemanticStmtInfo {
     self
       .stmt_info_by_id
       .get(&stmt_id)
@@ -45,42 +45,42 @@ impl SemanticInfo {
   }
 
   /// Obtiene la informacion semantica correspondiente al bloque de ID BlockId.
-  pub(crate) fn block_info(&self, block_id: BlockId) -> &SemanticBlockInfo {
+  pub fn block_info(&self, block_id: BlockId) -> &SemanticBlockInfo {
     self
       .block_info_by_id
       .get(&block_id)
       .expect("BlockId no encontrado en el AST")
   }
 
-  /// Obtiene el simbolo para la variable de ID ExprId. Para otras expresiones, deberia devolver None.
-  pub(crate) fn symbol_for_var(&self, expr_id: ExprId) -> Option<SymbolId> {
-    self.expr_info(expr_id).symbol
-  }
+  // /// Obtiene el simbolo para la variable de ID ExprId. Para otras expresiones, deberia devolver None.
+  // pub fn symbol_for_var(&self, expr_id: ExprId) -> Option<SymbolId> {
+  //   self.expr_info(expr_id).symbol
+  // }
 
-  /// Obtiene el scope en el que vive el statement de ID StmtId.
-  pub(crate) fn scope_for_stmt(&self, stmt_id: StmtId) -> ScopeId {
-    self.stmt_info(stmt_id).scope
-  }
+  // /// Obtiene el scope en el que vive el statement de ID StmtId.
+  // pub fn scope_for_stmt(&self, stmt_id: StmtId) -> ScopeId {
+  //   self.stmt_info(stmt_id).scope
+  // }
 
-  pub(crate) fn insert_expr_info(&mut self, expr_id: ExprId, info: SemanticExprInfo) {
+  pub fn insert_expr_info(&mut self, expr_id: ExprId, info: SemanticExprInfo) {
     self.expr_info_by_id.insert(expr_id, info);
   }
 
-  pub(crate) fn insert_stmt_info(&mut self, stmt_id: StmtId, info: SemanticStmtInfo) {
+  pub fn insert_stmt_info(&mut self, stmt_id: StmtId, info: SemanticStmtInfo) {
     self.stmt_info_by_id.insert(stmt_id, info);
   }
 
-  pub(crate) fn insert_block_info(&mut self, block_id: BlockId, info: SemanticBlockInfo) {
+  pub fn insert_block_info(&mut self, block_id: BlockId, info: SemanticBlockInfo) {
     self.block_info_by_id.insert(block_id, info);
   }
 
-  pub(crate) fn stmt_info_by_id(&self) -> &HashMap<StmtId, SemanticStmtInfo> {
+  pub fn stmt_info_by_id(&self) -> &HashMap<StmtId, SemanticStmtInfo> {
     &self.stmt_info_by_id
   }
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub(crate) struct SemanticExprInfo {
+pub struct SemanticExprInfo {
   /// Que simbolo representa la expresion (si aplica).
   symbol: Option<SymbolId>,
   /// Tipo de la expresion.
@@ -94,7 +94,7 @@ pub(crate) struct SemanticExprInfo {
 }
 
 impl SemanticExprInfo {
-  pub(crate) fn new(
+  pub fn new(
     symbol: Option<SymbolId>,
     r#type: Type,
     category: ExprCategory,
@@ -110,29 +110,29 @@ impl SemanticExprInfo {
     }
   }
 
-  pub(crate) fn symbol(&self) -> Option<SymbolId> {
+  pub fn symbol(&self) -> Option<SymbolId> {
     self.symbol
   }
 
-  pub(crate) fn r#type(&self) -> Type {
+  pub fn r#type(&self) -> Type {
     self.r#type
   }
 
-  pub(crate) fn category(&self) -> ExprCategory {
+  pub fn category(&self) -> ExprCategory {
     self.category
   }
 
-  pub(crate) fn scope(&self) -> ScopeId {
+  pub fn scope(&self) -> ScopeId {
     self.scope
   }
 
-  pub(crate) fn compile_time_constant(&self) -> Option<&ConstValue> {
+  pub fn compile_time_constant(&self) -> Option<&ConstValue> {
     self.compile_time_constant.as_ref()
   }
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub(crate) struct SemanticStmtInfo {
+pub struct SemanticStmtInfo {
   /// Scope del statement.
   scope: ScopeId,
   /// Simbolo declarado en esta expresion (si es una asignacion de variable).
@@ -140,24 +140,24 @@ pub(crate) struct SemanticStmtInfo {
 }
 
 impl SemanticStmtInfo {
-  pub(crate) fn new(scope: ScopeId, symbol_declared: Option<SymbolId>) -> Self {
+  pub fn new(scope: ScopeId, symbol_declared: Option<SymbolId>) -> Self {
     Self {
       scope,
       symbol_declared,
     }
   }
 
-  pub(crate) fn scope(&self) -> ScopeId {
+  pub fn scope(&self) -> ScopeId {
     self.scope
   }
 
-  pub(crate) fn symbol_declared(&self) -> Option<SymbolId> {
+  pub fn symbol_declared(&self) -> Option<SymbolId> {
     self.symbol_declared
   }
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub(crate) struct SemanticBlockInfo {
+pub struct SemanticBlockInfo {
   /// Scope asociado al bloque.
   scope: ScopeId,
   /// El statement terminador del bloque. Es `None`` si y solo si el bloque esta vacio.
@@ -165,15 +165,15 @@ pub(crate) struct SemanticBlockInfo {
 }
 
 impl SemanticBlockInfo {
-  pub(crate) fn new(scope: ScopeId, terminator: Option<StmtId>) -> Self {
+  pub fn new(scope: ScopeId, terminator: Option<StmtId>) -> Self {
     Self { scope, terminator }
   }
 
-  pub(crate) fn scope(&self) -> ScopeId {
+  pub fn scope(&self) -> ScopeId {
     self.scope
   }
 
-  pub(crate) fn terminator(&self) -> Option<StmtId> {
+  pub fn terminator(&self) -> Option<StmtId> {
     self.terminator
   }
 }

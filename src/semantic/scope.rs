@@ -9,10 +9,10 @@ use std::collections::HashMap;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 
-pub(crate) struct ScopeId(pub(crate) usize);
+pub struct ScopeId(pub usize);
 
 #[derive(Debug, Clone)]
-pub(crate) struct Scope {
+pub struct Scope {
   id: ScopeId,
   /// Puede tener un padre para permitir scopes anidados.
   parent: Option<ScopeId>,
@@ -21,38 +21,38 @@ pub(crate) struct Scope {
 }
 
 impl Scope {
-  pub(crate) fn add_symbol(&mut self, name: &VarId, id: SymbolId) {
+  pub fn add_symbol(&mut self, name: &VarId, id: SymbolId) {
     self.symbols.insert(name.clone(), id);
   }
 
-  pub(crate) fn id(&self) -> ScopeId {
+  pub fn id(&self) -> ScopeId {
     self.id
   }
 
-  pub(crate) fn parent(&self) -> Option<ScopeId> {
+  pub fn parent(&self) -> Option<ScopeId> {
     self.parent
   }
 
-  pub(crate) fn symbols(&self) -> &HashMap<VarId, SymbolId> {
+  pub fn symbols(&self) -> &HashMap<VarId, SymbolId> {
     &self.symbols
   }
 }
 
 /// En `ScopeArena` van a vivir las referencias a todos los scopes
 #[derive(Debug, Clone)]
-pub(crate) struct ScopeArena {
+pub struct ScopeArena {
   scopes: Vec<Scope>,
 }
 
 impl ScopeArena {
-  pub(crate) fn new() -> Self {
+  pub fn new() -> Self {
     Self {
       scopes: Vec::<Scope>::new(),
     }
   }
 
   /// Crea un scope hijo del padre dado.
-  pub(crate) fn new_scope(&mut self, parent: Option<ScopeId>) -> ScopeId {
+  pub fn new_scope(&mut self, parent: Option<ScopeId>) -> ScopeId {
     let new_scope_id = ScopeId(self.scopes.len());
     let scope = Scope {
       id: new_scope_id,
@@ -64,23 +64,23 @@ impl ScopeArena {
   }
 
   /// Devuelve una referencia al scope.
-  pub(crate) fn scope(&self, id: ScopeId) -> &Scope {
+  pub fn scope(&self, id: ScopeId) -> &Scope {
     &self.scopes[id.0]
   }
 
   /// Agrega simbolo a scope existente.
-  pub(crate) fn insert_symbol(&mut self, name: &VarId, scope: ScopeId, symbol: SymbolId) {
+  pub fn insert_symbol(&mut self, name: &VarId, scope: ScopeId, symbol: SymbolId) {
     self.scopes[scope.0].add_symbol(name, symbol);
   }
 
   /// Devuelve el padre de un scope.
-  pub(crate) fn parent_of(&self, scope: ScopeId) -> Option<ScopeId> {
+  pub fn parent_of(&self, scope: ScopeId) -> Option<ScopeId> {
     self.scope(scope).parent()
   }
 
   /// Busca hacia arriba en la jerarquía de scopes hasta encontrar el símbolo.
   /// Permite hallar variables usadas pero no declaradas (si `resolve()` devuelve `None`).
-  pub(crate) fn resolve(&self, name: &VarId, current_scope: ScopeId) -> Option<SymbolId> {
+  pub fn resolve(&self, name: &VarId, current_scope: ScopeId) -> Option<SymbolId> {
     let mut current_scope_opt = Some(current_scope);
     while let Some(current_scope) = current_scope_opt {
       // Busco el simbolo en este scope

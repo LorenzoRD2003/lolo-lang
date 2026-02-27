@@ -16,7 +16,7 @@ use crate::{
 };
 
 #[derive(Debug)]
-pub(crate) struct SymbolTable {
+pub struct SymbolTable {
   /// Arena de simbolos. Se indexan por su `SymbolId`.
   symbols: Vec<Symbol>,
   /// Arena de Scopes. Solamente tiene sentido en el contexto de una SymbolTable, por lo tanto
@@ -27,7 +27,7 @@ pub(crate) struct SymbolTable {
 }
 
 impl SymbolTable {
-  pub(crate) fn new(scopes: ScopeArena) -> Self {
+  pub fn new(scopes: ScopeArena) -> Self {
     Self {
       symbols: Vec::<Symbol>::new(),
       scopes,
@@ -36,14 +36,14 @@ impl SymbolTable {
   }
 
   /// Crea un scope hijo del `current_scope` y lo hace activo.
-  pub(crate) fn enter_scope(&mut self) -> ScopeId {
+  pub fn enter_scope(&mut self) -> ScopeId {
     let new_scope = self.scopes.new_scope(self.current_scope);
     self.current_scope = Some(new_scope);
     new_scope
   }
 
   /// Entra al scope global en caso de que no tenga scope actual.
-  pub(crate) fn enter_global_scope(&mut self) {
+  pub fn enter_global_scope(&mut self) {
     if self.current_scope.is_none() {
       self.enter_scope();
     }
@@ -51,7 +51,7 @@ impl SymbolTable {
 
   /// Retrocede al padre del `current_scope`.
   /// Es defensivo: Si estamos en root_scope (o sea que el padre es None), no subimos.
-  pub(crate) fn exit_scope(&mut self) {
+  pub fn exit_scope(&mut self) {
     if let Some(scope) = self.current_scope
       && let Some(parent_scope) = self.scopes.parent_of(scope)
     {
@@ -63,7 +63,7 @@ impl SymbolTable {
   /// - Lo inserta en el `current_scope`.
   /// - Devuelve el `SymbolId` del simbolo.
   /// - No Debe chequear redeclaraciones legales/ilegales. TODO: Hacer esa parte en el analyzer que es quien tiene diagnostics
-  pub(crate) fn add_symbol(
+  pub fn add_symbol(
     &mut self,
     name: &VarId,
     r#type: Type,
@@ -81,25 +81,17 @@ impl SymbolTable {
     symbol_id
   }
 
-  pub(crate) fn symbol(&self, id: SymbolId) -> &Symbol {
+  pub fn symbol(&self, id: SymbolId) -> &Symbol {
     &self.symbols[id.0]
   }
 
-  pub(crate) fn symbol_mut(&mut self, id: SymbolId) -> &mut Symbol {
-    &mut self.symbols[id.0]
-  }
-
-  pub(crate) fn current_scope(&self) -> Option<ScopeId> {
+  pub fn current_scope(&self) -> Option<ScopeId> {
     self.current_scope
-  }
-
-  pub(crate) fn scopes(&self) -> &ScopeArena {
-    &self.scopes
   }
 
   /// Devuelve todos los `SymbolId` para el scope con `ScopeId` dado. La complejidad es lineal.
   /// Por lo tanto, esta funcion no debe usarse en las partes criticas, sino solamente para debug y diagnostics.
-  pub(crate) fn all_symbols_in_scope(&self, scope_id: ScopeId) -> Vec<SymbolId> {
+  pub fn all_symbols_in_scope(&self, scope_id: ScopeId) -> Vec<SymbolId> {
     self
       .scopes
       .scope(scope_id)
@@ -111,13 +103,13 @@ impl SymbolTable {
 
   /// Busca hacia arriba en la jerarquía de scopes hasta encontrar el simbolo.
   /// Permite hallar variables usadas pero no declaradas (si `resolve()` devuelve `None`).
-  pub(crate) fn resolve(&self, name: &VarId) -> Option<SymbolId> {
+  pub fn resolve(&self, name: &VarId) -> Option<SymbolId> {
     self.scopes.resolve(name, self.current_scope?)
   }
 
   /// Busca el simbolo exactamente en el scope actual. Tiene que resolverlo para el scope actual,
   /// pero no para un scope por encima del actual.
-  pub(crate) fn was_declared_in_current_scope(&mut self, name: &VarId) -> Option<SymbolId> {
+  pub fn was_declared_in_current_scope(&mut self, name: &VarId) -> Option<SymbolId> {
     let symbol = self.resolve(name)?;
     self.exit_scope();
     let exists_in_parent = self.resolve(name).is_some();
@@ -127,156 +119,4 @@ impl SymbolTable {
 }
 
 #[cfg(test)]
-mod tests {
-  use super::*;
-  use proptest::prelude::*;
-
-  #[test]
-  fn symbol_is_inserted_and_retrievable() {
-    let scopes = ScopeArena::new();
-    let mut table = SymbolTable::new(scopes);
-    let name = VarId("a".into());
-    let sym = table.add_symbol(&name, Type::Int32, Mutability::Immutable, 0..1);
-    assert_eq!(table.symbol(sym).name(), name);
-  }
-
-  #[test]
-  fn resolve_finds_symbol_in_current_scope() {
-    let scopes = ScopeArena::new();
-    let mut table = SymbolTable::new(scopes);
-    let name = VarId("x".into());
-    let sym = table.add_symbol(&name, Type::Int32, Mutability::Immutable, 0..1);
-    assert_eq!(table.resolve(&name), Some(sym));
-  }
-
-  #[test]
-  fn resolve_walks_up_scopes() {
-    let scopes = ScopeArena::new();
-    let mut table = SymbolTable::new(scopes);
-    let name = VarId("a".into());
-    let sym = table.add_symbol(&name, Type::Int32, Mutability::Immutable, 0..1);
-    table.enter_scope();
-    assert_eq!(table.resolve(&name), Some(sym));
-  }
-
-  /// Este test indica que en lolo-lang si hay dos declaraciones de una misma variable (lo que debe ser)
-  /// en scopes diferentes, entonces en el inner scope se hace shadowing de la declaracion del outer scope.
-  #[test]
-  fn shadowing_prefers_inner_scope() {
-    let scopes = ScopeArena::new();
-    let mut table = SymbolTable::new(scopes);
-
-    let name = VarId("x".into());
-    let outer = table.add_symbol(&name, Type::Int32, Mutability::Immutable, 0..1);
-
-    table.enter_scope();
-    let inner = table.add_symbol(&name, Type::Bool, Mutability::Immutable, 2..3);
-    assert_eq!(table.resolve(&name), Some(inner));
-
-    table.exit_scope();
-    assert_eq!(table.resolve(&name), Some(outer));
-  }
-
-  #[test]
-  fn exit_scope_on_root_is_safe() {
-    let scopes = ScopeArena::new();
-    let mut table = SymbolTable::new(scopes);
-    table.enter_scope();
-    let _root = table.current_scope();
-    table.exit_scope(); // vuelve a None o root padre
-    table.exit_scope(); // no debe crashear
-  }
-
-  #[test]
-  fn all_symbols_in_scope_returns_correct_symbols() {
-    let scopes = ScopeArena::new();
-    let mut table = SymbolTable::new(scopes);
-
-    table.enter_scope();
-    let outer_scope = table.current_scope().unwrap();
-    let a = table.add_symbol(&VarId("a".into()), Type::Int32, Mutability::Immutable, 0..1);
-    let b = table.add_symbol(&VarId("b".into()), Type::Int32, Mutability::Immutable, 2..3);
-
-    table.enter_scope();
-    let inner_scope = table.current_scope.unwrap();
-    let c = table.add_symbol(&VarId("c".into()), Type::Int32, Mutability::Immutable, 4..5);
-    let d = table.add_symbol(&VarId("d".into()), Type::Bool, Mutability::Immutable, 6..7);
-
-    table.exit_scope();
-    let e = table.add_symbol(&VarId("e".into()), Type::Int32, Mutability::Immutable, 8..9);
-
-    let outer_symbols = table.all_symbols_in_scope(outer_scope);
-    let inner_symbols = table.all_symbols_in_scope(inner_scope);
-
-    for i in [a, b, e] {
-      assert!(outer_symbols.contains(&i));
-      assert!(!inner_symbols.contains(&i));
-    }
-
-    for i in [c, d] {
-      assert!(!outer_symbols.contains(&i));
-      assert!(inner_symbols.contains(&i));
-    }
-  }
-
-  #[test]
-  fn variable_was_declared_in_current_scope() {
-    let scopes = ScopeArena::new();
-    let mut table = SymbolTable::new(scopes);
-    table.enter_global_scope();
-    table.enter_scope();
-    let name = VarId("x".into());
-    let symbol = table.add_symbol(&name, Type::Int32, Mutability::Immutable, 0..1);
-
-    assert_eq!(table.was_declared_in_current_scope(&name), Some(symbol));
-    table.exit_scope();
-    assert!(table.was_declared_in_current_scope(&name).is_none());
-    table.enter_scope();
-    assert!(table.was_declared_in_current_scope(&name).is_none());
-  }
-
-  proptest! {
-    #[test]
-    fn resolve_never_returns_outer_symbol_if_shadowed(name in "[a-z]{1,8}") {
-      let scopes = ScopeArena::new();
-      let mut table = SymbolTable::new(scopes);
-      let var = VarId(name.clone());
-      let outer = table.add_symbol(&var, Type::Int32, Mutability::Immutable, 0..1);
-      table.enter_scope();
-      let inner = table.add_symbol(&var, Type::Bool, Mutability::Immutable, 2..3);
-      prop_assert_eq!(table.resolve(&var), Some(inner));
-      prop_assert_ne!(table.resolve(&var), Some(outer));
-    }
-
-    #[test]
-    fn resolve_finds_symbol_in_any_parent_scope(name in "[a-z]{1,8}", difference in 5..10) {
-      let scopes = ScopeArena::new();
-      let mut table = SymbolTable::new(scopes);
-      let var = VarId(name.clone());
-      let sym = table.add_symbol(&var, Type::Int32, Mutability::Immutable, 0..1);
-      for _ in 0..difference {
-        table.enter_scope();
-      }
-      prop_assert_eq!(table.resolve(&var), Some(sym));
-    }
-
-    #[test]
-    fn symbol_ids_are_unique(names in prop::collection::vec("[a-z]{1,8}", 1..50)) {
-      let scopes = ScopeArena::new();
-      let mut table = SymbolTable::new(scopes);
-      let mut ids = Vec::new();
-      for name in names {
-        let id = table.add_symbol(
-          &VarId(name),
-          Type::Int32,
-          Mutability::Immutable,
-          0..1
-        );
-        ids.push(id.0);
-      }
-      ids.sort();
-      ids.dedup();
-      prop_assert_eq!(ids.len(), ids.len());
-    }
-  }
-}
+mod tests;

@@ -10,13 +10,13 @@ use crate::{
 };
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub(crate) enum Mutability {
+pub enum Mutability {
   Mutable,
   Immutable,
 }
 
 impl Mutability {
-  pub(crate) fn is_mutable(&self) -> bool {
+  pub fn is_mutable(&self) -> bool {
     match self {
       Mutability::Mutable => true,
       Mutability::Immutable => false,
@@ -25,10 +25,10 @@ impl Mutability {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub(crate) struct SymbolId(pub(crate) usize);
+pub struct SymbolId(pub usize);
 
 #[derive(Debug, Clone, PartialEq)]
-pub(crate) struct Symbol {
+pub struct Symbol {
   name: VarId,
   r#type: Type,
   /// Scope de declaracion. El ScopeId referente al scope que contiene a la entidad
@@ -43,7 +43,7 @@ pub(crate) struct Symbol {
 }
 
 impl Symbol {
-  pub(crate) fn new(
+  pub fn new(
     id: SymbolId,
     name: &VarId,
     r#type: Type,
@@ -62,32 +62,27 @@ impl Symbol {
   }
 
   /// Devuelve el `SymbolId` unico del simbolo.
-  pub(crate) fn id(&self) -> SymbolId {
+  pub fn id(&self) -> SymbolId {
     self.id
   }
 
   /// Devuelve el tipo de la variable (`Int32`/`Bool`)
-  pub(crate) fn r#type(&self) -> Type {
+  pub fn r#type(&self) -> Type {
     self.r#type
   }
 
   /// Devuelve el nombre del simbolo.
-  pub(crate) fn name(&self) -> VarId {
+  pub fn name(&self) -> VarId {
     self.name.clone()
   }
 
   /// Devuelve el `ScopeId` asociado al bloque donde fue declarado el simbolo.
-  pub(crate) fn scope(&self) -> ScopeId {
+  pub fn scope(&self) -> ScopeId {
     self.scope
   }
 
   /// Indica si el simbolo es mutable.
-  pub(crate) fn is_mutable(&self) -> bool {
+  pub fn is_mutable(&self) -> bool {
     self.mutability.is_mutable()
-  }
-
-  /// Indica el span del simbolo
-  pub(crate) fn span(&self) -> Span {
-    self.span.clone()
   }
 }

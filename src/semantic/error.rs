@@ -11,7 +11,7 @@ use crate::{
 };
 
 #[derive(Debug, Clone)]
-pub(crate) enum SemanticError {
+pub enum SemanticError {
   /// Una operacion de suma/resta/multiplicacion hizo overflow en 32 bits
   ArithmeticOverflow {
     span: Span,
@@ -23,8 +23,6 @@ pub(crate) enum SemanticError {
   ExpectedPlaceExpression { span: Span },
   /// Se esperaba una ValueExpr (a la hora de emitir un valor).
   ExpectedValueExpression { span: Span },
-  /// Intento de asignar a algo no asignable
-  InvalidAssignmentTarget { span: Span },
   /// Redeclaracion ilegal en el mismo scope
   RedeclaredVariable {
     name: VarId,
@@ -55,11 +53,8 @@ impl Diagnosable for SemanticError {
           .with_span(span.clone())
       }
       Self::ExpectedValueExpression { span } => {
-        Diagnostic::error("se esperaba una place expression (para emitir un valor)".into())
+        Diagnostic::error("se esperaba una value expression (para emitir un valor)".into())
           .with_span(span.clone())
-      }
-      Self::InvalidAssignmentTarget { span } => {
-        Diagnostic::error("target de asignacion invalido".into()).with_span(span.clone())
       }
       Self::RedeclaredVariable {
         name,

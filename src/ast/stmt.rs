@@ -1,10 +1,9 @@
 use crate::ast::{
   ast::{BlockId, ExprId, StmtId},
-  expr::VarId,
 };
 
 #[derive(Debug, Clone, PartialEq)]
-pub(crate) enum Stmt {
+pub enum Stmt {
   Expr(ExprId),
   Let {
     var: ExprId, // va a tener que ser una variable o damos un error
@@ -25,24 +24,24 @@ pub(crate) enum Stmt {
 
 /// Block tambien va a ser arena-based
 #[derive(Debug, Clone, PartialEq)]
-pub(crate) struct Block {
+pub struct Block {
   stmts: Vec<StmtId>,
 }
 
 impl Block {
-  pub(crate) fn new() -> Self {
+  pub fn new() -> Self {
     Self { stmts: vec![] }
   }
 
-  pub(crate) fn with_stmts(stmts: Vec<StmtId>) -> Self {
+  pub fn with_stmts(stmts: Vec<StmtId>) -> Self {
     Self { stmts }
   }
 
-  pub(crate) fn stmts(&self) -> &[StmtId] {
+  pub fn stmts(&self) -> &[StmtId] {
     &self.stmts
   }
 
-  pub(crate) fn add_stmt(&mut self, stmt: StmtId) {
+  pub fn add_stmt(&mut self, stmt: StmtId) {
     self.stmts.push(stmt)
   }
 }

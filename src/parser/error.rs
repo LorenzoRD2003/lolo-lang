@@ -4,11 +4,10 @@ use crate::{
 };
 
 #[derive(Debug, Clone)]
-pub(crate) enum ParserError {
+pub enum ParserError {
   ChainedAssociativeOperator(Token),
   IdentifierExpected(Token),
-  MissingToken,
-  UnexpectedEOF(Token),
+  UnexpectedEOF,
   UnexpectedToken(Token),
 }
 
@@ -26,10 +25,9 @@ impl Diagnosable for ParserError {
       }
       Self::IdentifierExpected(token) => Self::token_error_fmt(
         token,
-        "se esperaba un identificador de variable, pero se encontro {}".into(),
+        "se esperaba un identificador de variable, pero se encontro '{}'".into(),
       ),
-      Self::MissingToken => Diagnostic::error("hay un token faltante en el token stream".into()),
-      Self::UnexpectedEOF(token) => Self::token_error_fmt(token, "hubo un EOF inesperado '{}'"),
+      Self::UnexpectedEOF => Diagnostic::error("hubo un EOF inesperado".into()),
       Self::UnexpectedToken(token) => Self::token_error_fmt(token, "hubo un token inesperado '{}'"),
     }
   }

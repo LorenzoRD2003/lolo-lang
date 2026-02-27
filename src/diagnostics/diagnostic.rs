@@ -24,7 +24,7 @@ use crate::{
 type Note = String;
 
 #[derive(Debug, Clone)]
-pub(crate) struct Diagnostic {
+pub struct Diagnostic {
   /// Severidad del error.
   severity: Severity,
   /// Que salio mal.
@@ -39,7 +39,7 @@ pub(crate) struct Diagnostic {
 
 impl Diagnostic {
   // Constructores limpios, y voy agregando contexto progresivamente
-  pub(crate) fn error(error_msg: String) -> Self {
+  pub fn error(error_msg: String) -> Self {
     Self {
       severity: Severity::Error,
       msg: error_msg,
@@ -49,7 +49,7 @@ impl Diagnostic {
     }
   }
 
-  pub(crate) fn warning(warning_msg: String) -> Self {
+  pub fn warning(warning_msg: String) -> Self {
     Self {
       severity: Severity::Warning,
       msg: warning_msg,
@@ -59,7 +59,7 @@ impl Diagnostic {
     }
   }
 
-  pub(crate) fn note(note_msg: String) -> Self {
+  pub fn note(note_msg: String) -> Self {
     Self {
       severity: Severity::Note,
       msg: note_msg,
@@ -69,7 +69,7 @@ impl Diagnostic {
     }
   }
 
-  pub(crate) fn help(help_msg: String) -> Self {
+  pub fn help(help_msg: String) -> Self {
     Self {
       severity: Severity::Help,
       msg: help_msg,
@@ -80,39 +80,39 @@ impl Diagnostic {
   }
 
   // Agregar contexto progresivamente
-  pub(crate) fn with_span(mut self, span: Span) -> Self {
+  pub fn with_span(mut self, span: Span) -> Self {
     self.primary_span = Some(span);
     self
   }
 
-  pub(crate) fn with_label(mut self, label: Label) -> Self {
+  pub fn with_label(mut self, label: Label) -> Self {
     self.labels.push(label);
     self
   }
 
-  pub(crate) fn with_note(mut self, note: Note) -> Self {
+  pub fn with_note(mut self, note: Note) -> Self {
     self.notes.push(note);
     self
   }
 
   // Primary span helper: va a ser util para el renderer
-  pub(crate) fn primary_span(&self) -> Option<&Span> {
+  pub fn primary_span(&self) -> Option<&Span> {
     self.primary_span.as_ref()
   }
 
-  pub(crate) fn severity(&self) -> Severity {
+  pub fn severity(&self) -> Severity {
     self.severity
   }
 
-  pub(crate) fn msg(&self) -> &str {
+  pub fn msg(&self) -> &str {
     &self.msg
   }
 
-  pub(crate) fn labels(&self) -> &[Label] {
+  pub fn labels(&self) -> &[Label] {
     &self.labels
   }
 
-  pub(crate) fn notes(&self) -> &[String] {
+  pub fn notes(&self) -> &[String] {
     &self.notes
   }
 

@@ -2,7 +2,7 @@
 // y los usuarios no van a poder definir tipos.
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub(crate) enum Type {
+pub enum Type {
   Int32,
   Bool,
   /// `DefaultType` es para cuando hay un error a la hora de asignar un tipo a una expresion.
@@ -10,7 +10,7 @@ pub(crate) enum Type {
 }
 
 impl Type {
-  pub(crate) fn to_string(&self) -> &str {
+  pub fn to_string(&self) -> &str {
     match &self {
       Self::Int32 => "Int32",
       Self::Bool => "Bool",
