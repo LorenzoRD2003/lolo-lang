@@ -282,7 +282,7 @@ fn parse_let_stmt_structure() {
   let (ast, stmt_id) = parse_stmt("let x = abc;");
   let stmt_id = stmt_id.unwrap();
   match ast.stmt(stmt_id) {
-    Stmt::Let { var, initializer } => {
+    Stmt::LetBinding { var, initializer } => {
       assert_eq!(ast.expr(var), Expr::Var(VarId("x".into())));
       assert!(matches!(ast.expr(initializer), Expr::Var(_)));
     }
@@ -295,7 +295,7 @@ fn let_initializer_expression() {
   let (ast, stmt_id) = parse_stmt("let x = a + b;");
   let stmt_id = stmt_id.unwrap();
   match ast.stmt(stmt_id) {
-    Stmt::Let { initializer, .. } => {
+    Stmt::LetBinding { initializer, .. } => {
       assert!(matches!(
         ast.expr(initializer),
         Expr::Binary(BinaryExpr {
@@ -304,6 +304,29 @@ fn let_initializer_expression() {
           rhs: _
         })
       ));
+    }
+    _ => panic!("Expected Let"),
+  }
+}
+
+#[test]
+fn assign_span_is_correct() {
+  let (ast, stmt_id) = parse_stmt("x = abc;");
+  let stmt_id = stmt_id.unwrap();
+  assert_eq!(ast.stmt_span(stmt_id), 0..8);
+}
+
+#[test]
+fn parse_assign_stmt_structure() {
+  let (ast, stmt_id) = parse_stmt("x = 18;");
+  let stmt_id = stmt_id.unwrap();
+  match ast.stmt(stmt_id) {
+    Stmt::Assign {
+      var,
+      value_expr: expr,
+    } => {
+      assert_eq!(ast.expr(var), Expr::Var(VarId("x".into())));
+      assert!(matches!(ast.expr(expr), Expr::Const(ConstValue::Int32(18))));
     }
     _ => panic!("Expected Let"),
   }
@@ -412,7 +435,7 @@ fn block_stmt_order_is_preserved() {
   let block_id = block_id.unwrap();
   let block = ast.block(block_id);
   let stmts = block.stmts();
-  assert!(matches!(ast.stmt(stmts[0]), Stmt::Let { .. }));
+  assert!(matches!(ast.stmt(stmts[0]), Stmt::LetBinding { .. }));
   assert!(matches!(ast.stmt(stmts[1]), Stmt::Print(_)));
   assert!(matches!(ast.stmt(stmts[2]), Stmt::Return(_)));
 }

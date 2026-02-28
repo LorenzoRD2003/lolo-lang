@@ -80,7 +80,7 @@ fn let_cannot_use_variable_in_its_own_initializer() {
     8..13,
   );
   let stmt = ast.add_stmt(
-    Stmt::Let {
+    Stmt::LetBinding {
       var,
       initializer: init,
     },
@@ -130,7 +130,7 @@ fn if_else_with_invalid_condition_still_analyzes_blocks() {
   let v_if = ast.add_expr(Expr::Var(VarId("x".into())), 8..9);
   let i_if = ast.add_expr(Expr::Const(ConstValue::Int32(2)), 12..13);
   let s_if = ast.add_stmt(
-    Stmt::Let {
+    Stmt::LetBinding {
       var: v_if,
       initializer: i_if,
     },
@@ -139,7 +139,7 @@ fn if_else_with_invalid_condition_still_analyzes_blocks() {
   let v_else = ast.add_expr(Expr::Var(VarId("y".into())), 22..23);
   let i_else = ast.add_expr(Expr::Const(ConstValue::Int32(3)), 26..27);
   let s_else = ast.add_stmt(
-    Stmt::Let {
+    Stmt::LetBinding {
       var: v_else,
       initializer: i_else,
     },

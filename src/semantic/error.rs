@@ -23,6 +23,8 @@ pub enum SemanticError {
   ExpectedPlaceExpression { span: Span },
   /// Se esperaba una ValueExpr (a la hora de emitir un valor).
   ExpectedValueExpression { span: Span },
+  /// Se intento modificar una variable inmutable
+  ImmutableVariable { name: VarId, span: Span },
   /// Redeclaracion ilegal en el mismo scope
   RedeclaredVariable {
     name: VarId,
@@ -56,6 +58,11 @@ impl Diagnosable for SemanticError {
         Diagnostic::error("se esperaba una value expression (para emitir un valor)".into())
           .with_span(span.clone())
       }
+      Self::ImmutableVariable { name, span } => Diagnostic::error(format!(
+        "se intento modificar la variable inmutable {}",
+        name.0
+      ))
+      .with_span(span.clone()),
       Self::RedeclaredVariable {
         name,
         span,

@@ -7,6 +7,7 @@
 use crate::{
   diagnostics::diagnostic::{Diagnosable, Diagnostic},
   lexer::{
+    cache::{CACHE_LEN, TokenCache},
     error::LexerError,
     keywords::lookup_keyword,
     operators::match_operator,
@@ -25,7 +26,7 @@ pub struct Lexer<'a> {
   /// El estado primario del lexer es la posicion del puntero y el offset, nada mas.
   /// Fila/columna son para simplificar errores, son metadata derivada.
   position: usize,
-  next_token_cache: Option<Token>,
+  token_cache: TokenCache,
   diagnostics: Vec<Diagnostic>,
   emitted_eof: bool,
 }
@@ -40,47 +41,30 @@ impl<'a> Lexer<'a> {
     Self {
       source,
       position: 0,
-      next_token_cache: None,
+      token_cache: TokenCache::empty(),
       diagnostics: Vec::new(),
       emitted_eof: false,
     }
   }
 
-  // Devuelve el siguiente token sin avanzar (lookahead). Esto es util para parsers predictivos
-  // La idea es tener un token cacheado, y rellenarlo si es None usando `next()`
+  // Actualiza los siguientes `CACHE_LEN` tokens en la cache. sin avanzar (lookahead). Esto es util para parsers predictivos
+  // La idea es tener tokens cacheados, y rellenarlos si son None usando `next()`
   // Para que no cambie el estado, usar una snapshot. `peek()` jamas debe cambiar nada visible
-  pub fn peek_token(&mut self) -> Option<Token> {
-    if self.next_token_cache.is_none() {
+  pub fn update_token_cache(&mut self) {
+    if self.token_cache.is_empty() {
       let snapshot_position = self.position;
       let snapshot_diagnostics_len = self.diagnostics.len();
       let snapshot_emitted_eof = self.emitted_eof;
 
-      self.next_token_cache = self.next().and_then(Result::ok);
+      for i in 0..CACHE_LEN {
+        let token = self.next().and_then(Result::ok);
+        self.token_cache.update_at(i, token);
+      }
       self.position = snapshot_position;
       self.diagnostics.truncate(snapshot_diagnostics_len);
       self.emitted_eof = snapshot_emitted_eof;
     }
-    self.next_token_cache.clone()
   }
-
-  // Indica si llegamos al final del input, pregunta "ya consumi todo?"
-  // No deberia ser un metodo de Token, porque EOF es solo un tipo de token,
-  // pero is_eof() depende de posicionar al lexer para saber si se termino
-  // fn is_eof(&mut self) -> bool {
-  //   let token = self.peek_token();
-  //   token.is_none() || token.is_some_and(|t| t.kind() == TokenKind::EOF)
-  // }
-
-  // TODO: Hacer correctamente el error UnexpectedEOF
-  // fn check_unexpected_eof_error(&mut self) {
-  //   if self.is_eof() {
-  //     let err = LexerError {
-  //       kind: LexerErrorKind::UnexpectedEOF,
-  //       span: self.position..(self.position + 1),
-  //     };
-  //     self.diagnostics.push(err.to_diagnostic());
-  //   }
-  // }
 
   // Funcion auxiliar para obtener el caracter actual
   // No se debe asumir que hay un caracter actual, asi EOF no es un caso especial
@@ -93,7 +77,7 @@ impl<'a> Lexer<'a> {
   }
 
   // Devuelve el siguiente caracter, si lo hay
-  fn peek_next(&self) -> Option<char> {
+  fn peek_next_char(&self) -> Option<char> {
     self.source[self.position + 1..].chars().next()
   }
 
@@ -159,7 +143,7 @@ impl<'a> Lexer<'a> {
   }
 
   fn lex_operator(&mut self, c: char) -> Option<Token> {
-    let next_c = self.peek_next();
+    let next_c = self.peek_next_char();
     if let Some((kind, width)) = match_operator(c, next_c) {
       let start = self.position;
       for _ in 0..width {
@@ -168,6 +152,14 @@ impl<'a> Lexer<'a> {
       return Some(self.make_token(kind, start));
     }
     None
+  }
+
+  pub(crate) fn token_cache(&self) -> &TokenCache {
+    &self.token_cache
+  }
+
+  pub(crate) fn delete_cache(&mut self) {
+    self.token_cache = TokenCache::empty();
   }
 }
 
@@ -184,8 +176,6 @@ impl<'a> Iterator for Lexer<'a> {
     4. Emitir token
   */
   fn next(&mut self) -> Option<Self::Item> {
-    // borrar el cache actual
-    self.next_token_cache = None;
     loop {
       match self.current_char() {
         // EOF

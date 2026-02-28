@@ -60,7 +60,8 @@ The next planned phase is **lowering to an intermediate representation (IR)**.
 
 ### Statements
 
-- `let` declarations
+- `let` bindings
+- `assign` to already declared variables
 - `return`
 - `if`
 - `if/else`

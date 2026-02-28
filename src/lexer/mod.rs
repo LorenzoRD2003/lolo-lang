@@ -1,3 +1,4 @@
+pub mod cache;
 pub mod error;
 pub mod keywords;
 pub mod lexer;

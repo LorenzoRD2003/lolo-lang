@@ -57,7 +57,7 @@ impl<'a> Parser<'a> {
   fn parse_expr_bp(&mut self, min_bp: u8) -> Option<ExprId> {
     let mut lhs = self.parse_prefix()?;
     // si es una asignacion, la devolvemos
-    if self.tokens.peek()?.kind() == TokenKind::Equal {
+    if self.tokens.peek_first()?.kind() == TokenKind::Equal {
       return Some(lhs);
     }
     // Mientras el siguiente token pueda extender la expresion...
@@ -65,7 +65,7 @@ impl<'a> Parser<'a> {
     let mut i = 5;
     loop {
       i = i + 1;
-      let token = self.tokens.peek()?;
+      let token = self.tokens.peek_first()?;
       let Some((lbp, _)) = infix_binding_power(token.kind()) else {
         break;
       };
@@ -190,17 +190,22 @@ impl<'a> Parser<'a> {
   /// Funcion de punto de entrada para parsear un Statement. Se introduce la expresion en el AST mediante su StmtId
   pub fn parse_statement(&mut self) -> Option<StmtId> {
     // decidir que tipo de statement es.
-    // uso peek() en vez de bump() porque el bump() lo uso al parsear en cada branch
-    let token = self.tokens.peek()?;
+    // uso peek_first() en vez de bump() porque el bump() lo uso al parsear en cada branch
+    let token = self.tokens.peek_first()?;
     let (stmt, span) = match token.kind() {
       TokenKind::Let => self.parse_let_stmt()?,
       TokenKind::Return => self.parse_return_stmt()?,
       TokenKind::If => self.parse_if_stmt()?,
       TokenKind::Print => self.parse_print_stmt()?,
       _ => {
-        let expr_id = self.parse_expression()?;
-        self.expect_token(TokenKind::Semicolon);
-        (Stmt::Expr(expr_id), self.ast.expr_span(expr_id))
+        // Ahora depende si el segundo token es un `=` o no
+        if self.tokens.check_kind(1, TokenKind::Equal) {
+          self.parse_assign_stmt()?
+        } else {
+          let expr_id = self.parse_expression()?;
+          self.expect_token(TokenKind::Semicolon);
+          (Stmt::Expr(expr_id), self.ast.expr_span(expr_id))
+        }
       }
     };
     Some(self.ast.add_stmt(stmt, span))
@@ -209,51 +214,74 @@ impl<'a> Parser<'a> {
   fn parse_let_stmt(&mut self) -> Option<(Stmt, Span)> {
     // let <var_expr> = <expr>;
     // Consumimos el `let`
-    let span_start = self.tokens.peek()?.span().start;
+    let span_start = self.tokens.peek_first()?.span().start;
     self.expect_token(TokenKind::Let);
     // Ahora deberiamos consumir un identificador
     // Igualmente, vamos a seguir parseando en vez de panickear
-    let token = self.tokens.peek()?.clone();
-    let var_expr_id = self.parse_expression()?;
-    if !self.ast.expr(var_expr_id).is_var() {
-      self.emit_error(&ParserError::IdentifierExpected(token));
-    }
+    let token = self.tokens.peek_first()?.clone();
+    let var = self.parse_var(token)?;
+    // Ahora deberiamos consumir un `=`
+    self.expect_token(TokenKind::Equal);
+    // Ahora vamos a parsear una expresion
+    let initializer = self.parse_expression()?;
+    // Ahora deberiamos consumir un `;`
+    let span_end = self.tokens.peek_first()?.span().end;
+    self.expect_token(TokenKind::Semicolon);
+    Some((Stmt::LetBinding { var, initializer }, span_start..span_end))
+  }
+
+  fn parse_assign_stmt(&mut self) -> Option<(Stmt, Span)> {
+    // <var> = <expr>
+    let span_start = self.tokens.peek_first()?.span().start;
+    let token = self.tokens.peek_first()?.clone();
+    let var = self.parse_var(token)?;
     // Ahora deberiamos consumir un `=`
     self.expect_token(TokenKind::Equal);
     // Ahora vamos a parsear una expresion
     let expr_id = self.parse_expression()?;
     // Ahora deberiamos consumir un `;`
-    let span_end = self.tokens.peek()?.span().end;
+    let span_end = self.tokens.peek_first()?.span().end;
     self.expect_token(TokenKind::Semicolon);
     Some((
-      Stmt::Let {
-        var: var_expr_id,
-        initializer: expr_id,
+      Stmt::Assign {
+        var,
+        value_expr: expr_id,
       },
       span_start..span_end,
     ))
   }
 
+  fn parse_var(&mut self, token: Token) -> Option<ExprId> {
+    let var = self.parse_expression()?;
+    if !self.ast.expr(var).is_var() {
+      self.emit_error(&ParserError::IdentifierExpected(token));
+    }
+    Some(var)
+  }
+
+  /// TODO: eliminar el codigo repetido en assign y let
+  // fn let_assign_helper(&mut self)
+
   fn parse_return_stmt(&mut self) -> Option<(Stmt, Span)> {
     // return <expr>;
-    let span_start = self.tokens.peek()?.span().start;
+    let span_start = self.tokens.peek_first()?.span().start;
     self.expect_token(TokenKind::Return);
     let expr_id = self.parse_expression()?;
-    let span_end = self.tokens.peek()?.span().end;
+    let span_end = self.tokens.peek_first()?.span().end;
     self.expect_token(TokenKind::Semicolon);
     Some((Stmt::Return(expr_id), span_start..span_end))
   }
 
   fn parse_if_stmt(&mut self) -> Option<(Stmt, Span)> {
     // if expr { block } [ else { block } ]
-    let span_start = self.tokens.peek()?.span().start;
+    let span_start = self.tokens.peek_first()?.span().start;
     self.expect_token(TokenKind::If);
     let condition = self.parse_expression()?;
     // parsear el bloque if
     let if_block = self.parse_block()?;
     let mut span_end = self.ast.block_span(if_block).end;
     // si hay un bloque else, lo tengo que parsear
-    if let Some(token) = self.tokens.peek()
+    if let Some(token) = self.tokens.peek_first()
       && matches!(token.kind(), TokenKind::Else)
     {
       self.expect_token(TokenKind::Else);
@@ -281,10 +309,10 @@ impl<'a> Parser<'a> {
 
   fn parse_print_stmt(&mut self) -> Option<(Stmt, Span)> {
     // print <expr>;
-    let span_start = self.tokens.peek()?.span().start;
+    let span_start = self.tokens.peek_first()?.span().start;
     self.expect_token(TokenKind::Print);
     let expr_id = self.parse_expression()?;
-    let span_end = self.tokens.peek()?.span().end;
+    let span_end = self.tokens.peek_first()?.span().end;
     self.expect_token(TokenKind::Semicolon);
     Some((Stmt::Print(expr_id), span_start..span_end))
   }
@@ -296,7 +324,7 @@ impl<'a> Parser<'a> {
     let span_start = lbrace.span().start;
     loop {
       // el bloque termina cuando encontramos el `}` correspondiente, o con un error si se teremina el archivo
-      let token = self.tokens.peek()?.clone();
+      let token = self.tokens.peek_first()?.clone();
       let token_kind = token.kind();
       if matches!(token_kind, TokenKind::EOF) {
         self.emit_error(&ParserError::UnexpectedEOF);
@@ -308,7 +336,7 @@ impl<'a> Parser<'a> {
       let stmt = self.parse_statement()?;
       block.add_stmt(stmt);
     }
-    // hay que avanzar una ultima vez porque estabamos haciendo peek()
+    // hay que avanzar una ultima vez porque estabamos haciendo peek_first()
     let rbrace = self.tokens.expect(TokenKind::RCurlyBrace).ok()?;
     let span_end = rbrace.span().end;
     Some(self.ast.add_block(block, span_start..span_end))
@@ -316,7 +344,7 @@ impl<'a> Parser<'a> {
 
   pub fn parse_program(&mut self) -> Option<Program> {
     // program ::= main block
-    let span_start = self.tokens.peek()?.span().start;
+    let span_start = self.tokens.peek_first()?.span().start;
     self.expect_token(TokenKind::Main);
     let block = self.parse_block()?;
     let span_end = self.ast.block_span(block).end;

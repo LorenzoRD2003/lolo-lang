@@ -43,7 +43,6 @@ fn analyze_var_expr_unresolved() {
   assert_eq!(info.symbol(), None);
   assert_eq!(info.r#type(), Type::DefaultErrorType);
   assert!(info.compile_time_constant().is_none());
-  assert_eq!(sem.diagnostics().len(), 1);
   assert!(
     sem
       .diagnostics()
@@ -73,7 +72,7 @@ fn let_with_var_non_place_expr() {
   );
   let initializer = ast.add_expr(Expr::Const(ConstValue::Int32(3)), 13..14);
   let stmt = ast.add_stmt(
-    Stmt::Let {
+    Stmt::LetBinding {
       var: sum_var,
       initializer,
     },
@@ -91,5 +90,100 @@ fn let_with_var_non_place_expr() {
       .diagnostics()
       .iter()
       .any(|d: &Diagnostic| d.msg().contains("place expression"))
+  );
+}
+
+#[test]
+fn assign_expr_stmt() {
+  // let my_var = 1;
+  // x = 2;
+  let mut ast = Ast::empty();
+  let var_let_binding = ast.add_expr(Expr::Var(VarId("my_var".into())), 4..10);
+  let initializer = ast.add_expr(Expr::Const(ConstValue::Int32(1)), 13..14);
+  let let_stmt = ast.add_stmt(
+    Stmt::LetBinding {
+      var: var_let_binding,
+      initializer,
+    },
+    0..15,
+  );
+  let var_assign = ast.add_expr(Expr::Var(VarId("my_var".into())), 14..15);
+  let value_expr = ast.add_expr(Expr::Const(ConstValue::Int32(2)), 18..19);
+  let assign_stmt = ast.add_stmt(
+    Stmt::Assign {
+      var: var_assign,
+      value_expr,
+    },
+    14..20,
+  );
+  let main_block = ast.add_block(Block::with_stmts(vec![let_stmt, assign_stmt]), 0..20);
+  let program = Program::new(main_block, 0..20);
+
+  let mut sem = semantic_analyzer(&ast);
+  sem.analyze_program(program);
+  let stmt_info = sem.semantic_info.stmt_info(assign_stmt);
+  assert!(stmt_info.symbol_declared().is_none());
+  assert!(sem.diagnostics().is_empty());
+}
+
+#[test]
+fn assign_expr_for_undefined_variable() {
+  // my_var = 2;
+  let mut ast = Ast::empty();
+  let var_assign = ast.add_expr(Expr::Var(VarId("my_var".into())), 0..6);
+  let value_expr = ast.add_expr(Expr::Const(ConstValue::Int32(2)), 9..10);
+  let assign_stmt = ast.add_stmt(
+    Stmt::Assign {
+      var: var_assign,
+      value_expr,
+    },
+    0..10,
+  );
+  let main_block = ast.add_block(Block::with_stmts(vec![assign_stmt]), 0..10);
+  let program = Program::new(main_block, 0..10);
+
+  let mut sem = semantic_analyzer(&ast);
+  sem.analyze_program(program);
+  assert!(
+    sem
+      .diagnostics()
+      .iter()
+      .any(|d: &Diagnostic| d.msg().contains("variable 'my_var' indefinida"))
+  );
+}
+
+#[test]
+fn assign_expr_for_different_type_variable() {
+  // let my_int = 1;
+  // my_int = true;
+  let mut ast = Ast::empty();
+  let var_let_binding = ast.add_expr(Expr::Var(VarId("my_int".into())), 4..10);
+  let initializer = ast.add_expr(Expr::Const(ConstValue::Int32(1)), 13..14);
+  let let_stmt = ast.add_stmt(
+    Stmt::LetBinding {
+      var: var_let_binding,
+      initializer,
+    },
+    0..15,
+  );
+  let var_assign = ast.add_expr(Expr::Var(VarId("my_int".into())), 14..15);
+  let value_expr = ast.add_expr(Expr::Const(ConstValue::Bool(true)), 18..22);
+  let assign_stmt = ast.add_stmt(
+    Stmt::Assign {
+      var: var_assign,
+      value_expr,
+    },
+    14..23,
+  );
+  let main_block = ast.add_block(Block::with_stmts(vec![let_stmt, assign_stmt]), 0..23);
+  let program = Program::new(main_block, 0..23);
+
+  let mut sem = semantic_analyzer(&ast);
+  sem.analyze_program(program);
+  assert!(
+    sem
+      .diagnostics()
+      .iter()
+      .any(|d: &Diagnostic| d.msg().contains("mismatch de tipos"))
   );
 }

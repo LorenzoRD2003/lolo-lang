@@ -194,7 +194,7 @@ proptest! {
     }
   }
 
-// peek_token() no cambia estado
+  // peek_token() no cambia estado
   #[test]
   fn peek_token_is_pure(bytes in proptest::collection::vec(0u8..=127u8, 0..100)) {
     let input = String::from_utf8(bytes).unwrap();
@@ -204,7 +204,7 @@ proptest! {
     let emitted_eof = lexer.emitted_eof;
     // Peek arbitrarias veces
     for _ in 0..10 {
-      let _ = lexer.peek_token();
+      let _ = lexer.update_token_cache();
     }
     prop_assert_eq!(lexer.position, pos_before);
     prop_assert_eq!(lexer.diagnostics.len(), diagnostics_before);
@@ -219,7 +219,7 @@ proptest! {
     let mut lexer2 = Lexer::new(&input);
 
     for _ in 0..10 {
-      lexer1.peek_token(); // lexer1 usa peek
+      lexer1.update_token_cache(); // lexer1 usa peek
     }
     loop {
       let tok1 = lexer1.next();

@@ -82,6 +82,7 @@ impl SymbolTable {
   }
 
   pub fn symbol(&self, id: SymbolId) -> &Symbol {
+    debug_assert!(id.0 < self.symbols.len());
     &self.symbols[id.0]
   }
 

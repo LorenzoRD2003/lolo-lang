@@ -28,7 +28,7 @@ fn let_declares_symbol_in_scope() {
   let var = ast.add_expr(Expr::Var(VarId("x".into())), 4..5);
   let init = ast.add_expr(Expr::Const(ConstValue::Int32(42)), 8..10);
   let stmt = ast.add_stmt(
-    Stmt::Let {
+    Stmt::LetBinding {
       var,
       initializer: init,
     },
@@ -52,7 +52,7 @@ fn redeclaration_in_same_scope_is_error() {
   let var1 = ast.add_expr(Expr::Var(VarId("x".into())), 0..1);
   let init1 = ast.add_expr(Expr::Const(ConstValue::Int32(1)), 4..5);
   let stmt1 = ast.add_stmt(
-    Stmt::Let {
+    Stmt::LetBinding {
       var: var1,
       initializer: init1,
     },
@@ -62,7 +62,7 @@ fn redeclaration_in_same_scope_is_error() {
   let var2 = ast.add_expr(Expr::Var(VarId("x".into())), 6..7);
   let init2 = ast.add_expr(Expr::Const(ConstValue::Int32(2)), 10..11);
   let stmt2 = ast.add_stmt(
-    Stmt::Let {
+    Stmt::LetBinding {
       var: var2,
       initializer: init2,
     },
@@ -90,7 +90,7 @@ fn shadowing_in_inner_block_is_allowed() {
   let var_outer = ast.add_expr(Expr::Var(VarId("x".into())), 4..5);
   let init_outer = ast.add_expr(Expr::Const(ConstValue::Int32(1)), 8..9);
   let stmt_outer = ast.add_stmt(
-    Stmt::Let {
+    Stmt::LetBinding {
       var: var_outer,
       initializer: init_outer,
     },
@@ -111,7 +111,7 @@ fn shadowing_in_inner_block_is_allowed() {
   let var_inner = ast.add_expr(Expr::Var(VarId("x".into())), 26..27);
   let init_inner = ast.add_expr(Expr::Const(ConstValue::Int32(2)), 30..31);
   let stmt_inner = ast.add_stmt(
-    Stmt::Let {
+    Stmt::LetBinding {
       var: var_inner,
       initializer: init_inner,
     },
@@ -162,7 +162,7 @@ fn inner_block_variable_not_visible_outside() {
   let var_inner = ast.add_expr(Expr::Var(VarId("x".into())), 14..15);
   let init_inner = ast.add_expr(Expr::Const(ConstValue::Int32(1)), 18..19);
   let stmt_inner = ast.add_stmt(
-    Stmt::Let {
+    Stmt::LetBinding {
       var: var_inner,
       initializer: init_inner,
     },
@@ -206,7 +206,7 @@ fn triple_nested_shadowing() {
   let v1 = ast.add_expr(Expr::Var(VarId("x".into())), 0..1);
   let i1 = ast.add_expr(Expr::Const(ConstValue::Int32(1)), 4..5);
   let s1 = ast.add_stmt(
-    Stmt::Let {
+    Stmt::LetBinding {
       var: v1,
       initializer: i1,
     },
@@ -215,7 +215,7 @@ fn triple_nested_shadowing() {
   let v2 = ast.add_expr(Expr::Var(VarId("x".into())), 10..11);
   let i2 = ast.add_expr(Expr::Const(ConstValue::Int32(2)), 14..15);
   let s2 = ast.add_stmt(
-    Stmt::Let {
+    Stmt::LetBinding {
       var: v2,
       initializer: i2,
     },
@@ -224,7 +224,7 @@ fn triple_nested_shadowing() {
   let v3 = ast.add_expr(Expr::Var(VarId("x".into())), 20..21);
   let i3 = ast.add_expr(Expr::Const(ConstValue::Int32(3)), 24..25);
   let s3 = ast.add_stmt(
-    Stmt::Let {
+    Stmt::LetBinding {
       var: v3,
       initializer: i3,
     },
@@ -284,7 +284,7 @@ fn redeclaration_after_inner_scope_is_error() {
   let v1 = ast.add_expr(Expr::Var(VarId("x".into())), 0..1);
   let i1 = ast.add_expr(Expr::Const(ConstValue::Int32(1)), 4..5);
   let s1 = ast.add_stmt(
-    Stmt::Let {
+    Stmt::LetBinding {
       var: v1,
       initializer: i1,
     },
@@ -293,7 +293,7 @@ fn redeclaration_after_inner_scope_is_error() {
   let v2 = ast.add_expr(Expr::Var(VarId("x".into())), 10..11);
   let i2 = ast.add_expr(Expr::Const(ConstValue::Int32(2)), 14..15);
   let s2 = ast.add_stmt(
-    Stmt::Let {
+    Stmt::LetBinding {
       var: v2,
       initializer: i2,
     },
@@ -311,7 +311,7 @@ fn redeclaration_after_inner_scope_is_error() {
   let v3 = ast.add_expr(Expr::Var(VarId("x".into())), 18..19);
   let i3 = ast.add_expr(Expr::Const(ConstValue::Int32(3)), 22..23);
   let s3 = ast.add_stmt(
-    Stmt::Let {
+    Stmt::LetBinding {
       var: v3,
       initializer: i3,
     },
@@ -337,7 +337,7 @@ fn if_else_scopes_are_independent() {
   let v_if = ast.add_expr(Expr::Var(VarId("x".into())), 10..11);
   let i_if = ast.add_expr(Expr::Const(ConstValue::Int32(1)), 14..15);
   let s_if = ast.add_stmt(
-    Stmt::Let {
+    Stmt::LetBinding {
       var: v_if,
       initializer: i_if,
     },
@@ -346,7 +346,7 @@ fn if_else_scopes_are_independent() {
   let v_else = ast.add_expr(Expr::Var(VarId("x".into())), 25..26);
   let i_else = ast.add_expr(Expr::Const(ConstValue::Int32(2)), 29..30);
   let s_else = ast.add_stmt(
-    Stmt::Let {
+    Stmt::LetBinding {
       var: v_else,
       initializer: i_else,
     },
@@ -378,7 +378,7 @@ fn variable_declared_in_if_not_visible_in_else() {
   let v_if = ast.add_expr(Expr::Var(VarId("x".into())), 10..11);
   let i_if = ast.add_expr(Expr::Const(ConstValue::Int32(1)), 14..15);
   let s_if = ast.add_stmt(
-    Stmt::Let {
+    Stmt::LetBinding {
       var: v_if,
       initializer: i_if,
     },

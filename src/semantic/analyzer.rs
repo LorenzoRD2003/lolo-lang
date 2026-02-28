@@ -285,9 +285,10 @@ impl<'a> SemanticAnalyzer<'a> {
     }
   }
 
-  /// Analiza un statement, chequeando redeclaraciones (Let)
-  /// y asignabilidad de expresiones (Return, Print).
-  /// Agrega un diagnostic si es `RedeclaredVariable`, `TypeMismatch`, o `InvalidAssignmentTarget`.
+  /// Analiza un statement, chequeando redeclaraciones (`Let`, `Assign`)
+  /// y asignabilidad de expresiones (`If`, `IfElse`, `Return`, `Print`).
+  /// Agrega un diagnostics por errores de tipos, de variables redeclaradas o indefinidas,
+  /// o de expresiones sin la categoria adecuada.
   pub fn analyze_stmt(&mut self, stmt_id: StmtId) {
     let scope = self
       .current_scope()
@@ -300,21 +301,13 @@ impl<'a> SemanticAnalyzer<'a> {
       Stmt::Expr(expr_id) | Stmt::Return(expr_id) | Stmt::Print(expr_id) => {
         self.analyze_expr(expr_id)
       }
-      Stmt::Let { var, initializer } => {
+      Stmt::LetBinding { var, initializer } => {
         // Ahora es seguro asumir que var es una variable
         match self.ast.expr(var) {
           Expr::Var(name) => {
             // Analizamos el inicializador
-            self.analyze_expr(initializer);
-            let initializer_info = self.semantic_info.expr_info(initializer);
-            let (initializer_type, initializer_category) =
-              (initializer_info.r#type(), initializer_info.category());
-            // Chequeo de que el RHS sea ValueExpr
-            if !initializer_category.is_value() {
-              self.emit_error(&SemanticError::ExpectedValueExpression {
-                span: self.ast.expr_span(initializer),
-              })
-            };
+            self.verify_expr_is_value(initializer);
+            let initializer_type = self.semantic_info.expr_info(initializer).r#type();
             // Chequeo de redeclaracion en el mismo scope
             if let Some(previous_symbol) = self.symbol_table.was_declared_in_current_scope(&name) {
               let previous_declaration_stmt_id = self
@@ -329,13 +322,53 @@ impl<'a> SemanticAnalyzer<'a> {
               symbol_declared = Some(self.symbol_table.add_symbol(
                 &name,
                 initializer_type,
-                Mutability::Immutable,
+                Mutability::Mutable,
                 self.ast.expr_span(var),
               ));
             }
           }
           _ => {
             // Chequeo de que sea PlaceExpr, no intentamos agregar un simbolo si el LHS no es una variable
+            self.emit_error(&SemanticError::ExpectedPlaceExpression {
+              span: self.ast.expr_span(var),
+            });
+          }
+        };
+      }
+      // TODO: eliminar el codigo repetido entre LetBinding y Assign
+      Stmt::Assign { var, value_expr } => {
+        match self.ast.expr(var) {
+          Expr::Var(name) => {
+            self.verify_expr_is_value(value_expr);
+            let value_expr_type = self.semantic_info.expr_info(value_expr).r#type();
+            // Debemos verificar que la variable exista en algun scope, que el tipo
+            // de la ValueExpr coincida con el de la variable, y que la variable sea mutable
+            match self.symbol_table.resolve(&name) {
+              Some(symbol_id) => {
+                let var_symbol = self.symbol_table.symbol(symbol_id);
+                let (var_type, var_is_immmutable) = (var_symbol.r#type(), !var_symbol.is_mutable());
+                if var_type != value_expr_type {
+                  self.emit_error(&SemanticError::TypeMismatch {
+                    expected: var_type,
+                    found: value_expr_type,
+                    span: self.ast.expr_span(value_expr),
+                  });
+                }
+                if var_is_immmutable {
+                  // hasta que no agreguemos const bindings, esto es unreachable code
+                  self.emit_error(&SemanticError::ImmutableVariable {
+                    name,
+                    span: self.ast.expr_span(var),
+                  });
+                }
+              }
+              None => self.emit_error(&SemanticError::UndefinedVariable {
+                name,
+                span: self.ast.expr_span(var),
+              }),
+            };
+          }
+          _ => {
             self.emit_error(&SemanticError::ExpectedPlaceExpression {
               span: self.ast.expr_span(var),
             });
@@ -363,6 +396,20 @@ impl<'a> SemanticAnalyzer<'a> {
     self
       .semantic_info
       .insert_stmt_info(stmt_id, semantic_stmt_info);
+  }
+
+  /// Verifica que una expresion dada tiene ValueExpr como una de sus categorias.
+  fn verify_expr_is_value(&mut self, expr: ExprId) {
+    self.analyze_expr(expr);
+    let expr_info = self.semantic_info.expr_info(expr);
+    let expr_category = expr_info.category();
+    // Chequeo de que el RHS sea ValueExpr
+    if !expr_category.is_value() {
+      // por ahora esto es unreachable code ya que no tenemos expresiones no evaluables
+      self.emit_error(&SemanticError::ExpectedValueExpression {
+        span: self.ast.expr_span(expr),
+      })
+    };
   }
 
   fn get_stmt_for_symbol_declaration(&self, symbol: SymbolId) -> Option<StmtId> {

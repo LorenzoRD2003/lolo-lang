@@ -1,13 +1,19 @@
-use crate::ast::{
-  ast::{BlockId, ExprId, StmtId},
-};
+use crate::ast::ast::{BlockId, ExprId, StmtId};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Stmt {
   Expr(ExprId),
-  Let {
+  LetBinding {
     var: ExprId, // va a tener que ser una variable o damos un error
     initializer: ExprId,
+  },
+  // ConstBinding { // La diferencia va a ser en la parte semantica que pondremos Mutability::Immutable
+  //   var: ExprId, // va a tener que ser una variable o damos un error
+  //   initializer: ExprId,
+  // },
+  Assign {
+    var: ExprId, // va a tener que ser una variable ya inicializada o damos un error
+    value_expr: ExprId,
   },
   Return(ExprId),
   If {
