@@ -23,6 +23,7 @@ use crate::{
   },
 };
 
+#[derive(Debug)]
 pub struct NameResolver<'a> {
   /// El AST. Forma parte del mundo sintactico, asi que si debe ser una referencia y no tomamos ownership.
   /// Vamos a generar mucha metadata para el AST sin tocarlo.
