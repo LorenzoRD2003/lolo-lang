@@ -11,7 +11,6 @@ use crate::{
   semantic::{
     scope::{ScopeArena, ScopeId},
     symbol::{Mutability, Symbol, SymbolId},
-    types::Type,
   },
 };
 
@@ -66,7 +65,6 @@ impl SymbolTable {
   pub fn add_symbol(
     &mut self,
     name: &VarId,
-    r#type: Type,
     mutability: Mutability,
     span: Span,
   ) -> SymbolId {
@@ -75,7 +73,7 @@ impl SymbolTable {
       None => self.enter_scope(),
     };
     let symbol_id = SymbolId(self.symbols.len());
-    let symbol = Symbol::new(symbol_id, &name, r#type, current_scope, mutability, span);
+    let symbol = Symbol::new(symbol_id, &name, current_scope, mutability, span);
     self.symbols.push(symbol);
     self.scopes.insert_symbol(name, current_scope, symbol_id);
     symbol_id

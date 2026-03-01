@@ -1,4 +1,3 @@
-pub mod analyzer;
 pub mod category;
 pub mod error;
 pub mod scope;
@@ -6,3 +5,5 @@ pub mod semantic_info;
 pub mod symbol;
 pub mod symbol_table;
 pub mod types;
+pub mod resolver;
+pub mod type_checker;

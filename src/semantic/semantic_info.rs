@@ -77,6 +77,10 @@ impl SemanticInfo {
   pub fn stmt_info_by_id(&self) -> &HashMap<StmtId, SemanticStmtInfo> {
     &self.stmt_info_by_id
   }
+
+  pub fn has_expr_info(&self, expr_id: ExprId) -> bool {
+    self.expr_info_by_id.contains_key(&expr_id)
+  }
 }
 
 #[derive(Debug, Clone, PartialEq)]

@@ -6,7 +6,7 @@
 use crate::{
   ast::expr::VarId,
   common::span::Span,
-  semantic::{scope::ScopeId, types::Type},
+  semantic::scope::ScopeId,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -24,13 +24,12 @@ impl Mutability {
   }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct SymbolId(pub usize);
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Symbol {
   name: VarId,
-  r#type: Type,
   /// Scope de declaracion. El ScopeId referente al scope que contiene a la entidad
   scope: ScopeId,
   /// Informacion sobre mutabilidad de la variable. Para implementar let/const en un futuro.
@@ -46,7 +45,6 @@ impl Symbol {
   pub fn new(
     id: SymbolId,
     name: &VarId,
-    r#type: Type,
     scope: ScopeId,
     mutability: Mutability,
     span: Span,
@@ -54,7 +52,6 @@ impl Symbol {
     Self {
       id,
       name: name.clone(),
-      r#type,
       scope,
       mutability,
       span,
@@ -64,11 +61,6 @@ impl Symbol {
   /// Devuelve el `SymbolId` unico del simbolo.
   pub fn id(&self) -> SymbolId {
     self.id
-  }
-
-  /// Devuelve el tipo de la variable (`Int32`/`Bool`)
-  pub fn r#type(&self) -> Type {
-    self.r#type
   }
 
   /// Devuelve el nombre del simbolo.

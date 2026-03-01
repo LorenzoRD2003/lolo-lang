@@ -19,7 +19,6 @@ use crate::{
     scope::ScopeArena,
     symbol::Mutability,
     symbol_table::SymbolTable,
-    types::Type,
   },
 };
 
@@ -111,12 +110,9 @@ impl<'a> NameResolver<'a> {
             return;
           }
           // Insertar el simbolo en la tabla
-          None => self.symbol_table.add_symbol(
-            &name,
-            Type::Unknown,
-            Mutability::Mutable,
-            self.ast.expr_span(var),
-          ),
+          None => self
+            .symbol_table
+            .add_symbol(&name, Mutability::Mutable, self.ast.expr_span(var)),
         };
         self.resolution_info.insert_expr_symbol(var, symbol);
         self.resolution_info.insert_declared_symbol(stmt_id, symbol);

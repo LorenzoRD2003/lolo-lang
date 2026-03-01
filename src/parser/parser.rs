@@ -354,6 +354,11 @@ impl<'a> Parser<'a> {
   pub fn diagnostics(&self) -> &[Diagnostic] {
     &self.diagnostics
   }
+
+  /// Devuelve el Ast generado, consumiendose.
+  pub fn into_ast(self) -> Ast {
+    self.ast
+  }
 }
 
 #[cfg(test)]

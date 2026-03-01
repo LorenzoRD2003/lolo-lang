@@ -5,6 +5,60 @@ use crate::ast::{
 };
 use proptest::prelude::*;
 
+// // Helpers para generar AST arbitrarios
+
+// fn arb_const() -> impl Strategy<Value = Expr> {
+//   prop_oneof![
+//     any::<i32>().prop_map(|v| Expr::Const(v.into())),
+//     any::<bool>().prop_map(|v| Expr::Const(v.into())),
+//   ]
+// }
+
+// use proptest::prelude::*;
+
+// type ExprGen = Box<dyn Fn(&mut Ast) -> ExprId>;
+
+// fn arb_expr(depth: u32) -> BoxedStrategy<ExprGen> {
+//   if depth == 0 {
+//     return prop_oneof![
+//       any::<i32>().prop_map(|v| {
+//         Box::new(move |ast: &mut Ast| ast.add_expr(Expr::Const(v.into()))) as ExprGen
+//       }),
+//       any::<bool>().prop_map(|v| {
+//         Box::new(move |ast: &mut Ast| ast.add_expr(Expr::Const(v.into()))) as ExprGen
+//       }),
+//     ]
+//     .boxed();
+//   }
+
+//   let leaf = arb_expr(0);
+
+//   let unary = arb_expr(depth - 1).prop_map(|inner| {
+//     Box::new(move |ast: &mut Ast| {
+//       let operand_id = inner(ast);
+//       ast.add_expr(Expr::Unary(UnaryExpr {
+//         op: UnaryOp::Neg,
+//         operand: operand_id,
+//       }))
+//     }) as ExprGen
+//   });
+
+//   let binary = (arb_expr(depth - 1), arb_expr(depth - 1)).prop_map(|(lhs_gen, rhs_gen)| {
+//     Box::new(move |ast: &mut Ast| {
+//       let lhs_id = lhs_gen(ast);
+//       let rhs_id = rhs_gen(ast);
+//       ast.add_expr(Expr::Binary(BinaryExpr {
+//         op: BinaryOp::Add,
+//         lhs: lhs_id,
+//         rhs: rhs_id,
+//       }))
+//     }) as ExprGen
+//   });
+
+//   prop_oneof![leaf, unary, binary].boxed()
+// }
+
+// Test suite
 #[test]
 fn test_add_and_retrieve_expr() {
   let mut ast = Ast::empty();

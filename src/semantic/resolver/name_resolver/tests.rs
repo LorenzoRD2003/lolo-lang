@@ -6,7 +6,7 @@ use crate::{
   semantic::resolver::{name_resolver::NameResolver, resolution_info::ResolutionInfo},
 };
 
-fn resolve(source: &str) -> (ResolutionInfo, Vec<Diagnostic>, Ast, Program) {
+pub(crate) fn resolve(source: &str) -> (ResolutionInfo, Vec<Diagnostic>, Ast, Program) {
   // helper hipotetico
   let mut ts = TokenStream::new(Lexer::new(source));
   let mut parser = Parser::new(&mut ts);

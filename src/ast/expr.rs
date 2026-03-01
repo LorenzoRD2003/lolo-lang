@@ -46,6 +46,18 @@ pub enum ConstValue {
   Bool(bool),
 }
 
+impl From<i32> for ConstValue {
+  fn from(value: i32) -> Self {
+    Self::Int32(value)
+  }
+}
+
+impl From<bool> for ConstValue {
+  fn from(value: bool) -> Self {
+    Self::Bool(value)
+  }
+}
+
 impl Display for ConstValue {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     match self {
@@ -61,7 +73,7 @@ pub struct UnaryExpr {
   pub operand: ExprId,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum UnaryOp {
   Neg,
   Not,
@@ -76,10 +88,10 @@ impl UnaryOp {
     }
   }
 
-  pub fn compatible_operand_type(&self) -> Type {
+  pub fn is_valid_for_operand_type(&self, operand_type: Type) -> bool {
     match self {
-      Self::Neg => Type::Int32,
-      Self::Not => Type::Bool,
+      Self::Neg => operand_type.is_number(),
+      Self::Not => operand_type.is_boolean(),
     }
   }
 
@@ -91,6 +103,19 @@ impl UnaryOp {
       Self::Not => Type::Bool,
     }
   }
+
+  fn to_string(&self) -> &str {
+    match self {
+      Self::Neg => "-",
+      Self::Not => "!",
+    }
+  }
+}
+
+impl Display for UnaryOp {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(f, "{}", self.to_string())
+  }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -100,7 +125,7 @@ pub struct BinaryExpr {
   pub rhs: ExprId,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum BinaryOp {
   // Arithmetic Binary Operations
   Add,
@@ -140,21 +165,14 @@ impl BinaryOp {
     }
   }
 
-  /// Obtiene el tipo compatible para el LHS y el RHS.
-  /// Por ahora siempre es el mismo, pero puede cambiar en el futuro.
-  pub fn compatible_operand_types(&self) -> (Type, Type) {
+  pub fn is_valid_for_operand_types(&self, lhs_type: Type, rhs_type: Type) -> bool {
     match self {
-      Self::Add
-      | Self::Sub
-      | Self::Mul
-      | Self::Div
-      | Self::Eq
-      | Self::Neq
-      | Self::Gt
-      | Self::Lt
-      | Self::Gte
-      | Self::Lte => (Type::Int32, Type::Int32),
-      Self::And | Self::Or | Self::Xor => (Type::Bool, Type::Bool),
+      Self::Add | Self::Sub | Self::Mul | Self::Div => lhs_type.is_number() && rhs_type.is_number(),
+      Self::Eq | Self::Neq | Self::Gt | Self::Lt | Self::Gte | Self::Lte => {
+        (lhs_type.is_number() && rhs_type.is_number())
+          || (lhs_type.is_boolean() && rhs_type.is_boolean())
+      }
+      Self::And | Self::Or | Self::Xor => lhs_type.is_boolean() && rhs_type.is_boolean(),
     }
   }
 
