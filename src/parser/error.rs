@@ -6,7 +6,6 @@ use crate::{
 #[derive(Debug, Clone)]
 pub enum ParserError {
   ChainedAssociativeOperator(Token),
-  IdentifierExpected(Token),
   UnexpectedEOF,
   UnexpectedToken(Token),
 }
@@ -23,10 +22,6 @@ impl Diagnosable for ParserError {
       Self::ChainedAssociativeOperator(token) => {
         Self::token_error_fmt(token, "operadores de comparacion '{}' no son asociativos")
       }
-      Self::IdentifierExpected(token) => Self::token_error_fmt(
-        token,
-        "se esperaba un identificador de variable, pero se encontro '{}'".into(),
-      ),
       Self::UnexpectedEOF => Diagnostic::error("hubo un EOF inesperado".into()),
       Self::UnexpectedToken(token) => Self::token_error_fmt(token, "hubo un token inesperado '{}'"),
     }

@@ -211,56 +211,56 @@ impl<'a> Parser<'a> {
     Some(self.ast.add_stmt(stmt, span))
   }
 
+  /// let <var_expr> = <expr>;
   fn parse_let_stmt(&mut self) -> Option<(Stmt, Span)> {
-    // let <var_expr> = <expr>;
     // Consumimos el `let`
     let span_start = self.tokens.peek_first()?.span().start;
     self.expect_token(TokenKind::Let);
-    // Ahora deberiamos consumir un identificador
-    // Igualmente, vamos a seguir parseando en vez de panickear
-    let token = self.tokens.peek_first()?.clone();
-    let var = self.parse_var(token)?;
-    // Ahora deberiamos consumir un `=`
-    self.expect_token(TokenKind::Equal);
-    // Ahora vamos a parsear una expresion
-    let initializer = self.parse_expression()?;
-    // Ahora deberiamos consumir un `;`
-    let span_end = self.tokens.peek_first()?.span().end;
-    self.expect_token(TokenKind::Semicolon);
-    Some((Stmt::LetBinding { var, initializer }, span_start..span_end))
+    // corregimos el span_start porque el let fue consumido antes
+    self
+      .parse_assignment_like(|var, initializer| Stmt::LetBinding { var, initializer })
+      .map(|(stmt, span)| (stmt, span_start..span.end))
   }
 
+  /// <var> = <expr>
   fn parse_assign_stmt(&mut self) -> Option<(Stmt, Span)> {
-    // <var> = <expr>
+    self.parse_assignment_like(|var, value_expr| Stmt::Assign { var, value_expr })
+  }
+
+  /// Helper para parse_assign, parse_let, y en un futuro parse_const
+  fn parse_assignment_like<F>(&mut self, constructor: F) -> Option<(Stmt, Span)>
+  where
+    F: FnOnce(ExprId, ExprId) -> Stmt,
+  {
     let span_start = self.tokens.peek_first()?.span().start;
-    let token = self.tokens.peek_first()?.clone();
-    let var = self.parse_var(token)?;
+    // Ahora deberiamos consumir un identificador de variable
+    // Igualmente, vamos a seguir parseando en vez de panickear
+    let var = self.parse_identifier_expr()?;
     // Ahora deberiamos consumir un `=`
     self.expect_token(TokenKind::Equal);
-    // Ahora vamos a parsear una expresion
-    let expr_id = self.parse_expression()?;
-    // Ahora deberiamos consumir un `;`
+    // Luego debemos parsear una expresion (que semanticamente es ValueExpr)
+    let value = self.parse_expression()?;
     let span_end = self.tokens.peek_first()?.span().end;
+    // Ahora deberiamos consumir un `;`
     self.expect_token(TokenKind::Semicolon);
-    Some((
-      Stmt::Assign {
-        var,
-        value_expr: expr_id,
-      },
-      span_start..span_end,
-    ))
+    Some((constructor(var, value), span_start..span_end))
   }
 
-  fn parse_var(&mut self, token: Token) -> Option<ExprId> {
-    let var = self.parse_expression()?;
-    if !self.ast.expr(var).is_var() {
-      self.emit_error(&ParserError::IdentifierExpected(token));
+  fn parse_identifier_expr(&mut self) -> Option<ExprId> {
+    match self.tokens.expect(TokenKind::Identifier) {
+      Ok(token) => {
+        let expr_id = self.ast.add_expr(
+          Expr::Var(VarId(token.lexeme().into())),
+          token.span().clone(),
+        );
+        Some(expr_id)
+      }
+      Err(err) => {
+        self.emit_error(&err);
+        None
+      }
     }
-    Some(var)
   }
-
-  /// TODO: eliminar el codigo repetido en assign y let
-  // fn let_assign_helper(&mut self)
 
   fn parse_return_stmt(&mut self) -> Option<(Stmt, Span)> {
     // return <expr>;

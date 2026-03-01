@@ -569,10 +569,13 @@ fn let_requires_identifier() {
   let mut tokens = TokenStream::new(lexer);
   let mut parser = Parser::new(&mut tokens);
   parser.parse_statement();
-  assert!(parser.diagnostics().iter().any(|d: &Diagnostic| {
-    d.msg()
-      .contains("se esperaba un identificador de variable, pero se encontro '123'")
-  }));
+  dbg!(parser.diagnostics());
+  assert!(
+    parser
+      .diagnostics()
+      .iter()
+      .any(|d: &Diagnostic| { d.msg().contains("hubo un token inesperado '123'") })
+  );
 }
 
 #[test]
