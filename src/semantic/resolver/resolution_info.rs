@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 
 use crate::{
   ast::ast::{BlockId, ExprId, StmtId},
@@ -9,28 +9,28 @@ use crate::{
 pub struct ResolutionInfo {
   // Mapeos desde los IDs del AST a simbolos y scope
   /// ExprId -> SymbolId. La clave es el ID en el AST.
-  expr_symbol_by_id: HashMap<ExprId, SymbolId>,
+  expr_symbol_by_id: FxHashMap<ExprId, SymbolId>,
   /// ExprId -> ScopeId. La clave es el ID en el AST.
-  expr_scope_by_id: HashMap<ExprId, ScopeId>,
+  expr_scope_by_id: FxHashMap<ExprId, ScopeId>,
   /// StmtId -> ScopeId. La clave es el ID en el AST.
-  stmt_scope_by_id: HashMap<StmtId, ScopeId>,
+  stmt_scope_by_id: FxHashMap<StmtId, ScopeId>,
   /// BlockId -> ScopeId. La clave es el ID en el AST.
-  block_scope_by_id: HashMap<BlockId, ScopeId>,
+  block_scope_by_id: FxHashMap<BlockId, ScopeId>,
   /// Simbolo declarado por este statement (solamente para bindings).
-  stmt_declared_symbol: HashMap<StmtId, SymbolId>,
+  stmt_declared_symbol: FxHashMap<StmtId, SymbolId>,
   /// Stmt que declaro un simbolo (util para buscar redeclaraciones)
-  symbol_declared_by_stmt: HashMap<SymbolId, StmtId>,
+  symbol_declared_by_stmt: FxHashMap<SymbolId, StmtId>,
 }
 
 impl ResolutionInfo {
   pub fn new() -> Self {
     Self {
-      expr_symbol_by_id: HashMap::new(),
-      expr_scope_by_id: HashMap::new(),
-      stmt_scope_by_id: HashMap::new(),
-      block_scope_by_id: HashMap::new(),
-      stmt_declared_symbol: HashMap::new(),
-      symbol_declared_by_stmt: HashMap::new(),
+      expr_symbol_by_id: FxHashMap::default(),
+      expr_scope_by_id: FxHashMap::default(),
+      stmt_scope_by_id: FxHashMap::default(),
+      block_scope_by_id: FxHashMap::default(),
+      stmt_declared_symbol: FxHashMap::default(),
+      symbol_declared_by_stmt: FxHashMap::default(),
     }
   }
 
