@@ -1,47 +1,17 @@
 use crate::{
   ast::{
-    ast::{Ast, BlockId, ExprId, StmtId},
     expr::{BinaryExpr, BinaryOp, ConstValue, Expr, UnaryExpr, UnaryOp, VarId},
-    program::Program,
     stmt::Stmt,
   },
   diagnostics::diagnostic::Diagnostic,
   lexer::lexer::Lexer,
-  parser::{parser::Parser, precedence::ASSIGN_BP, token_stream::TokenStream},
+  parser::{
+    parser::Parser,
+    program_parsing::{parse_block, parse_expr, parse_program, parse_stmt},
+    token_stream::TokenStream,
+  },
 };
 use proptest::prelude::*;
-
-fn parse_expr(input: &str) -> (Ast, Option<ExprId>) {
-  let lexer = Lexer::new(input);
-  let mut ts = TokenStream::new(lexer);
-  let mut parser = Parser::new(&mut ts);
-  let expr = parser.parse_expr_bp(ASSIGN_BP);
-  (parser.ast, expr)
-}
-
-fn parse_stmt(input: &str) -> (Ast, Option<StmtId>) {
-  let lexer = Lexer::new(input);
-  let mut ts = TokenStream::new(lexer);
-  let mut parser = Parser::new(&mut ts);
-  let stmt = parser.parse_statement();
-  (parser.ast, stmt)
-}
-
-fn parse_block(input: &str) -> (Ast, Option<BlockId>) {
-  let lexer = Lexer::new(input);
-  let mut ts = TokenStream::new(lexer);
-  let mut parser = Parser::new(&mut ts);
-  let block = parser.parse_block();
-  (parser.ast, block)
-}
-
-fn parse_program(input: &str) -> (Ast, Option<Program>) {
-  let lexer = Lexer::new(input);
-  let mut ts = TokenStream::new(lexer);
-  let mut parser = Parser::new(&mut ts);
-  let program = parser.parse_program();
-  (parser.ast, program)
-}
 
 #[test]
 fn parses_number_literal() {
@@ -537,29 +507,27 @@ fn nested_if_parses_correctly() {
 
 #[test]
 fn parse_empty_program() {
-  let (_ast, program) = parse_program("main {}");
-  assert!(program.is_some());
+  parse_program("main {}");
 }
 
 #[test]
 fn parse_program_with_statements() {
   let (ast, program) = parse_program("main { a; b; }");
-  let block_id = program.unwrap().main_block();
+  let block_id = program.main_block();
   assert_eq!(ast.block(block_id).stmts().len(), 2);
 }
 
 #[test]
 fn program_span_is_correct() {
-  let (ast, program_opt) = parse_program("main { a; }");
-  let program = program_opt.unwrap();
+  let (ast, program) = parse_program("main { a; }");
   assert_eq!(ast.block_span(program.main_block()), 5..11);
   assert_eq!(program.span(), 0..11);
 }
 
 #[test]
+#[should_panic]
 fn program_requires_main() {
-  let (_ast, program) = parse_program("{ a; }");
-  assert!(program.is_none());
+  parse_program("{ a; }");
 }
 
 #[test]
@@ -569,7 +537,6 @@ fn let_requires_identifier() {
   let mut tokens = TokenStream::new(lexer);
   let mut parser = Parser::new(&mut tokens);
   parser.parse_statement();
-  dbg!(parser.diagnostics());
   assert!(
     parser
       .diagnostics()
@@ -685,7 +652,6 @@ proptest! {
         program.push_str(&stmt);
       }
       program.push_str("}");
-      let (_ast, parsed) = parse_program(&program);
-      prop_assert!(parsed.is_some());
+      parse_program(&program);
     }
 }
