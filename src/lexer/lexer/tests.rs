@@ -142,9 +142,13 @@ fn lex_mixed_input() {
   );
 }
 
-// necesito que las entradas sean ASCII para que no se rompan los proptest
+// ===============================
+// PROPERTY TESTS
+// ===============================
+
 proptest! {
-#[test]
+  #[test]
+  // necesito que las entradas sean ASCII para que no se rompan los proptest
   fn lexer_never_panics(bytes in proptest::collection::vec(0u8..=127u8, 0..100)) {
     let input = String::from_utf8(bytes).unwrap();
     let lexer = Lexer::new(&input);
@@ -189,44 +193,8 @@ proptest! {
         .collect();
     let no_ws: String = input.chars().filter(|c| !c.is_whitespace()).collect();
     // esto funciona en caso de que no haya habido diagnostics durante la ejecucion (por ejemplo un invalid character)
-    if lexer.diagnostics.is_empty() {
+    if lexer.diagnostics().is_empty() {
       prop_assert_eq!(reconstructed, no_ws);
-    }
-  }
-
-  // peek_token() no cambia estado
-  #[test]
-  fn peek_token_is_pure(bytes in proptest::collection::vec(0u8..=127u8, 0..100)) {
-    let input = String::from_utf8(bytes).unwrap();
-    let mut lexer = Lexer::new(&input);
-    let pos_before = lexer.position;
-    let diagnostics_before = lexer.diagnostics.len();
-    let emitted_eof = lexer.emitted_eof;
-    // Peek arbitrarias veces
-    for _ in 0..10 {
-      let _ = lexer.update_token_cache();
-    }
-    prop_assert_eq!(lexer.position, pos_before);
-    prop_assert_eq!(lexer.diagnostics.len(), diagnostics_before);
-    prop_assert_eq!(lexer.emitted_eof, emitted_eof);
-  }
-
-// en particular, peek_token() no altera la siguiente ejecucion de next()
-  #[test]
-  fn peek_does_not_change_next(bytes in proptest::collection::vec(0u8..=127u8, 0..100)) {
-    let input = String::from_utf8(bytes).unwrap();
-    let mut lexer1 = Lexer::new(&input);
-    let mut lexer2 = Lexer::new(&input);
-
-    for _ in 0..10 {
-      lexer1.update_token_cache(); // lexer1 usa peek
-    }
-    loop {
-      let tok1 = lexer1.next();
-      let tok2 = lexer2.next();
-      assert_eq!(tok1.is_some(), tok2.is_some());
-      if tok1.is_none() { break; }
-      assert_eq!(tok1.unwrap().ok().map(|tok| tok.kind()), tok2.unwrap().ok().map(|tok| tok.kind()));
     }
   }
 }

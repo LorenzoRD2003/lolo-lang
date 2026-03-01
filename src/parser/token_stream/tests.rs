@@ -8,8 +8,8 @@ use proptest::prelude::*;
 // luego, bump() debe devolver el token que peek_first() vio (tomandolo)
 #[test]
 fn peek_does_not_advance() {
-  let mut lexer = Lexer::new("x + 1");
-  let mut ts = TokenStream::new(&mut lexer);
+  let lexer = Lexer::new("x + 1");
+  let mut ts = TokenStream::new(lexer);
 
   let first = ts.peek_first().unwrap().clone();
   let first_again = ts.peek_first().unwrap().clone();
@@ -25,8 +25,8 @@ fn peek_does_not_advance() {
 // bump() consecutivos deberian devolver tokens diferentes
 #[test]
 fn bump_advances() {
-  let mut lexer = Lexer::new("x + 1");
-  let mut ts = TokenStream::new(&mut lexer);
+  let lexer = Lexer::new("x + 1");
+  let mut ts = TokenStream::new(lexer);
 
   let first = ts.bump().unwrap();
   let second = ts.bump().unwrap();
@@ -37,8 +37,8 @@ fn bump_advances() {
 
 #[test]
 fn match_kind_returns_true_and_peeks() {
-  let mut lexer = Lexer::new("+");
-  let mut ts = TokenStream::new(&mut lexer);
+  let lexer = Lexer::new("+");
+  let mut ts = TokenStream::new(lexer);
   assert!(ts.check_kind(0, TokenKind::Plus));
   // peek ahora debe seguir viendo el mismo token porque match_kind no avanza
   assert_eq!(ts.peek_first().unwrap().kind(), TokenKind::Plus);
@@ -46,8 +46,8 @@ fn match_kind_returns_true_and_peeks() {
 
 #[test]
 fn match_kind_returns_false_without_advancing() {
-  let mut lexer = Lexer::new("-");
-  let mut ts = TokenStream::new(&mut lexer);
+  let lexer = Lexer::new("-");
+  let mut ts = TokenStream::new(lexer);
   // peek sigue viendo el mismo token
   assert!(!ts.check_kind(0, TokenKind::BangEqual));
   assert_eq!(ts.peek_first().unwrap().kind(), TokenKind::Minus);
@@ -55,8 +55,8 @@ fn match_kind_returns_false_without_advancing() {
 
 #[test]
 fn expect_succeeds_and_advances() {
-  let mut lexer = Lexer::new("+ -");
-  let mut ts = TokenStream::new(&mut lexer);
+  let lexer = Lexer::new("+ -");
+  let mut ts = TokenStream::new(lexer);
   let token = ts.expect(TokenKind::Plus).unwrap();
   assert_eq!(token.kind(), TokenKind::Plus);
   // peek_first() ahora debe ver el siguiente token
@@ -65,8 +65,8 @@ fn expect_succeeds_and_advances() {
 
 #[test]
 fn expect_fails_and_advances_on_unexpected_token() {
-  let mut lexer = Lexer::new("+ -");
-  let mut ts = TokenStream::new(&mut lexer);
+  let lexer = Lexer::new("+ -");
+  let mut ts = TokenStream::new(lexer);
   let err = ts.expect(TokenKind::Minus).unwrap_err();
   match err {
     ParserError::UnexpectedToken(token) => assert_eq!(token.kind(), TokenKind::Plus),
@@ -78,16 +78,16 @@ fn expect_fails_and_advances_on_unexpected_token() {
 
 #[test]
 fn expect_works_for_eof_on_empty_stream() {
-  let mut lexer = Lexer::new("");
-  let mut ts = TokenStream::new(&mut lexer);
+  let lexer = Lexer::new("");
+  let mut ts = TokenStream::new(lexer);
   let token = ts.expect(TokenKind::EOF).unwrap();
   assert_eq!(token.kind(), TokenKind::EOF);
 }
 
 #[test]
 fn expect_fails_when_there_are_no_more_tokens() {
-  let mut lexer = Lexer::new("");
-  let mut ts = TokenStream::new(&mut lexer);
+  let lexer = Lexer::new("");
+  let mut ts = TokenStream::new(lexer);
   ts.expect(TokenKind::EOF).unwrap();
   let err = ts.expect(TokenKind::EOF).unwrap_err();
   assert!(matches!(err, ParserError::UnexpectedEOF));
@@ -98,8 +98,8 @@ proptest! {
   #[test]
   fn peek_never_consumes(bytes in proptest::collection::vec(0u8..=127u8, 0..100)) {
     let input = String::from_utf8(bytes).unwrap_or_default();
-    let mut lexer = Lexer::new(&input);
-    let mut ts = TokenStream::new(&mut lexer);
+    let lexer = Lexer::new(&input);
+    let mut ts = TokenStream::new(lexer);
     for _ in 0..5 { // Llamamos varias veces a peek
       let _ = ts.peek_first();
     }
@@ -112,8 +112,8 @@ proptest! {
   #[test]
   fn match_kind_does_not_advance_unless_matching(bytes in proptest::collection::vec(0u8..=127u8, 0..20)) {
     let input = String::from_utf8(bytes).unwrap_or_default();
-    let mut lexer = Lexer::new(&input);
-    let mut ts = TokenStream::new(&mut lexer);
+    let lexer = Lexer::new(&input);
+    let mut ts = TokenStream::new(lexer);
     let initial_peek = ts.peek_first().cloned();
     let _ = ts.check_kind(0, TokenKind::Plus); // tratar de coincidir con + arbitrario
     let after_peek = ts.peek_first().cloned();
@@ -129,8 +129,8 @@ proptest! {
   #[test]
   fn expect_always_advances(bytes in proptest::collection::vec(0u8..=127u8, 0..20)) {
     let input = String::from_utf8(bytes).unwrap_or_default();
-    let mut lexer = Lexer::new(&input);
-    let mut ts = TokenStream::new(&mut lexer);
+    let lexer = Lexer::new(&input);
+    let mut ts = TokenStream::new(lexer);
     let initial_peek = ts.peek_first().cloned();
     let _ = ts.expect(TokenKind::Plus);
     let after_peek = ts.peek_first().cloned();

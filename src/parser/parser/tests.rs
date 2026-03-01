@@ -12,32 +12,32 @@ use crate::{
 use proptest::prelude::*;
 
 fn parse_expr(input: &str) -> (Ast, Option<ExprId>) {
-  let mut lexer = Lexer::new(input);
-  let mut ts = TokenStream::new(&mut lexer);
+  let lexer = Lexer::new(input);
+  let mut ts = TokenStream::new(lexer);
   let mut parser = Parser::new(&mut ts);
   let expr = parser.parse_expr_bp(ASSIGN_BP);
   (parser.ast, expr)
 }
 
 fn parse_stmt(input: &str) -> (Ast, Option<StmtId>) {
-  let mut lexer = Lexer::new(input);
-  let mut ts = TokenStream::new(&mut lexer);
+  let lexer = Lexer::new(input);
+  let mut ts = TokenStream::new(lexer);
   let mut parser = Parser::new(&mut ts);
   let stmt = parser.parse_statement();
   (parser.ast, stmt)
 }
 
 fn parse_block(input: &str) -> (Ast, Option<BlockId>) {
-  let mut lexer = Lexer::new(input);
-  let mut ts = TokenStream::new(&mut lexer);
+  let lexer = Lexer::new(input);
+  let mut ts = TokenStream::new(lexer);
   let mut parser = Parser::new(&mut ts);
   let block = parser.parse_block();
   (parser.ast, block)
 }
 
 fn parse_program(input: &str) -> (Ast, Option<Program>) {
-  let mut lexer = Lexer::new(input);
-  let mut ts = TokenStream::new(&mut lexer);
+  let lexer = Lexer::new(input);
+  let mut ts = TokenStream::new(lexer);
   let mut parser = Parser::new(&mut ts);
   let program = parser.parse_program();
   (parser.ast, program)
@@ -249,8 +249,8 @@ fn parses_comparison() {
 
 #[test]
 fn comparison_is_not_associative() {
-  let mut lexer = Lexer::new("a < b < c");
-  let mut ts = TokenStream::new(&mut lexer);
+  let lexer = Lexer::new("a < b < c");
+  let mut ts = TokenStream::new(lexer);
   let mut parser = Parser::new(&mut ts);
   let expr = parser.parse_expression();
   assert!(expr.is_some(), "parser should recover");
@@ -262,8 +262,8 @@ fn comparison_is_not_associative() {
 
 #[test]
 fn parser_recovers_after_comparison_error() {
-  let mut lexer = Lexer::new("a < b < c + d");
-  let mut ts = TokenStream::new(&mut lexer);
+  let lexer = Lexer::new("a < b < c + d");
+  let mut ts = TokenStream::new(lexer);
   let mut parser = Parser::new(&mut ts);
   let expr = parser.parse_expression();
   assert!(expr.is_some());
@@ -565,8 +565,8 @@ fn program_requires_main() {
 #[test]
 fn let_requires_identifier() {
   let source = "let 123 = 5;";
-  let mut lexer = Lexer::new(source);
-  let mut tokens = TokenStream::new(&mut lexer);
+  let lexer = Lexer::new(source);
+  let mut tokens = TokenStream::new(lexer);
   let mut parser = Parser::new(&mut tokens);
   parser.parse_statement();
   assert!(parser.diagnostics().iter().any(|d: &Diagnostic| {
@@ -578,8 +578,8 @@ fn let_requires_identifier() {
 #[test]
 fn unexpected_eof_in_block() {
   let source = "main { print 1; ";
-  let mut lexer = Lexer::new(source);
-  let mut tokens = TokenStream::new(&mut lexer);
+  let lexer = Lexer::new(source);
+  let mut tokens = TokenStream::new(lexer);
   let mut parser = Parser::new(&mut tokens);
   parser.parse_program();
   assert!(
@@ -593,8 +593,8 @@ fn unexpected_eof_in_block() {
 #[test]
 fn missing_semicolon_emits_error() {
   let source = "main { print 1 }";
-  let mut lexer = Lexer::new(source);
-  let mut tokens = TokenStream::new(&mut lexer);
+  let lexer = Lexer::new(source);
+  let mut tokens = TokenStream::new(lexer);
   let mut parser = Parser::new(&mut tokens);
   parser.parse_program();
   assert!(

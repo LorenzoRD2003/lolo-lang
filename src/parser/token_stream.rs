@@ -5,9 +5,10 @@
 // - API ergonomica: peek(), bump(), expect(kind), match(kind)
 // Esto evita bugs de sincronizacion, centraliza el manejo de EOF y de errores
 
+use std::collections::VecDeque;
+
 use crate::{
   lexer::{
-    cache::{CACHE_LEN, TokenCache},
     lexer::Lexer,
     token::{Token, TokenKind},
   },
@@ -16,61 +17,79 @@ use crate::{
 
 #[derive(Debug)]
 pub struct TokenStream<'a> {
-  lexer: &'a mut Lexer<'a>,
+  /// El token stream va a poseer al lexer
+  lexer: Lexer<'a>,
+  /// Buffer de tokens
+  buffer: VecDeque<Token>,
 }
 
 impl<'a> TokenStream<'a> {
-  pub fn new(lexer: &'a mut Lexer<'a>) -> Self {
-    Self { lexer }
-  }
-
-  /// Devuelve una referencia al token indicado del cache (lookahead), sin avanzar
-  pub fn peek(&mut self, index: usize) -> Option<&Token> {
-    debug_assert!(index < CACHE_LEN);
-    if self.cache().is_empty() {
-      self.lexer.update_token_cache();
+  pub fn new(lexer: Lexer<'a>) -> Self {
+    Self {
+      lexer,
+      buffer: VecDeque::new(),
     }
-    // dbg!(self.cache());
-    self.cache().get_at(index)
   }
 
+  // =========================
+  // Buffer management
+  // =========================
+
+  /// Asegura que haya al menos `n + 1` tokens en el buffer
+  fn ensure_buffered(&mut self, n: usize) {
+    while self.buffer.len() <= n {
+      match self.lexer.next() {
+        Some(Ok(token)) => self.buffer.push_back(token),
+        Some(Err(_err)) => {
+          // TODO posible: impl From<LexerError> for ParserError
+          continue;
+        }
+        None => break,
+      }
+    }
+  }
+
+  // =========================
+  // API publica del stream
+  // =========================
+
+  /// Lookahead sin consumir.
+  pub fn peek(&mut self, n: usize) -> Option<&Token> {
+    self.ensure_buffered(n);
+    self.buffer.get(n)
+  }
+
+  /// peek(0) = token actual
   pub fn peek_first(&mut self) -> Option<&Token> {
     self.peek(0)
   }
 
-  /// Avanza al siguiente token y devuelve el anterior
+  /// Consume y devuelve el siguiente token
   pub fn bump(&mut self) -> Option<Token> {
-    if !self.cache().is_empty() {
-      self.lexer.delete_cache();
+    if self.buffer.is_empty() {
+      return self.lexer.next().and_then(Result::ok);
     }
-    self.lexer.next().and_then(Result::ok)
+    self.buffer.pop_front()
   }
 
-  /// Comprueba que el token actual sea del kind esperado. Siempre avanza.
-  /// Devuelve Ok(token) si coincide, y Err(ParserError) si no coincide.
+  /// Siempre avanza. Devuelve error si el token no es del tipo esperado.
   pub fn expect(&mut self, kind: TokenKind) -> Result<Token, ParserError> {
     match self.bump() {
-      Some(token) => {
-        if token.kind() == kind {
-          Ok(token)
-        } else {
-          Err(ParserError::UnexpectedToken(token))
-        }
-      }
+      Some(token) if token.kind() == kind => Ok(token),
+      Some(token) => Err(ParserError::UnexpectedToken(token)),
       None => Err(ParserError::UnexpectedEOF),
     }
   }
 
-  /// Si el token de posicion indicada desde el lugar actual es del kind indicado,
-  /// lo consume y devuelve true; si no, devuelve false.
-  pub fn check_kind(&mut self, index: usize, kind: TokenKind) -> bool {
-    debug_assert!(index < CACHE_LEN);
-    matches!(self.peek(index), Some(token) if token.kind() == kind)
+  /// Chequea el kind del token en posición `n` sin consumir.
+  pub fn check_kind(&mut self, n: usize, kind: TokenKind) -> bool {
+    matches!(self.peek(n), Some(tok) if tok.kind() == kind)
   }
 
-  fn cache(&self) -> &TokenCache {
-    self.lexer.token_cache()
-  }
+  // /// Devuelve true si el token actual es EOF.
+  // pub fn is_eof(&mut self) -> bool {
+  //   matches!(self.peek(0), Some(tok) if tok.kind() == TokenKind::EOF)
+  // }
 }
 
 #[cfg(test)]

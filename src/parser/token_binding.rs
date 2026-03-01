@@ -1,6 +1,6 @@
 use crate::{
   lexer::token::TokenKind,
-  parser::precedence::{ADD_BP, AND_BP, ASSIGN_BP, CMP_BP, MUL_BP, OR_BP, UNARY_BP, XOR_BP},
+  parser::precedence::{ADD_BP, AND_BP, CMP_BP, MUL_BP, OR_BP, UNARY_BP, XOR_BP},
 };
 
 /// Para operadores infijos: devuelve (lo, hi), que son el binding power

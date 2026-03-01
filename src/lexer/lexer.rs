@@ -7,7 +7,6 @@
 use crate::{
   diagnostics::diagnostic::{Diagnosable, Diagnostic},
   lexer::{
-    cache::{CACHE_LEN, TokenCache},
     error::LexerError,
     keywords::lookup_keyword,
     operators::match_operator,
@@ -26,45 +25,27 @@ pub struct Lexer<'a> {
   /// El estado primario del lexer es la posicion del puntero y el offset, nada mas.
   /// Fila/columna son para simplificar errores, son metadata derivada.
   position: usize,
-  token_cache: TokenCache,
   diagnostics: Vec<Diagnostic>,
   emitted_eof: bool,
 }
-
-// al final del pipeline, se haria algo como
-// for diag in diagnostics {
-//   renderer.render(&diag)?;
-// }
 
 impl<'a> Lexer<'a> {
   pub fn new(source: &'a str) -> Self {
     Self {
       source,
       position: 0,
-      token_cache: TokenCache::empty(),
       diagnostics: Vec::new(),
       emitted_eof: false,
     }
   }
 
-  // Actualiza los siguientes `CACHE_LEN` tokens en la cache. sin avanzar (lookahead). Esto es util para parsers predictivos
-  // La idea es tener tokens cacheados, y rellenarlos si son None usando `next()`
-  // Para que no cambie el estado, usar una snapshot. `peek()` jamas debe cambiar nada visible
-  pub fn update_token_cache(&mut self) {
-    if self.token_cache.is_empty() {
-      let snapshot_position = self.position;
-      let snapshot_diagnostics_len = self.diagnostics.len();
-      let snapshot_emitted_eof = self.emitted_eof;
-
-      for i in 0..CACHE_LEN {
-        let token = self.next().and_then(Result::ok);
-        self.token_cache.update_at(i, token);
-      }
-      self.position = snapshot_position;
-      self.diagnostics.truncate(snapshot_diagnostics_len);
-      self.emitted_eof = snapshot_emitted_eof;
-    }
+  pub fn diagnostics(&self) -> &[Diagnostic] {
+    &self.diagnostics
   }
+
+  // ============================
+  // Helpers internos
+  // ============================
 
   // Funcion auxiliar para obtener el caracter actual
   // No se debe asumir que hay un caracter actual, asi EOF no es un caso especial
@@ -107,6 +88,10 @@ impl<'a> Lexer<'a> {
       start..self.position,
     )
   }
+
+  // =========================
+  // Lexers especificos
+  // =========================
 
   // Funcion auxiliar para lexear un numero y devolver el token indicado
   fn lex_number_literal(&mut self) -> Result<Token, LexerError> {
@@ -153,15 +138,11 @@ impl<'a> Lexer<'a> {
     }
     None
   }
-
-  pub(crate) fn token_cache(&self) -> &TokenCache {
-    &self.token_cache
-  }
-
-  pub(crate) fn delete_cache(&mut self) {
-    self.token_cache = TokenCache::empty();
-  }
 }
+
+// =========================
+// Iterator impl
+// =========================
 
 // Esto nos permite hacer `for token in lexer` despues
 impl<'a> Iterator for Lexer<'a> {
@@ -249,6 +230,10 @@ impl<'a> Iterator for Lexer<'a> {
     }
   }
 }
+
+// =========================
+// Helpers de clasificacion
+// =========================
 
 // Funcion para determinar si el caracter puede ser el inicio de un identificador (variable/keyword)
 fn is_identifier_start(c: char) -> bool {
