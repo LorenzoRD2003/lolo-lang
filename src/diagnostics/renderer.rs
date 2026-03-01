@@ -122,7 +122,7 @@ impl<'a, W: fmt::Write> Renderer<'a, W> {
   /// Renderiza los labels secundarios (y primarios opcionales) de un Diagnostic
   fn render_labels(&mut self, diag: &Diagnostic) -> fmt::Result {
     for label in diag.labels() {
-      let (line_start, column_start, line_end, column_end) =
+      let (line_start, _, line_end, _) =
         self.source_map.span_to_line_column(&label.span);
 
       // imprimimos cada línea del span
