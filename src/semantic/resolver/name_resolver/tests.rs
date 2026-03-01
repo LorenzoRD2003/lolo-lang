@@ -1,19 +1,12 @@
 use crate::{
   ast::{ast::Ast, expr::Expr, program::Program, stmt::Stmt},
   diagnostics::diagnostic::Diagnostic,
-  lexer::lexer::Lexer,
-  parser::{parser::Parser, token_stream::TokenStream},
+  parser::program_parsing::parse_program,
   semantic::resolver::{name_resolver::NameResolver, resolution_info::ResolutionInfo},
 };
 
 pub(crate) fn resolve(source: &str) -> (ResolutionInfo, Vec<Diagnostic>, Ast, Program) {
-  // helper hipotetico
-  let mut ts = TokenStream::new(Lexer::new(source));
-  let mut parser = Parser::new(&mut ts);
-  let program = parser
-    .parse_program()
-    .expect("el codigo fuente no pudo ser parseado correctamente");
-  let ast = parser.into_ast();
+  let (ast, program) = parse_program(source);
   let mut resolver = NameResolver::new(&ast);
   resolver.resolve_program(&program);
   let diagnostics = resolver.diagnostics().to_vec();
@@ -219,7 +212,7 @@ fn assignment_in_inner_scope_resolves_to_the_same_symbol_id() {
         .declared_symbol_of_stmt(assign_stmt_id)
         .is_none()
     );
-    
+
     if let Stmt::Assign { var, value_expr: _ } = ast.stmt(assign_stmt_id) {
       let symbol_inner_scope = resolution_info
         .symbol_of(var)
