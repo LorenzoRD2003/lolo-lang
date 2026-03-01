@@ -49,7 +49,7 @@ impl<'a> NameResolver<'a> {
     resolver
   }
 
-  pub fn resolve_program(&mut self, program: Program) {
+  pub fn resolve_program(&mut self, program: &Program) {
     self.resolve_block(program.main_block());
   }
 

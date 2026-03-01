@@ -15,7 +15,7 @@ pub(crate) fn resolve(source: &str) -> (ResolutionInfo, Vec<Diagnostic>, Ast, Pr
     .expect("el codigo fuente no pudo ser parseado correctamente");
   let ast = parser.into_ast();
   let mut resolver = NameResolver::new(&ast);
-  resolver.resolve_program(program.clone());
+  resolver.resolve_program(&program);
   let diagnostics = resolver.diagnostics().to_vec();
   let resolution_info = resolver.into_resolution_info();
   (resolution_info, diagnostics, ast, program)
