@@ -1,10 +1,10 @@
 pub mod category_checker;
 pub mod compile_time_constant;
-pub mod error;
+pub mod mutability_checker;
 pub mod resolver;
 pub mod scope;
+pub mod semantic_analyzer;
 pub mod symbol;
 pub mod symbol_table;
 pub mod type_checker;
 pub mod types;
-pub mod mutability_checker;
