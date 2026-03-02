@@ -36,7 +36,11 @@ The following modules are complete and conceptually stable:
 - ✅ Parser
 - ✅ AST
 - ✅ Diagnostics
-- ✅ Semantic analysis
+- ✅ Semantic analysis (NameResolver -> TypeChecker -> ConstantTimeCompileChecker -> MutabilityChecker -> CategoryChecker)
+- ✅ Frontend (Lexer → Parser → Semantic Pipeline)
+
+The frontend is implemented as a configurable, extensible pipeline with
+well-defined compilation stages.
 
 The next planned phase is **lowering to an intermediate representation (IR)**.
 
@@ -67,16 +71,41 @@ The next planned phase is **lowering to an intermediate representation (IR)**.
 - `if/else`
 - `print`
 
-### Semantic Capabilities
+### Semantic Analysis Phases
 
-- Scoped symbol resolution
-- Shadowing rules
-- Type checking
-- Compile-time constant evaluation
-- Arithmetic overflow detection
-- Division by zero detection
-- Structured diagnostics with spans
-- Error recovery (analysis continues after errors)
+- Name Resolution
+  - Scoped symbol resolution
+  - Shadowing rules
+  - Redeclaration diagnostics
+
+- Type Checking
+  - Strict static typing
+  - Unary and Binary operators type validation
+  - Boolean conditions check
+  - Type mismatch diagnostics
+
+- Mutability Analysis
+  - Mutable by default bindings
+  - Assignment validation
+
+- Compile-Time Constant Analysis
+  - Constant propagation
+  - Arithmetic overflow detection
+  - Division by zero detection
+
+- Category Analysis
+  - L-value / R-value classification
+  - Assignment target validation
+
+### Compilation Modes
+
+The frontend supports configurable compilation policies:
+
+- Strict mode (fail-fast)
+- CLI/tolerant mode (collect diagnostics)
+- IDE-oriented mode
+
+This enables future integration with CLI tools and future IDE support.
 
 ---
 
@@ -87,18 +116,44 @@ The compiler is structured as a clean pipeline:
 ```
 source code
 ↓
-lexer
+Frontend Pipeline
 ↓
-parser
+Parsing Stage
 ↓
-AST
+Semantic Stages:
+  - Name Resolution
+  - Type Checking
+  - Mutability Analysis
+  - Compile-Time Constant Analysis
+  - Category Analysis
 ↓
-semantic analysis
-↓
-(coming next: IR lowering)
+(coming next: IR lowering stage)
 ```
 
 Each stage is clearly separated and tested independently.
+
+## Frontend Architecture
+
+The frontend is implemented as a staged pipeline.  
+Each compilation phase is modeled as an independent `Stage` implementing a common trait.
+
+Current frontend stages:
+
+1. Parsing
+2. Semantic Analysis:
+   - Name Resolution
+   - Type Checking
+   - Mutability Checking
+   - Compile-Time Constant Analysis
+   - Category Checking
+
+## Extensibility
+
+The frontend pipeline is designed to be open for extension. Compilation phases are modeled as trait-based stages:
+
+- Each stage implements a common interface.
+- Stages are dynamically dispatched.
+- Adding a new phase (e.g., IR lowering, optimizations) requires no modification to existing stages.
 
 ---
 
@@ -164,6 +219,11 @@ src/
  ├── ast/
  ├── diagnostics/
  ├── semantic/
+ └── frontend/
+ ├   ├── config.rs
+ ├   ├── frontend.rs
+ ├   ├── frontend_result.rs
+ ├   └── pipeline.rs
  └── lib.rs
 ```
 
