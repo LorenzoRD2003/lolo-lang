@@ -110,4 +110,8 @@ impl Token {
   pub fn span(&self) -> &Span {
     &self.span
   }
+
+  pub fn is_eof(&self) -> bool {
+    self.kind() == TokenKind::EOF
+  }
 }

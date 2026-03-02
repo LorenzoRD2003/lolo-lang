@@ -8,6 +8,7 @@
 use std::collections::VecDeque;
 
 use crate::{
+  diagnostics::diagnostic::Diagnostic,
   lexer::{
     lexer::Lexer,
     token::{Token, TokenKind},
@@ -36,14 +37,10 @@ impl<'a> TokenStream<'a> {
   // =========================
 
   /// Asegura que haya al menos `n + 1` tokens en el buffer
-  fn ensure_buffered(&mut self, n: usize) {
+  fn ensure_buffered(&mut self, n: usize, diagnostics: &mut Vec<Diagnostic>) {
     while self.buffer.len() <= n {
-      match self.lexer.next() {
-        Some(Ok(token)) => self.buffer.push_back(token),
-        Some(Err(_err)) => {
-          // TODO posible: impl From<LexerError> for ParserError
-          continue;
-        }
+      match self.lexer.next(diagnostics) {
+        Some(token) => self.buffer.push_back(token),
         None => break,
       }
     }
@@ -54,27 +51,31 @@ impl<'a> TokenStream<'a> {
   // =========================
 
   /// Lookahead sin consumir.
-  pub fn peek(&mut self, n: usize) -> Option<&Token> {
-    self.ensure_buffered(n);
+  pub fn peek(&mut self, n: usize, diagnostics: &mut Vec<Diagnostic>) -> Option<&Token> {
+    self.ensure_buffered(n, diagnostics);
     self.buffer.get(n)
   }
 
   /// peek(0) = token actual
-  pub fn peek_first(&mut self) -> Option<&Token> {
-    self.peek(0)
+  pub fn peek_first(&mut self, diagnostics: &mut Vec<Diagnostic>) -> Option<&Token> {
+    self.peek(0, diagnostics)
   }
 
   /// Consume y devuelve el siguiente token
-  pub fn bump(&mut self) -> Option<Token> {
+  pub fn bump(&mut self, diagnostics: &mut Vec<Diagnostic>) -> Option<Token> {
     if self.buffer.is_empty() {
-      return self.lexer.next().and_then(Result::ok);
+      return self.lexer.next(diagnostics);
     }
     self.buffer.pop_front()
   }
 
   /// Siempre avanza. Devuelve error si el token no es del tipo esperado.
-  pub fn expect(&mut self, kind: TokenKind) -> Result<Token, ParserError> {
-    match self.bump() {
+  pub fn expect(
+    &mut self,
+    kind: TokenKind,
+    diagnostics: &mut Vec<Diagnostic>,
+  ) -> Result<Token, ParserError> {
+    match self.bump(diagnostics) {
       Some(token) if token.kind() == kind => Ok(token),
       Some(token) => Err(ParserError::UnexpectedToken(token)),
       None => Err(ParserError::UnexpectedEOF),
@@ -82,14 +83,14 @@ impl<'a> TokenStream<'a> {
   }
 
   /// Chequea el kind del token en posición `n` sin consumir.
-  pub fn check_kind(&mut self, n: usize, kind: TokenKind) -> bool {
-    matches!(self.peek(n), Some(tok) if tok.kind() == kind)
+  pub fn check_kind(
+    &mut self,
+    n: usize,
+    kind: TokenKind,
+    diagnostics: &mut Vec<Diagnostic>,
+  ) -> bool {
+    matches!(self.peek(n, diagnostics), Some(tok) if tok.kind() == kind)
   }
-
-  // /// Devuelve true si el token actual es EOF.
-  // pub fn is_eof(&mut self) -> bool {
-  //   matches!(self.peek(0), Some(tok) if tok.kind() == TokenKind::EOF)
-  // }
 }
 
 #[cfg(test)]

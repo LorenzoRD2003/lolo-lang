@@ -1,145 +1,158 @@
 use proptest::prelude::*;
 
-use crate::lexer::{error::LexerError, lexer::Lexer, token::TokenKind};
+use crate::lexer::{lexer::Lexer, token::TokenKind};
 
 #[test]
 fn eof_is_emitted() {
   let mut lexer = Lexer::new("");
-  let tok = lexer.next().unwrap().unwrap();
+  let mut diagnostics = Vec::new();
+  let tok = lexer.next(&mut diagnostics).unwrap();
   assert_eq!(tok.kind(), TokenKind::EOF);
 }
 
 #[test]
 fn lex_simple_delimiters_tokens() {
+  let mut diagnostics = Vec::new();
   let src = "( ) { } ;";
-  let tokens: Vec<TokenKind> = Lexer::new(src).map(|res| res.unwrap().kind()).collect();
-
-  assert_eq!(
-    tokens,
-    vec![
-      TokenKind::LParen,
-      TokenKind::RParen,
-      TokenKind::LCurlyBrace,
-      TokenKind::RCurlyBrace,
-      TokenKind::Semicolon,
-      TokenKind::EOF,
-    ]
-  );
+  let mut lexer = Lexer::new(src);
+  let expected_tokens = vec![
+    TokenKind::LParen,
+    TokenKind::RParen,
+    TokenKind::LCurlyBrace,
+    TokenKind::RCurlyBrace,
+    TokenKind::Semicolon,
+    TokenKind::EOF,
+  ];
+  for expected_token in expected_tokens {
+    let token = lexer.next(&mut diagnostics).unwrap();
+    assert_eq!(token.kind(), expected_token);
+  }
 }
 
 #[test]
 fn lex_keywords() {
-  let tokens: Vec<TokenKind> = Lexer::new("let true false if else return")
-    .map(|res| res.unwrap().kind())
-    .collect();
-
-  assert_eq!(
-    tokens,
-    vec![
-      TokenKind::Let,
-      TokenKind::BooleanLiteral,
-      TokenKind::BooleanLiteral,
-      TokenKind::If,
-      TokenKind::Else,
-      TokenKind::Return,
-      TokenKind::EOF
-    ]
-  );
+  let mut diagnostics = Vec::new();
+  let mut lexer = Lexer::new("let true false if else return");
+  let expected_tokens = vec![
+    TokenKind::Let,
+    TokenKind::BooleanLiteral,
+    TokenKind::BooleanLiteral,
+    TokenKind::If,
+    TokenKind::Else,
+    TokenKind::Return,
+    TokenKind::EOF,
+  ];
+  for expected_token in expected_tokens {
+    let token = lexer.next(&mut diagnostics).unwrap();
+    assert_eq!(token.kind(), expected_token);
+  }
 }
 
 #[test]
 fn lex_identifier() {
-  let src = "hello world";
-  let tokens: Vec<_> = Lexer::new(src).map(Result::unwrap).collect();
-  // recordar que aun no hay strings en el lenguaje. esas deberian estar entre comillas en un futuro
-  assert_eq!(tokens[0].lexeme(), "hello");
-  assert_eq!(tokens[0].kind(), TokenKind::Identifier);
-  assert_eq!(tokens[1].lexeme(), "world");
-  assert_eq!(tokens[1].kind(), TokenKind::Identifier);
+  let mut diagnostics = Vec::new();
+  let mut lexer = Lexer::new("hello world");
+  let first_token = lexer.next(&mut diagnostics).unwrap();
+  assert_eq!(first_token.lexeme(), "hello");
+  let second_token = lexer.next(&mut diagnostics).unwrap();
+  assert_eq!(first_token.kind(), TokenKind::Identifier);
+  assert_eq!(second_token.lexeme(), "world");
+  assert_eq!(second_token.kind(), TokenKind::Identifier);
 }
 
 #[test]
 fn lex_number_literal() {
-  let src = "12345";
-  let token = Lexer::new(src).next().unwrap().unwrap();
+  let mut diagnostics = Vec::new();
+  let mut lexer = Lexer::new("12345");
+  let token = lexer.next(&mut diagnostics).unwrap();
   assert_eq!(token.kind(), TokenKind::NumberLiteral);
   assert_eq!(token.lexeme(), "12345");
 }
 
 #[test]
 fn lex_operators() {
-  let src = "+ == ! != > >= !$ ^/ ^^";
-  let lexer = Lexer::new(src);
-  let tokens: Vec<TokenKind> = lexer
-    .filter_map(|res| res.ok().map(|tok| tok.kind()))
-    .collect();
-  assert_eq!(
-    tokens,
-    vec![
-      TokenKind::Plus,
-      TokenKind::EqualEqual,
-      TokenKind::Bang,
-      TokenKind::BangEqual,
-      TokenKind::Greater,
-      TokenKind::GreaterEqual,
-      TokenKind::Bang,
-      TokenKind::Slash,
-      TokenKind::CaretCaret,
-      TokenKind::EOF,
-    ]
-  );
+  let mut diagnostics = Vec::new();
+  let mut lexer = Lexer::new("+ == ! != > >= ! / ^^");
+  let expected_tokens = vec![
+    TokenKind::Plus,
+    TokenKind::EqualEqual,
+    TokenKind::Bang,
+    TokenKind::BangEqual,
+    TokenKind::Greater,
+    TokenKind::GreaterEqual,
+    TokenKind::Bang,
+    TokenKind::Slash,
+    TokenKind::CaretCaret,
+    TokenKind::EOF,
+  ];
+  for expected_token in expected_tokens {
+    let token = lexer.next(&mut diagnostics);
+    assert_eq!(token.unwrap().kind(), expected_token);
+  }
 }
 
 #[test]
 fn lex_ill_formed_literal() {
-  let src = "123abc";
-  let result = Lexer::new(src).next().unwrap();
-  assert!(result.is_err());
-  let err = result.unwrap_err();
-  assert_eq!(err, LexerError::IllFormedLiteral(src.into(), 0..6));
+  let mut diagnostics = Vec::new();
+  let mut lexer = Lexer::new("123abc");
+  assert!(lexer.next(&mut diagnostics).is_none());
+  assert!(!diagnostics.is_empty());
+  assert!(
+    diagnostics[0]
+      .msg()
+      .contains(&format!("se detecto un literal mal formado 123abc"))
+  );
 }
 
 #[test]
 fn lex_invalid_character() {
-  let src = "@";
-  let result = Lexer::new(src).next().unwrap();
-  assert!(result.is_err());
-  let err = result.unwrap_err();
-  assert_eq!(err, LexerError::InvalidCharacter('@', 0..1));
+  let mut diagnostics = Vec::new();
+  let mut lexer = Lexer::new("@");
+  assert!(lexer.next(&mut diagnostics).is_some_and(|tok| tok.is_eof()));
+  assert!(!diagnostics.is_empty());
+  assert!(
+    diagnostics[0]
+      .msg()
+      .contains(&format!("se detecto un caracter invalido '@'"))
+  );
 }
 
 #[test]
 fn lex_operators_find_invalid_characters() {
+  let mut diagnostics = Vec::new();
   let src = "+ == ! != > >= !$ ^/ ^^";
-  let lexer = Lexer::new(src);
-  // chequeo que encuentre el InvalidCharacter('$')
-  let errors: Vec<LexerError> = lexer.filter_map(|res| res.err()).collect();
-  assert_eq!(errors.len(), 2);
-  assert_eq!(errors[0], LexerError::InvalidCharacter('$', 16..17));
-  assert_eq!(errors[1], LexerError::InvalidCharacter('^', 18..19));
+  let mut lexer = Lexer::new(src);
+  loop {
+    let token = lexer.next(&mut diagnostics);
+    match token {
+      Some(token) if token.is_eof() => break,
+      _ => continue,
+    }
+  }
+  assert_eq!(diagnostics.len(), 2);
 }
 
 // test unitario: mezcla operadores + números + identificadores
 #[test]
 fn lex_mixed_input() {
+  let mut diagnostics = Vec::new();
   let input = "a + b * 42 = false";
-  let tokens: Vec<TokenKind> = Lexer::new(input)
-    .filter_map(|res| res.ok().map(|tok| tok.kind()))
-    .collect();
+  let mut lexer = Lexer::new(input);
 
-  assert_eq!(
-    tokens,
-    vec![
-      TokenKind::Identifier,
-      TokenKind::Plus,
-      TokenKind::Identifier,
-      TokenKind::Star,
-      TokenKind::NumberLiteral,
-      TokenKind::Equal,
-      TokenKind::BooleanLiteral,
-      TokenKind::EOF,
-    ]
-  );
+  let expected_tokens = vec![
+    TokenKind::Identifier,
+    TokenKind::Plus,
+    TokenKind::Identifier,
+    TokenKind::Star,
+    TokenKind::NumberLiteral,
+    TokenKind::Equal,
+    TokenKind::BooleanLiteral,
+    TokenKind::EOF,
+  ];
+  for expected_token in expected_tokens {
+    let token = lexer.next(&mut diagnostics).unwrap();
+    assert_eq!(token.kind(), expected_token);
+  }
 }
 
 // ===============================
@@ -150,31 +163,23 @@ proptest! {
   #[test]
   // necesito que las entradas sean ASCII para que no se rompan los proptest
   fn lexer_never_panics(bytes in proptest::collection::vec(0u8..=127u8, 0..100)) {
+    let mut diagnostics = Vec::new();
     let input = String::from_utf8(bytes).unwrap();
-    let lexer = Lexer::new(&input);
-    for tok in lexer { // iteracion completa
-      let _ = tok;
-    }
+    let mut lexer = Lexer::new(&input);
+    while let Some(_) = lexer.next(&mut diagnostics) {}
   }
 }
 
 proptest! {
   #[test]
   fn spans_are_always_valid(bytes in proptest::collection::vec(0u8..=127u8, 0..100)) {
+    let mut diagnostics = Vec::new();
     let input = String::from_utf8(bytes).unwrap();
-    let lexer = Lexer::new(&input);
-    for tok in lexer {
-      match tok {
-        Ok(tok) => {
-          let tok_span = tok.span();
-          prop_assert!(tok_span.start <= tok_span.end);
-          prop_assert!(tok_span.end <= input.len());
-        }
-        Err(LexerError::InvalidCharacter(_, span)) | Err(LexerError::IllFormedLiteral(_, span)) => {
-          prop_assert!(span.start <= span.end);
-          prop_assert!(span.end <= input.len());
-        }
-      }
+    let mut lexer = Lexer::new(&input);
+    while let Some(tok) = lexer.next(&mut diagnostics) {
+      let tok_span = tok.span();
+      prop_assert!(tok_span.start <= tok_span.end);
+      prop_assert!(tok_span.end <= input.len());
     }
   }
 }
@@ -183,17 +188,21 @@ proptest! {
 proptest! {
   #[test]
   fn lexemes_reconstruct_input(bytes in proptest::collection::vec(0u8..=127u8, 0..100)) {
+    let mut diagnostics = Vec::new();
     let input = String::from_utf8(bytes).unwrap();
     let mut lexer = Lexer::new(&input);
-    let reconstructed: String = lexer
-        .by_ref()
-        .filter_map(Result::ok)
+    let mut tokens = Vec::new();
+    while let Some(token) = lexer.next(&mut diagnostics) {
+      tokens.push(token);
+    }
+    let reconstructed: String = tokens
+        .iter()
         .filter(|t| t.kind() != TokenKind::EOF)
         .map(|t| t.lexeme().to_string())
         .collect();
     let no_ws: String = input.chars().filter(|c| !c.is_whitespace()).collect();
     // esto funciona en caso de que no haya habido diagnostics durante la ejecucion (por ejemplo un invalid character)
-    if lexer.diagnostics().is_empty() {
+    if diagnostics.is_empty() {
       prop_assert_eq!(reconstructed, no_ws);
     }
   }

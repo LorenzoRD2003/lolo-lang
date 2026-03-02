@@ -25,7 +25,6 @@ pub struct Lexer<'a> {
   /// El estado primario del lexer es la posicion del puntero y el offset, nada mas.
   /// Fila/columna son para simplificar errores, son metadata derivada.
   position: usize,
-  diagnostics: Vec<Diagnostic>,
   emitted_eof: bool,
 }
 
@@ -34,13 +33,92 @@ impl<'a> Lexer<'a> {
     Self {
       source,
       position: 0,
-      diagnostics: Vec::new(),
       emitted_eof: false,
     }
   }
 
-  pub fn diagnostics(&self) -> &[Diagnostic] {
-    &self.diagnostics
+  /*
+    Devuelve el siguiente token y avanza
+    El lexer decide que token producir basandose en el char actual y aplicando reglas
+    1. Mirar char actual
+    2. Decidir que tipo de "cosa" empieza aca -> revisar la jerarquia de reconocimiento en `manual.md`
+    3. Consumir caracteres segun las reglas
+    4. Emitir token
+  */
+  pub fn next(&mut self, diagnostics: &mut Vec<Diagnostic>) -> Option<Token> {
+    loop {
+      match self.current_char() {
+        // EOF
+        None => {
+          if self.emitted_eof {
+            return None;
+          }
+          self.emitted_eof = true;
+          return Some(self.make_token(TokenKind::EOF, self.position));
+        }
+
+        // whitespace: no genera ningun token
+        Some(c) if c.is_whitespace() => {
+          self.consume_while(char::is_whitespace);
+          continue;
+        }
+
+        // delimitadores: el mapeo es uno a uno. es consumir un solo token
+        // Fundamental: No tengo que hardcodear lexemas. Solamente consumir caracteres y fabricar tokens
+        Some('(') => {
+          let start = self.position;
+          self.advance();
+          return Some(self.make_token(TokenKind::LParen, start));
+        }
+
+        Some(')') => {
+          let start = self.position;
+          self.advance();
+          return Some(self.make_token(TokenKind::RParen, start));
+        }
+
+        Some('{') => {
+          let start = self.position;
+          self.advance();
+          return Some(self.make_token(TokenKind::LCurlyBrace, start));
+        }
+
+        Some('}') => {
+          let start = self.position;
+          self.advance();
+          return Some(self.make_token(TokenKind::RCurlyBrace, start));
+        }
+
+        Some(';') => {
+          let start = self.position;
+          self.advance();
+          return Some(self.make_token(TokenKind::Semicolon, start));
+        }
+
+        // digitos: seguro el token deberia ser un NumberLiteral. hay que consumir todo el numero
+        // no mezclar numeros con identificadores: "123abc" deberia dar error
+        Some(c) if c.is_ascii_digit() => return self.lex_number_literal(diagnostics),
+
+        // Identifiers / Keywords
+        // en particular, al terminar de parsear se verifica si el lexema obtenido es una keyword
+        Some(c) if is_identifier_start(c) => return Some(self.lex_identifier_or_keyword()),
+
+        // operadores: todavia no tenemos (serian +, -, *, ==, etc). pero irian aca
+        // Regla fundamental: siempre intentar primero reconocer los operadores mas largos
+        Some(c) => {
+          if let Some(token) = self.lex_operator(c) {
+            return Some(token);
+          }
+          // si llegamos hasta aca, es un caracter invalido
+          self.emit_error(
+            diagnostics,
+            &LexerError::InvalidCharacter(c, self.position..(self.position + 1)),
+          );
+          self.advance();
+          continue;
+        }
+      }
+    }
   }
 
   // ============================
@@ -89,31 +167,36 @@ impl<'a> Lexer<'a> {
     )
   }
 
+  fn emit_error(&self, diagnostics: &mut Vec<Diagnostic>, err: &LexerError) {
+    diagnostics.push(err.to_diagnostic());
+  }
+
   // =========================
   // Lexers especificos
   // =========================
 
   // Funcion auxiliar para lexear un numero y devolver el token indicado
-  fn lex_number_literal(&mut self) -> Result<Token, LexerError> {
+  fn lex_number_literal(&mut self, diagnostics: &mut Vec<Diagnostic>) -> Option<Token> {
     let start = self.position;
     self.consume_while(|c| c.is_ascii_digit());
     // self.check_unexpected_eof_error();
 
-    if let Some(c) = self.current_char() {
-      if is_identifier_start(c) {
-        // es un error de IllFormedLiteral. sigo consumiendo hasta llegar al final del literal
-        self.advance();
-        self.consume_while(is_identifier_continue);
-        // self.check_unexpected_eof_error();
-        let err = LexerError::IllFormedLiteral(
+    if let Some(c) = self.current_char()
+      && is_identifier_start(c)
+    {
+      // es un error de IllFormedLiteral. sigo consumiendo hasta llegar al final del literal
+      self.advance();
+      self.consume_while(is_identifier_continue);
+      self.emit_error(
+        diagnostics,
+        &LexerError::IllFormedLiteral(
           self.source[start..self.position].to_string(),
           start..self.position,
-        );
-        self.diagnostics.push(err.to_diagnostic());
-        return Err(err);
-      }
+        ),
+      );
+      return None;
     }
-    Ok(self.make_token(TokenKind::NumberLiteral, start))
+    Some(self.make_token(TokenKind::NumberLiteral, start))
   }
 
   fn lex_identifier_or_keyword(&mut self) -> Token {
@@ -137,97 +220,6 @@ impl<'a> Lexer<'a> {
       return Some(self.make_token(kind, start));
     }
     None
-  }
-}
-
-// =========================
-// Iterator impl
-// =========================
-
-// Esto nos permite hacer `for token in lexer` despues
-impl<'a> Iterator for Lexer<'a> {
-  type Item = Result<Token, LexerError>;
-
-  /*
-    Devuelve el siguiente token y avanza
-    El lexer decide que token producir basandose en el char actual y aplicando reglas
-    1. Mirar char actual
-    2. Decidir que tipo de "cosa" empieza aca -> revisar la jerarquia de reconocimiento en `manual.md`
-    3. Consumir caracteres segun las reglas
-    4. Emitir token
-  */
-  fn next(&mut self) -> Option<Self::Item> {
-    loop {
-      match self.current_char() {
-        // EOF
-        None => {
-          if self.emitted_eof {
-            return None;
-          }
-          self.emitted_eof = true;
-          return Some(Ok(self.make_token(TokenKind::EOF, self.position)));
-        }
-
-        // whitespace: no genera ningun token
-        Some(c) if c.is_whitespace() => {
-          self.consume_while(char::is_whitespace);
-          continue;
-        }
-
-        // delimitadores: el mapeo es uno a uno. es consumir un solo token
-        // Fundamental: No tengo que hardcodear lexemas. Solamente consumir caracteres y fabricar tokens
-        Some('(') => {
-          let start = self.position;
-          self.advance();
-          return Some(Ok(self.make_token(TokenKind::LParen, start)));
-        }
-
-        Some(')') => {
-          let start = self.position;
-          self.advance();
-          return Some(Ok(self.make_token(TokenKind::RParen, start)));
-        }
-
-        Some('{') => {
-          let start = self.position;
-          self.advance();
-          return Some(Ok(self.make_token(TokenKind::LCurlyBrace, start)));
-        }
-
-        Some('}') => {
-          let start = self.position;
-          self.advance();
-          return Some(Ok(self.make_token(TokenKind::RCurlyBrace, start)));
-        }
-
-        Some(';') => {
-          let start = self.position;
-          self.advance();
-          return Some(Ok(self.make_token(TokenKind::Semicolon, start)));
-        }
-
-        // digitos: seguro el token deberia ser un NumberLiteral. hay que consumir todo el numero
-        // no mezclar numeros con identificadores: "123abc" deberia dar error
-        Some(c) if c.is_ascii_digit() => return Some(self.lex_number_literal()),
-
-        // Identifiers / Keywords
-        // en particular, al terminar de parsear se verifica si el lexema obtenido es una keyword
-        Some(c) if is_identifier_start(c) => return Some(Ok(self.lex_identifier_or_keyword())),
-
-        // operadores: todavia no tenemos (serian +, -, *, ==, etc). pero irian aca
-        // Regla fundamental: siempre intentar primero reconocer los operadores mas largos
-        Some(c) => {
-          if let Some(token) = self.lex_operator(c) {
-            return Some(Ok(token));
-          }
-          // si llegamos hasta aca, es un caracter invalido
-          let err = LexerError::InvalidCharacter(c, self.position..(self.position + 1));
-          self.diagnostics.push(err.to_diagnostic());
-          self.advance();
-          return Some(Err(err));
-        }
-      }
-    }
   }
 }
 

@@ -219,9 +219,10 @@ fn parses_comparison() {
 
 #[test]
 fn comparison_is_not_associative() {
+  let mut diagnostics = Vec::new();
   let lexer = Lexer::new("a < b < c");
   let mut ts = TokenStream::new(lexer);
-  let mut parser = Parser::new(&mut ts);
+  let mut parser = Parser::new(&mut ts, &mut diagnostics);
   let expr = parser.parse_expression();
   assert!(expr.is_some(), "parser should recover");
   assert!(
@@ -232,9 +233,10 @@ fn comparison_is_not_associative() {
 
 #[test]
 fn parser_recovers_after_comparison_error() {
+  let mut diagnostics = Vec::new();
   let lexer = Lexer::new("a < b < c + d");
   let mut ts = TokenStream::new(lexer);
-  let mut parser = Parser::new(&mut ts);
+  let mut parser = Parser::new(&mut ts, &mut diagnostics);
   let expr = parser.parse_expression();
   assert!(expr.is_some());
   assert!(!parser.diagnostics().is_empty());
@@ -533,9 +535,10 @@ fn program_requires_main() {
 #[test]
 fn let_requires_identifier() {
   let source = "let 123 = 5;";
+  let mut diagnostics = Vec::new();
   let lexer = Lexer::new(source);
   let mut tokens = TokenStream::new(lexer);
-  let mut parser = Parser::new(&mut tokens);
+  let mut parser = Parser::new(&mut tokens, &mut diagnostics);
   parser.parse_statement();
   assert!(
     parser
@@ -547,10 +550,11 @@ fn let_requires_identifier() {
 
 #[test]
 fn unexpected_eof_in_block() {
+  let mut diagnostics = Vec::new();
   let source = "main { print 1; ";
   let lexer = Lexer::new(source);
   let mut tokens = TokenStream::new(lexer);
-  let mut parser = Parser::new(&mut tokens);
+  let mut parser = Parser::new(&mut tokens, &mut diagnostics);
   parser.parse_program();
   assert!(
     parser
@@ -562,10 +566,11 @@ fn unexpected_eof_in_block() {
 
 #[test]
 fn missing_semicolon_emits_error() {
+  let mut diagnostics = Vec::new();
   let source = "main { print 1 }";
   let lexer = Lexer::new(source);
   let mut tokens = TokenStream::new(lexer);
-  let mut parser = Parser::new(&mut tokens);
+  let mut parser = Parser::new(&mut tokens, &mut diagnostics);
   parser.parse_program();
   assert!(
     parser

@@ -30,15 +30,15 @@ pub struct Parser<'a> {
   /// El parser es quien construye nodos, fusiona coherementemente los spans del Ast arena-based
   ast: Ast,
   /// Para acumular los errores. Podemos devolver un AST parcial valido
-  diagnostics: Vec<Diagnostic>,
+  diagnostics: &'a mut Vec<Diagnostic>,
 }
 
 impl<'a> Parser<'a> {
-  pub fn new(tokens: &'a mut TokenStream<'a>) -> Self {
+  pub fn new(tokens: &'a mut TokenStream<'a>, diagnostics: &'a mut Vec<Diagnostic>) -> Self {
     Self {
       tokens,
       ast: Ast::empty(),
-      diagnostics: Vec::new(),
+      diagnostics,
     }
   }
 
@@ -57,7 +57,7 @@ impl<'a> Parser<'a> {
   fn parse_expr_bp(&mut self, min_bp: u8) -> Option<ExprId> {
     let mut lhs = self.parse_prefix()?;
     // si es una asignacion, la devolvemos
-    if self.tokens.peek_first()?.kind() == TokenKind::Equal {
+    if self.tokens.peek_first(self.diagnostics)?.kind() == TokenKind::Equal {
       return Some(lhs);
     }
     // Mientras el siguiente token pueda extender la expresion...
@@ -65,7 +65,7 @@ impl<'a> Parser<'a> {
     let mut i = 5;
     loop {
       i = i + 1;
-      let token = self.tokens.peek_first()?;
+      let token = self.tokens.peek_first(self.diagnostics)?;
       let Some((lbp, _)) = infix_binding_power(token.kind()) else {
         break;
       };
@@ -73,7 +73,7 @@ impl<'a> Parser<'a> {
       if lbp < min_bp {
         break;
       }
-      let token = self.tokens.bump()?;
+      let token = self.tokens.bump(self.diagnostics)?;
       lhs = self.parse_infix(lhs, token)?;
     }
     Some(lhs)
@@ -82,7 +82,7 @@ impl<'a> Parser<'a> {
   /// Es el nud. Construye el LHS inicial.
   /// Maneja literales, identifiers, expresiones con parentesis, operadores unarios.
   fn parse_prefix(&mut self) -> Option<ExprId> {
-    let token = self.tokens.bump()?;
+    let token = self.tokens.bump(self.diagnostics)?;
     let (kind, lexeme, span) = (token.kind(), token.lexeme(), token.span());
     match kind {
       TokenKind::NumberLiteral => {
@@ -104,7 +104,7 @@ impl<'a> Parser<'a> {
         // Llamar recursivamente
         let inner_expr_id = self.parse_expr_bp(ASSIGN_BP)?;
         // Esperar hasta `)` OBLIGATORIAMENTE
-        match self.tokens.expect(TokenKind::RParen) {
+        match self.tokens.expect(TokenKind::RParen, self.diagnostics) {
           Ok(rparen_token) => {
             // span(open_paren.start -> close_paren.end)
             let open_paren_start = span.start;
@@ -182,7 +182,7 @@ impl<'a> Parser<'a> {
   }
 
   fn expect_token(&mut self, kind: TokenKind) {
-    if let Err(err) = self.tokens.expect(kind) {
+    if let Err(err) = self.tokens.expect(kind, self.diagnostics) {
       self.emit_error(&err);
     }
   }
@@ -191,7 +191,7 @@ impl<'a> Parser<'a> {
   pub fn parse_statement(&mut self) -> Option<StmtId> {
     // decidir que tipo de statement es.
     // uso peek_first() en vez de bump() porque el bump() lo uso al parsear en cada branch
-    let token = self.tokens.peek_first()?;
+    let token = self.tokens.peek_first(self.diagnostics)?;
     let (stmt, span) = match token.kind() {
       TokenKind::Let => self.parse_let_stmt()?,
       TokenKind::Return => self.parse_return_stmt()?,
@@ -199,7 +199,7 @@ impl<'a> Parser<'a> {
       TokenKind::Print => self.parse_print_stmt()?,
       _ => {
         // Ahora depende si el segundo token es un `=` o no
-        if self.tokens.check_kind(1, TokenKind::Equal) {
+        if self.tokens.check_kind(1, TokenKind::Equal, self.diagnostics) {
           self.parse_assign_stmt()?
         } else {
           let expr_id = self.parse_expression()?;
@@ -214,7 +214,7 @@ impl<'a> Parser<'a> {
   /// let <var_expr> = <expr>;
   fn parse_let_stmt(&mut self) -> Option<(Stmt, Span)> {
     // Consumimos el `let`
-    let span_start = self.tokens.peek_first()?.span().start;
+    let span_start = self.tokens.peek_first(self.diagnostics)?.span().start;
     self.expect_token(TokenKind::Let);
     // corregimos el span_start porque el let fue consumido antes
     self
@@ -232,7 +232,7 @@ impl<'a> Parser<'a> {
   where
     F: FnOnce(ExprId, ExprId) -> Stmt,
   {
-    let span_start = self.tokens.peek_first()?.span().start;
+    let span_start = self.tokens.peek_first(self.diagnostics)?.span().start;
     // Ahora deberiamos consumir un identificador de variable
     // Igualmente, vamos a seguir parseando en vez de panickear
     let var = self.parse_identifier_expr()?;
@@ -240,14 +240,14 @@ impl<'a> Parser<'a> {
     self.expect_token(TokenKind::Equal);
     // Luego debemos parsear una expresion (que semanticamente es ValueExpr)
     let value = self.parse_expression()?;
-    let span_end = self.tokens.peek_first()?.span().end;
+    let span_end = self.tokens.peek_first(self.diagnostics)?.span().end;
     // Ahora deberiamos consumir un `;`
     self.expect_token(TokenKind::Semicolon);
     Some((constructor(var, value), span_start..span_end))
   }
 
   fn parse_identifier_expr(&mut self) -> Option<ExprId> {
-    match self.tokens.expect(TokenKind::Identifier) {
+    match self.tokens.expect(TokenKind::Identifier, self.diagnostics) {
       Ok(token) => {
         let expr_id = self.ast.add_expr(
           Expr::Var(VarId(token.lexeme().into())),
@@ -264,24 +264,24 @@ impl<'a> Parser<'a> {
 
   fn parse_return_stmt(&mut self) -> Option<(Stmt, Span)> {
     // return <expr>;
-    let span_start = self.tokens.peek_first()?.span().start;
+    let span_start = self.tokens.peek_first(self.diagnostics)?.span().start;
     self.expect_token(TokenKind::Return);
     let expr_id = self.parse_expression()?;
-    let span_end = self.tokens.peek_first()?.span().end;
+    let span_end = self.tokens.peek_first(self.diagnostics)?.span().end;
     self.expect_token(TokenKind::Semicolon);
     Some((Stmt::Return(expr_id), span_start..span_end))
   }
 
   fn parse_if_stmt(&mut self) -> Option<(Stmt, Span)> {
     // if expr { block } [ else { block } ]
-    let span_start = self.tokens.peek_first()?.span().start;
+    let span_start = self.tokens.peek_first(self.diagnostics)?.span().start;
     self.expect_token(TokenKind::If);
     let condition = self.parse_expression()?;
     // parsear el bloque if
     let if_block = self.parse_block()?;
     let mut span_end = self.ast.block_span(if_block).end;
     // si hay un bloque else, lo tengo que parsear
-    if let Some(token) = self.tokens.peek_first()
+    if let Some(token) = self.tokens.peek_first(self.diagnostics)
       && matches!(token.kind(), TokenKind::Else)
     {
       self.expect_token(TokenKind::Else);
@@ -309,10 +309,10 @@ impl<'a> Parser<'a> {
 
   fn parse_print_stmt(&mut self) -> Option<(Stmt, Span)> {
     // print <expr>;
-    let span_start = self.tokens.peek_first()?.span().start;
+    let span_start = self.tokens.peek_first(self.diagnostics)?.span().start;
     self.expect_token(TokenKind::Print);
     let expr_id = self.parse_expression()?;
-    let span_end = self.tokens.peek_first()?.span().end;
+    let span_end = self.tokens.peek_first(self.diagnostics)?.span().end;
     self.expect_token(TokenKind::Semicolon);
     Some((Stmt::Print(expr_id), span_start..span_end))
   }
@@ -320,11 +320,11 @@ impl<'a> Parser<'a> {
   pub fn parse_block(&mut self) -> Option<BlockId> {
     // block ::== { stmt* }
     let mut block = Block::new();
-    let lbrace = self.tokens.expect(TokenKind::LCurlyBrace).ok()?;
+    let lbrace = self.tokens.expect(TokenKind::LCurlyBrace, self.diagnostics).ok()?;
     let span_start = lbrace.span().start;
     loop {
       // el bloque termina cuando encontramos el `}` correspondiente, o con un error si se teremina el archivo
-      let token = self.tokens.peek_first()?.clone();
+      let token = self.tokens.peek_first(self.diagnostics)?.clone();
       let token_kind = token.kind();
       if matches!(token_kind, TokenKind::EOF) {
         self.emit_error(&ParserError::UnexpectedEOF);
@@ -337,14 +337,14 @@ impl<'a> Parser<'a> {
       block.add_stmt(stmt);
     }
     // hay que avanzar una ultima vez porque estabamos haciendo peek_first()
-    let rbrace = self.tokens.expect(TokenKind::RCurlyBrace).ok()?;
+    let rbrace = self.tokens.expect(TokenKind::RCurlyBrace, self.diagnostics).ok()?;
     let span_end = rbrace.span().end;
     Some(self.ast.add_block(block, span_start..span_end))
   }
 
   pub fn parse_program(&mut self) -> Option<Program> {
     // program ::= main block
-    let span_start = self.tokens.peek_first()?.span().start;
+    let span_start = self.tokens.peek_first(self.diagnostics)?.span().start;
     self.expect_token(TokenKind::Main);
     let block = self.parse_block()?;
     let span_end = self.ast.block_span(block).end;

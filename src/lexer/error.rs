@@ -13,11 +13,10 @@ impl Diagnosable for LexerError {
   fn to_diagnostic(&self) -> Diagnostic {
     match &self {
       Self::InvalidCharacter(c, span) => {
-        Diagnostic::error(format!("el lexer detecto un caracter invalido {c}"))
-          .with_span(span.clone())
+        Diagnostic::error(format!("se detecto un caracter invalido '{c}'")).with_span(span.clone())
       }
       Self::IllFormedLiteral(lit, span) => {
-        Diagnostic::error(format!("el lexer detecto un literal mal formado {lit}"))
+        Diagnostic::error(format!("se detecto un literal mal formado {lit}"))
           .with_span(span.clone())
       }
     }
