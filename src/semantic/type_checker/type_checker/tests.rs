@@ -14,9 +14,10 @@ use crate::{
 };
 
 fn typecheck(source: &str) -> (TypeInfo, Vec<Diagnostic>, Ast, Program) {
-  let (resolution_info, mut diagnostics, ast, program) = resolve(source);
-  let mut checker = TypeChecker::new(&ast, &resolution_info, &mut diagnostics);
+  let (resolution_info, _, ast, program) = resolve(source);
+  let mut checker = TypeChecker::new(&ast, &resolution_info);
   checker.check_program(&program);
+  let diagnostics = checker.diagnostics().to_vec();
   let type_info = checker.into_type_info();
   (type_info, diagnostics, ast, program)
 }

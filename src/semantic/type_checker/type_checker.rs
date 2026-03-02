@@ -36,21 +36,17 @@ pub struct TypeChecker<'a> {
   /// Informacion de resolucion de nombres, recibida al consumir el NameResolver.
   resolution_info: &'a ResolutionInfo,
   /// Donde se van acumulando los errores encontrados durante el analisis de tipos.
-  diagnostics: &'a mut Vec<Diagnostic>,
+  diagnostics: Vec<Diagnostic>,
   /// Informacion sobre tipos que se va acumulando.
   type_info: TypeInfo,
 }
 
 impl<'a> TypeChecker<'a> {
-  pub fn new(
-    ast: &'a Ast,
-    resolution_info: &'a ResolutionInfo,
-    diagnostics: &'a mut Vec<Diagnostic>,
-  ) -> Self {
+  pub fn new(ast: &'a Ast, resolution_info: &'a ResolutionInfo) -> Self {
     Self {
       ast,
       resolution_info,
-      diagnostics,
+      diagnostics: Vec::new(),
       type_info: TypeInfo::new(),
     }
   }

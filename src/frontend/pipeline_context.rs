@@ -2,8 +2,7 @@
 
 use crate::{
   ast::{ast::Ast, program::Program},
-  diagnostics::diagnostic::Diagnostic,
-  semantic::semantic_analyzer::SemanticResult,
+  diagnostics::diagnostic::Diagnostic, semantic::result::SemanticResult,
 };
 pub type IrModule = ();
 

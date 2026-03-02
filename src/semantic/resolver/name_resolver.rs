@@ -30,18 +30,18 @@ pub struct NameResolver<'a> {
   /// no es una referencia y tomamos ownership.
   symbol_table: SymbolTable,
   /// Donde se van acumulando los errores encontrados durante el analisis de resolucion de nombres.
-  diagnostics: &'a mut Vec<Diagnostic>,
+  diagnostics: Vec<Diagnostic>,
   /// Informacion sobre resolucion de nombres que se va acumulando.
   resolution_info: ResolutionInfo,
 }
 
 impl<'a> NameResolver<'a> {
-  pub fn new(ast: &'a Ast, diagnostics: &'a mut Vec<Diagnostic>) -> Self {
+  pub fn new(ast: &'a Ast) -> Self {
     let scopes = ScopeArena::new();
     let mut resolver = Self {
       ast,
       symbol_table: SymbolTable::new(scopes),
-      diagnostics,
+      diagnostics: Vec::new(),
       resolution_info: ResolutionInfo::new(),
     };
     resolver.symbol_table.enter_global_scope();

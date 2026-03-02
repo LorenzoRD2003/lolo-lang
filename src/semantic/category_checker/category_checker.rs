@@ -24,21 +24,17 @@ pub struct CategoryChecker<'a> {
   /// La informacion de que expresiones son constantes en tiempo de compilacion.
   compile_time_constant_info: &'a CompileTimeConstantInfo,
   /// Donde se van acumulando los errores encontrados durante el analisis de categorias.
-  diagnostics: &'a mut Vec<Diagnostic>,
+  diagnostics: Vec<Diagnostic>,
   /// Informacion sobre categorias de las expresiones que se va acumulando.
   category_info: CategoryInfo,
 }
 
 impl<'a> CategoryChecker<'a> {
-  pub fn new(
-    ast: &'a Ast,
-    compile_time_constant_info: &'a CompileTimeConstantInfo,
-    diagnostics: &'a mut Vec<Diagnostic>,
-  ) -> Self {
+  pub fn new(ast: &'a Ast, compile_time_constant_info: &'a CompileTimeConstantInfo) -> Self {
     Self {
       ast,
       compile_time_constant_info,
-      diagnostics,
+      diagnostics: Vec::new(),
       category_info: FxHashMap::default(),
     }
   }

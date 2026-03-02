@@ -25,21 +25,17 @@ pub struct MutabilityChecker<'a> {
   /// Informacion de resolucion de nombres, recibida al consumir el NameResolver.
   resolution_info: &'a ResolutionInfo,
   /// Donde se van acumulando los errores encontrados durante el analisis de mutabilidad.
-  diagnostics: &'a mut Vec<Diagnostic>,
+  diagnostics: Vec<Diagnostic>,
   /// Informacion sobre mutabilidad que se va acumulando.
   mutability_info: MutabilityInfo,
 }
 
 impl<'a> MutabilityChecker<'a> {
-  pub fn new(
-    ast: &'a Ast,
-    resolution_info: &'a ResolutionInfo,
-    diagnostics: &'a mut Vec<Diagnostic>,
-  ) -> Self {
+  pub fn new(ast: &'a Ast, resolution_info: &'a ResolutionInfo) -> Self {
     Self {
       ast,
       resolution_info,
-      diagnostics,
+      diagnostics: Vec::new(),
       mutability_info: FxHashMap::default(),
     }
   }
@@ -108,9 +104,10 @@ mod tests {
   use crate::semantic::resolver::name_resolver::tests::resolve;
 
   fn mutability_check(source: &str) -> (MutabilityInfo, Vec<Diagnostic>) {
-    let (resolution_info, mut diagnostics, ast, program) = resolve(source);
-    let mut checker = MutabilityChecker::new(&ast, &resolution_info, &mut diagnostics);
+    let (resolution_info, _, ast, program) = resolve(source);
+    let mut checker = MutabilityChecker::new(&ast, &resolution_info);
     checker.check_program(&program);
+    let diagnostics = checker.diagnostics().to_vec();
     let type_info = checker.into_mutability_info();
     (type_info, diagnostics)
   }

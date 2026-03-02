@@ -19,16 +19,16 @@ pub struct CompileTimeConstantChecker<'a> {
   /// Vamos a generar mucha metadata para el AST sin tocarlo.
   ast: &'a Ast,
   /// Donde se van acumulando los errores encontrados durante el analisis.
-  diagnostics: &'a mut Vec<Diagnostic>,
+  diagnostics: Vec<Diagnostic>,
   /// Informacion sobre compile time constants que se va acumulando.
   compile_time_constant_info: CompileTimeConstantInfo,
 }
 
 impl<'a> CompileTimeConstantChecker<'a> {
-  pub fn new(ast: &'a Ast, diagnostics: &'a mut Vec<Diagnostic>) -> Self {
+  pub fn new(ast: &'a Ast) -> Self {
     Self {
       ast,
-      diagnostics,
+      diagnostics: Vec::new(),
       compile_time_constant_info: FxHashMap::default(),
     }
   }

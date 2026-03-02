@@ -4,7 +4,7 @@ use crate::{
     pipeline_context::PipelineContext,
     stage::{Stage, StageResult},
   },
-  semantic::semantic_analyzer::SemanticAnalyzer,
+  semantic::{phase_graph::PhaseGraph, semantic_analyzer::SemanticAnalyzer},
 };
 
 #[derive(Debug, Clone)]
@@ -17,10 +17,11 @@ impl Stage for SemanticStage {
 
   fn run(&self, ctx: &mut PipelineContext, config: &FrontendConfig) -> StageResult {
     let before_errors = ctx.diagnostics.len();
-    let mut semantic_analyzer =
-      SemanticAnalyzer::new(&ctx.ast.as_ref().unwrap(), &mut ctx.diagnostics);
-    let result = semantic_analyzer.analyze(&ctx.program.as_ref().unwrap());
-
+    let result = {
+      let mut semantic_analyzer =
+      SemanticAnalyzer::new(&ctx.ast.as_ref().unwrap(), PhaseGraph::default_semantic_graph(), &mut ctx.diagnostics);
+      semantic_analyzer.analyze(&ctx.program.as_ref().unwrap())
+    };
     ctx.semantic = Some(result);
     if ctx.diagnostics.len() > before_errors && config.stop_after_semantic_errors {
       StageResult::Stop

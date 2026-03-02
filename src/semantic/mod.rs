@@ -1,7 +1,12 @@
 pub mod category_checker;
 pub mod compile_time_constant;
+pub mod context;
 pub mod mutability_checker;
+pub mod phase;
+pub mod phase_executor;
+pub mod phase_graph;
 pub mod resolver;
+pub mod result;
 pub mod scope;
 pub mod semantic_analyzer;
 pub mod symbol;
