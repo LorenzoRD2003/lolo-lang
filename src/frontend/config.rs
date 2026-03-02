@@ -23,8 +23,8 @@ impl FrontendConfig {
     }
   }
 
-  /// Modo test -> fallar inmediatamente si algo esta mal
-  pub fn test_mode() -> Self {
+  /// Modo strict/test -> fallar inmediatamente si algo esta mal
+  pub fn strict_mode() -> Self {
     Self {
       show_ast: false,
       show_semantic_result: false,
@@ -36,7 +36,7 @@ impl FrontendConfig {
   /// Modo IDE -> usar AST aunque haya errores, mejorar experiencia del usuario
   pub fn ide_mode() -> Self {
     Self {
-      show_ast: false,
+      show_ast: true,
       show_semantic_result: true,
       stop_after_parse_errors: false,
       stop_after_semantic_errors: false,

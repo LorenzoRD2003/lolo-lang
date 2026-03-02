@@ -4,31 +4,35 @@ use crate::{
   ast::ast::Ast, diagnostics::diagnostic::Diagnostic, semantic::semantic_analyzer::SemanticResult,
 };
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct FrontendResult {
-  pub ast: Option<Ast>,
-  pub semantic: Option<SemanticResult>,
-  pub diagnostics: Vec<Diagnostic>,
+  ast: Option<Ast>,
+  semantic: Option<SemanticResult>,
+  diagnostics: Vec<Diagnostic>,
 }
 
 impl FrontendResult {
-  pub fn from_diagnostics(diagnostics: Vec<Diagnostic>) -> Self {
+  pub fn from(
+    ast: Option<Ast>,
+    semantic: Option<SemanticResult>,
+    diagnostics: Vec<Diagnostic>,
+  ) -> Self {
     Self {
-      ast: None,
-      semantic: None,
+      ast,
+      semantic,
       diagnostics,
     }
-  }
-
-  pub fn has_errors(&self) -> bool {
-    self.diagnostics.is_empty()
   }
 
   pub fn into_diagnostics(self) -> Vec<Diagnostic> {
     self.diagnostics
   }
 
-  pub fn expect_semantic(self) -> SemanticResult {
-    todo!()
+  pub fn ast(&self) -> Option<&Ast> {
+    self.ast.as_ref()
+  }
+
+  pub fn semantic(&self) -> Option<&SemanticResult> {
+    self.semantic.as_ref()
   }
 }
