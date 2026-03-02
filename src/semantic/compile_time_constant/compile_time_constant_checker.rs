@@ -13,22 +13,22 @@ use crate::{
 
 pub type CompileTimeConstantInfo = FxHashMap<ExprId, ConstValue>;
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct CompileTimeConstantChecker<'a> {
   /// El AST. Forma parte del mundo sintactico, asi que si debe ser una referencia y no tomamos ownership.
   /// Vamos a generar mucha metadata para el AST sin tocarlo.
   ast: &'a Ast,
   /// Donde se van acumulando los errores encontrados durante el analisis.
-  diagnostics: Vec<Diagnostic>,
+  diagnostics: &'a mut Vec<Diagnostic>,
   /// Informacion sobre compile time constants que se va acumulando.
   compile_time_constant_info: CompileTimeConstantInfo,
 }
 
 impl<'a> CompileTimeConstantChecker<'a> {
-  pub fn new(ast: &'a Ast) -> Self {
+  pub fn new(ast: &'a Ast, diagnostics: &'a mut Vec<Diagnostic>) -> Self {
     Self {
       ast,
-      diagnostics: Vec::new(),
+      diagnostics,
       compile_time_constant_info: FxHashMap::default(),
     }
   }

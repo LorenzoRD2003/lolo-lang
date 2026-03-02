@@ -5,7 +5,7 @@ use crate::{
   semantic::{symbol::SymbolId, types::Type},
 };
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TypeInfo {
   /// Mapa de expresiones a tipos. Se usa el algoritmo utilizado por el compilador de Rust,
   /// que no es resistente a colisiones pero es mas rapido.

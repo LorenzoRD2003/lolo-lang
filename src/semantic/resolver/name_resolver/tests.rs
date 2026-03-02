@@ -7,9 +7,9 @@ use crate::{
 
 pub(crate) fn resolve(source: &str) -> (ResolutionInfo, Vec<Diagnostic>, Ast, Program) {
   let (ast, program) = parse_program(source);
-  let mut resolver = NameResolver::new(&ast);
+  let mut diagnostics = Vec::new();
+  let mut resolver = NameResolver::new(&ast, &mut diagnostics);
   resolver.resolve_program(&program);
-  let diagnostics = resolver.diagnostics().to_vec();
   let resolution_info = resolver.into_resolution_info();
   (resolution_info, diagnostics, ast, program)
 }

@@ -23,7 +23,7 @@ use crate::{
 
 type Note = String;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Diagnostic {
   /// Severidad del error.
   severity: Severity,

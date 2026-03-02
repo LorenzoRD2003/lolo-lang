@@ -5,7 +5,7 @@ use crate::{
   semantic::{scope::ScopeId, symbol::SymbolId},
 };
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ResolutionInfo {
   // Mapeos desde los IDs del AST a simbolos y scope
   /// ExprId -> SymbolId. La clave es el ID en el AST.

@@ -15,15 +15,12 @@ use crate::{
 
 fn category_check(source: &str) -> (CategoryInfo, Vec<Diagnostic>, Ast, Program) {
   let (ast, program) = parse_program(source);
-
-  let mut compile_time_constant_checker = CompileTimeConstantChecker::new(&ast);
+  let mut diagnostics = Vec::new();
+  let mut compile_time_constant_checker = CompileTimeConstantChecker::new(&ast, &mut diagnostics);
   compile_time_constant_checker.check_program(&program);
   let const_info = compile_time_constant_checker.into_compile_time_constant_info();
-
-  let mut category_checker = CategoryChecker::new(&ast, &const_info);
+  let mut category_checker = CategoryChecker::new(&ast, &const_info, &mut diagnostics);
   category_checker.check_program(&program);
-
-  let diagnostics = category_checker.diagnostics.clone();
   let info = category_checker.into_category_info();
   (info, diagnostics, ast, program)
 }
@@ -133,16 +130,18 @@ fn assignment_to_non_place_is_error() {
   let block = ast.add_block(Block::with_stmts(vec![stmt]), 0..4);
   let program = Program::new(block, 0..4);
 
-  let mut compile_time_constant_checker = CompileTimeConstantChecker::new(&ast);
+  let mut diagnostics = Vec::new();
+  let mut compile_time_constant_checker = CompileTimeConstantChecker::new(&ast, &mut diagnostics);
   compile_time_constant_checker.check_program(&program);
   let compile_time_constant_info = compile_time_constant_checker.into_compile_time_constant_info();
 
-  let mut category_checker = CategoryChecker::new(&ast, &compile_time_constant_info);
+  let mut category_checker =
+    CategoryChecker::new(&ast, &compile_time_constant_info, &mut diagnostics);
   category_checker.check_program(&program);
 
-  assert_eq!(category_checker.diagnostics().len(), 1);
+  assert_eq!(diagnostics.len(), 1);
   assert!(
-    category_checker.diagnostics()[0]
+    diagnostics[0]
       .msg()
       .contains(&format!("se esperaba una place expression"))
   );

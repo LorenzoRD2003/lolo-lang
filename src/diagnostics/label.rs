@@ -17,7 +17,7 @@ pub enum LabelStyle {
   Secondary,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Label {
   pub span: Span,
   pub message: Option<String>,

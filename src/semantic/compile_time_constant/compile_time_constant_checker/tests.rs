@@ -16,9 +16,9 @@ pub(crate) fn compile_time_check(
   source: &str,
 ) -> (CompileTimeConstantInfo, Vec<Diagnostic>, Ast, Program) {
   let (ast, program) = parse_program(source);
-  let mut compile_time_constant_checker = CompileTimeConstantChecker::new(&ast);
+  let mut diagnostics = Vec::new();
+  let mut compile_time_constant_checker = CompileTimeConstantChecker::new(&ast, &mut diagnostics);
   compile_time_constant_checker.check_program(&program);
-  let diagnostics = compile_time_constant_checker.diagnostics().to_vec();
   let resolution_info = compile_time_constant_checker.into_compile_time_constant_info();
   (resolution_info, diagnostics, ast, program)
 }

@@ -11,7 +11,7 @@ use std::collections::HashMap;
 
 pub struct ScopeId(pub usize);
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Scope {
   id: ScopeId,
   /// Puede tener un padre para permitir scopes anidados.
@@ -39,7 +39,7 @@ impl Scope {
 }
 
 /// En `ScopeArena` van a vivir las referencias a todos los scopes
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ScopeArena {
   scopes: Vec<Scope>,
 }

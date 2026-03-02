@@ -21,7 +21,7 @@ use crate::{
   },
 };
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct NameResolver<'a> {
   /// El AST. Forma parte del mundo sintactico, asi que si debe ser una referencia y no tomamos ownership.
   /// Vamos a generar mucha metadata para el AST sin tocarlo.
@@ -30,18 +30,18 @@ pub struct NameResolver<'a> {
   /// no es una referencia y tomamos ownership.
   symbol_table: SymbolTable,
   /// Donde se van acumulando los errores encontrados durante el analisis de resolucion de nombres.
-  diagnostics: Vec<Diagnostic>,
+  diagnostics: &'a mut Vec<Diagnostic>,
   /// Informacion sobre resolucion de nombres que se va acumulando.
   resolution_info: ResolutionInfo,
 }
 
 impl<'a> NameResolver<'a> {
-  pub fn new(ast: &'a Ast) -> Self {
+  pub fn new(ast: &'a Ast, diagnostics: &'a mut Vec<Diagnostic>) -> Self {
     let scopes = ScopeArena::new();
     let mut resolver = Self {
       ast,
       symbol_table: SymbolTable::new(scopes),
-      diagnostics: Vec::new(),
+      diagnostics,
       resolution_info: ResolutionInfo::new(),
     };
     resolver.symbol_table.enter_global_scope();
@@ -109,9 +109,7 @@ impl<'a> NameResolver<'a> {
             return;
           }
           // Insertar el simbolo en la tabla
-          None => self
-            .symbol_table
-            .add_symbol(&name, self.ast.expr_span(var)),
+          None => self.symbol_table.add_symbol(&name, self.ast.expr_span(var)),
         };
         self.resolution_info.insert_expr_symbol(var, symbol);
         self.resolution_info.insert_declared_symbol(stmt_id, symbol);

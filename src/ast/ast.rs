@@ -22,7 +22,7 @@ pub struct BlockId(pub usize);
 
 /// Esto es arena-based allocation
 /// por como escalaria en un futuro, es mejor que un Vec<(Expr, Span)>.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Ast {
   /// Se debe cumplir el invariante de que los expr_arena, expr_spans esten asociados por el indice ExprId.
   expr_arena: Vec<Expr>,

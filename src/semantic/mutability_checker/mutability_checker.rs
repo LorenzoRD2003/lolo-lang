@@ -17,6 +17,7 @@ use crate::{
 
 pub type MutabilityInfo = FxHashMap<SymbolId, Mutability>;
 
+#[derive(Debug)]
 pub struct MutabilityChecker<'a> {
   /// El AST. Forma parte del mundo sintactico, asi que si debe ser una referencia y no tomamos ownership.
   /// Vamos a generar mucha metadata para el AST sin tocarlo.
@@ -24,17 +25,21 @@ pub struct MutabilityChecker<'a> {
   /// Informacion de resolucion de nombres, recibida al consumir el NameResolver.
   resolution_info: &'a ResolutionInfo,
   /// Donde se van acumulando los errores encontrados durante el analisis de mutabilidad.
-  diagnostics: Vec<Diagnostic>,
+  diagnostics: &'a mut Vec<Diagnostic>,
   /// Informacion sobre mutabilidad que se va acumulando.
   mutability_info: MutabilityInfo,
 }
 
 impl<'a> MutabilityChecker<'a> {
-  pub fn new(ast: &'a Ast, resolution_info: &'a ResolutionInfo) -> Self {
+  pub fn new(
+    ast: &'a Ast,
+    resolution_info: &'a ResolutionInfo,
+    diagnostics: &'a mut Vec<Diagnostic>,
+  ) -> Self {
     Self {
       ast,
       resolution_info,
-      diagnostics: Vec::new(),
+      diagnostics,
       mutability_info: FxHashMap::default(),
     }
   }
@@ -103,9 +108,8 @@ mod tests {
 
   fn mutability_check(source: &str) -> (MutabilityInfo, Vec<Diagnostic>) {
     let (resolution_info, mut diagnostics, ast, program) = resolve(source);
-    let mut checker = MutabilityChecker::new(&ast, &resolution_info);
+    let mut checker = MutabilityChecker::new(&ast, &resolution_info, &mut diagnostics);
     checker.check_program(&program);
-    diagnostics.extend_from_slice(checker.diagnostics());
     let type_info = checker.into_mutability_info();
     (type_info, diagnostics)
   }

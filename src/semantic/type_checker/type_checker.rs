@@ -28,7 +28,7 @@ use crate::{
 /// - Chequear consistencia
 /// - Emitir errores
 /// - Guardar tipo de cada expresión
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct TypeChecker<'a> {
   /// El AST. Forma parte del mundo sintactico, asi que si debe ser una referencia y no tomamos ownership.
   /// Vamos a generar mucha metadata para el AST sin tocarlo.
@@ -36,17 +36,21 @@ pub struct TypeChecker<'a> {
   /// Informacion de resolucion de nombres, recibida al consumir el NameResolver.
   resolution_info: &'a ResolutionInfo,
   /// Donde se van acumulando los errores encontrados durante el analisis de tipos.
-  diagnostics: Vec<Diagnostic>,
+  diagnostics: &'a mut Vec<Diagnostic>,
   /// Informacion sobre tipos que se va acumulando.
   type_info: TypeInfo,
 }
 
 impl<'a> TypeChecker<'a> {
-  pub fn new(ast: &'a Ast, resolution_info: &'a ResolutionInfo) -> Self {
+  pub fn new(
+    ast: &'a Ast,
+    resolution_info: &'a ResolutionInfo,
+    diagnostics: &'a mut Vec<Diagnostic>,
+  ) -> Self {
     Self {
       ast,
       resolution_info,
-      diagnostics: Vec::new(),
+      diagnostics,
       type_info: TypeInfo::new(),
     }
   }

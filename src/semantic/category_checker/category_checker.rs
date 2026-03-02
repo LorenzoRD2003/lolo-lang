@@ -16,7 +16,7 @@ use crate::{
 
 pub type CategoryInfo = FxHashMap<ExprId, ExprCategory>;
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct CategoryChecker<'a> {
   /// El AST. Forma parte del mundo sintactico, asi que si debe ser una referencia y no tomamos ownership.
   /// Vamos a generar mucha metadata para el AST sin tocarlo.
@@ -24,17 +24,17 @@ pub struct CategoryChecker<'a> {
   /// La informacion de que expresiones son constantes en tiempo de compilacion.
   compile_time_constant_info: &'a CompileTimeConstantInfo,
   /// Donde se van acumulando los errores encontrados durante el analisis de categorias.
-  diagnostics: Vec<Diagnostic>,
+  diagnostics: &'a mut Vec<Diagnostic>,
   /// Informacion sobre categorias de las expresiones que se va acumulando.
   category_info: CategoryInfo,
 }
 
 impl<'a> CategoryChecker<'a> {
-  pub fn new(ast: &'a Ast, compile_time_constant_info: &'a CompileTimeConstantInfo) -> Self {
+  pub fn new(ast: &'a Ast, compile_time_constant_info: &'a CompileTimeConstantInfo, diagnostics: &'a mut Vec<Diagnostic>) -> Self {
     Self {
       ast,
-      diagnostics: Vec::new(),
       compile_time_constant_info,
+      diagnostics,
       category_info: FxHashMap::default(),
     }
   }

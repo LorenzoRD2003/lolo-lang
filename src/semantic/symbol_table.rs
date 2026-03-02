@@ -14,7 +14,7 @@ use crate::{
   },
 };
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct SymbolTable {
   /// Arena de simbolos. Se indexan por su `SymbolId`.
   symbols: Vec<Symbol>,
