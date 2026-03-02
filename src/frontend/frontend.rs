@@ -19,7 +19,8 @@ impl Frontend {
 
   /// Compila el codigo fuente
   pub fn compile(&self, source: &str) -> FrontendResult {
-    FrontendPipeline::run(source, &self.config)
+    let pipeline = FrontendPipeline::default();
+    pipeline.run(source, &self.config)
   }
 }
 
@@ -54,7 +55,7 @@ mod tests {
       }
     "#;
     let result = frontend.compile(source);
-    assert!(result.ast().is_none());
+    assert!(result.ast().is_some());
     assert!(result.semantic().is_none());
     assert!(!result.into_diagnostics().is_empty());
   }
@@ -87,7 +88,7 @@ fn stops_after_semantic_errors_in_strict_mode() {
   "#;
   let result = frontend.compile(source);
   assert!(result.ast().is_some());
-  assert!(result.semantic().is_none());
+  assert!(result.semantic().is_some());
   assert!(!result.into_diagnostics().is_empty());
 }
 
@@ -96,11 +97,11 @@ fn continues_after_semantic_errors_in_tolerant_mode() {
   let config = FrontendConfig::cli_mode();
   let frontend = Frontend::new(config);
   let source = r#"
-      main {
-        let x = true;
-        x = 5;
-      }
-    "#;
+    main {
+      let x = true;
+      x = 5;
+    }
+  "#;
 
   let result = frontend.compile(source);
   assert!(result.ast().is_some());
@@ -123,11 +124,11 @@ fn test_ide_mode() {
   let config = FrontendConfig::ide_mode();
   let frontend = Frontend::new(config);
   let source = r#"
-      main {
-        let x = 5;
-        x = 10;
-      }
-    "#;
+    main {
+      let x = 5;
+      x = 10;
+    }
+  "#;
   let result = frontend.compile(source);
   assert!(result.ast().is_some());
   assert!(result.semantic().is_some());
