@@ -60,7 +60,7 @@ impl<'a> MutabilityChecker<'a> {
   // Metodos internos
   // ===================
 
-  /// Resuelve los tipos para el bloque indicado.
+  /// Resuelve el analisis de mutabilidad para el bloque indicado.
   fn check_block(&mut self, block_id: BlockId) {
     let block = self.ast.block(block_id);
     for stmt_id in block.stmts() {
@@ -68,13 +68,14 @@ impl<'a> MutabilityChecker<'a> {
     }
   }
 
-  /// Resuelve los tipos para el statement indicado.
+  /// Resuelve el analisis de mutabilidad para el statement indicado.
   fn check_stmt(&mut self, stmt_id: StmtId) {
     match self.ast.stmt(stmt_id) {
       Stmt::LetBinding {
         var,
         initializer: _,
       } => {
+        // siempre deberiamos entrar a esta guarda
         if let Some(symbol) = self.resolution_info.symbol_of(var) {
           self.mutability_info.insert(symbol, Mutability::Mutable);
         }

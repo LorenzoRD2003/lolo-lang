@@ -190,3 +190,21 @@ fn constant_flag_depends_on_compile_time_analysis() {
     assert!(!cat.is_constant());
   }
 }
+
+#[test]
+fn check_if_stmt() {
+  let source = r#"
+    main {
+      if true {
+        let x = 1;
+      }
+      if false {
+        let y = 1;
+      } else {
+        let y = 2;
+      }
+    }
+  "#;
+  let (_, diagnostics, _, _) = category_check(source);
+  assert!(diagnostics.is_empty());
+}

@@ -70,7 +70,7 @@ impl<'a> SemanticAnalyzer<'a> {
 #[cfg(test)]
 mod tests {
   use super::*;
-  use crate::{ast::expr::ConstValue, diagnostics, parser::program_parsing::parse_program};
+  use crate::{ast::expr::ConstValue, parser::program_parsing::parse_program};
 
   #[test]
   fn semantic_analyzer_collects_all_metadata() {

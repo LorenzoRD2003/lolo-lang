@@ -84,8 +84,18 @@ fn comparison_is_constant() {
 }
 
 #[test]
-fn boolean_and_is_constant() {
-  let (info, diagnostics, ast, program) = compile_time_check("main { true && false; }");
+fn logical_expression_constants() {
+  let source = r#"
+    main {
+      true && false;
+      false && true;
+      true || false;
+      false || true;
+      true ^^ false;
+      false ^^ true;
+    }
+  "#;
+  let (info, diagnostics, ast, program) = compile_time_check(source);
   assert!(diagnostics.is_empty());
   let stmt = ast.block(program.main_block()).stmts()[0];
   if let Stmt::Expr(expr_id) = ast.stmt(stmt) {
@@ -117,8 +127,15 @@ fn mixed_expression_is_not_constant() {
 
 #[test]
 fn overflow_is_reported() {
-  let (info, diagnostics, ast, program) = compile_time_check("main { 2147483647 + 1; }");
-  assert_eq!(diagnostics.len(), 1);
+  let source = r#"
+    main {
+      2147483647 + 1;
+      100000 * 100000;
+      -2147483647 - 2;
+    }
+  "#;
+  let (info, diagnostics, ast, program) = compile_time_check(source);
+  assert_eq!(diagnostics.len(), 3);
   assert!(diagnostics[0].msg().contains(&format!(
     "overflow evaluando {} {} {}",
     ConstValue::Int32(2147483647),
@@ -134,7 +151,7 @@ fn overflow_is_reported() {
 
 #[test]
 fn division_by_zero_is_reported() {
-  let (info, diagnostics, ast, program) = compile_time_check("main { 10 / 0; }");
+  let (info, diagnostics, ast, program) = compile_time_check("main { 11 / 1; 10 / 0; }");
   assert_eq!(diagnostics.len(), 1);
   assert!(
     diagnostics[0]
@@ -142,7 +159,7 @@ fn division_by_zero_is_reported() {
       .contains(&format!("division por cero encontrada"))
   );
 
-  let stmt = ast.block(program.main_block()).stmts()[0];
+  let stmt = ast.block(program.main_block()).stmts()[1];
   if let Stmt::Expr(expr_id) = ast.stmt(stmt) {
     assert!(info.get(&expr_id).is_none());
   }

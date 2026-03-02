@@ -193,3 +193,21 @@ fn error_does_not_crash_checker() {
   let (_, diagnostics, _, _) = typecheck(source);
   assert!(!diagnostics.is_empty());
 }
+
+#[test]
+fn binary_op_cases() {
+  let source = r#"
+    main {
+      let a = true - 1;
+      let b = 1 == true;
+      let c = true != 1;
+      let d = 2 < 3;
+      let e = true == true;
+      let f = true ^^ 2;
+      let g = 2 && 3;
+      let h = 2 == 2;
+    }
+  "#;
+  let (_, diagnostics, _, _) = typecheck(source);
+  assert_eq!(diagnostics.len(), 5);
+}

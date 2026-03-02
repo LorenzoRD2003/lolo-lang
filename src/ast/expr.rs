@@ -46,18 +46,6 @@ pub enum ConstValue {
   Bool(bool),
 }
 
-impl From<i32> for ConstValue {
-  fn from(value: i32) -> Self {
-    Self::Int32(value)
-  }
-}
-
-impl From<bool> for ConstValue {
-  fn from(value: bool) -> Self {
-    Self::Bool(value)
-  }
-}
-
 impl Display for ConstValue {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     match self {
@@ -167,8 +155,15 @@ impl BinaryOp {
 
   pub fn is_valid_for_operand_types(&self, lhs_type: Type, rhs_type: Type) -> bool {
     match self {
-      Self::Add | Self::Sub | Self::Mul | Self::Div => lhs_type.is_number() && rhs_type.is_number(),
-      Self::Eq | Self::Neq | Self::Gt | Self::Lt | Self::Gte | Self::Lte => {
+      Self::Add
+      | Self::Sub
+      | Self::Mul
+      | Self::Div
+      | Self::Gt
+      | Self::Lt
+      | Self::Gte
+      | Self::Lte => lhs_type.is_number() && rhs_type.is_number(),
+      Self::Eq | Self::Neq => {
         (lhs_type.is_number() && rhs_type.is_number())
           || (lhs_type.is_boolean() && rhs_type.is_boolean())
       }

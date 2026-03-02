@@ -158,10 +158,6 @@ impl<'a> NameResolver<'a> {
 
   /// Resuelve los nombres de variables para una expresion.
   fn resolve_expr(&mut self, expr_id: ExprId) {
-    if self.resolution_info.scope_of_expr(expr_id).is_some() {
-      return;
-    }
-
     let scope = self
       .symbol_table
       .current_scope()

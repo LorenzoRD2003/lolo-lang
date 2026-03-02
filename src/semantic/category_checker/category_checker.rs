@@ -30,7 +30,11 @@ pub struct CategoryChecker<'a> {
 }
 
 impl<'a> CategoryChecker<'a> {
-  pub fn new(ast: &'a Ast, compile_time_constant_info: &'a CompileTimeConstantInfo, diagnostics: &'a mut Vec<Diagnostic>) -> Self {
+  pub fn new(
+    ast: &'a Ast,
+    compile_time_constant_info: &'a CompileTimeConstantInfo,
+    diagnostics: &'a mut Vec<Diagnostic>,
+  ) -> Self {
     Self {
       ast,
       compile_time_constant_info,
@@ -111,11 +115,6 @@ impl<'a> CategoryChecker<'a> {
   /// Resuelve la categoria de la expresion indicada. Devuelve la categoria.
   /// Invariante: Si check_expr fue llamado, esa expresion tiene la categoria guardada.
   fn check_expr(&mut self, expr_id: ExprId) -> ExprCategory {
-    // No recalcular si ya fue calculado
-    if let Some(cat) = self.category_info.get(&expr_id) {
-      return *cat;
-    }
-
     let expr = self.ast.expr(expr_id);
     match expr {
       Expr::Unary(UnaryExpr { op: _, operand }) => {
