@@ -9,21 +9,6 @@ use crate::{
   semantic::scope::ScopeId,
 };
 
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum Mutability {
-  Mutable,
-  Immutable,
-}
-
-impl Mutability {
-  pub fn is_mutable(&self) -> bool {
-    match self {
-      Mutability::Mutable => true,
-      Mutability::Immutable => false,
-    }
-  }
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct SymbolId(pub usize);
 
@@ -32,9 +17,6 @@ pub struct Symbol {
   name: VarId,
   /// Scope de declaracion. El ScopeId referente al scope que contiene a la entidad
   scope: ScopeId,
-  /// Informacion sobre mutabilidad de la variable. Para implementar let/const en un futuro.
-  /// Por ahora van a ser todas mutables.
-  mutability: Mutability,
   /// Lugar que ocupa en el programa. Lo heredamos directamente de la parte sintactica
   span: Span,
   /// Id interno unico del simbolo, para referenciarlo desde el `SemanticInfo`
@@ -46,14 +28,12 @@ impl Symbol {
     id: SymbolId,
     name: &VarId,
     scope: ScopeId,
-    mutability: Mutability,
     span: Span,
   ) -> Self {
     Self {
       id,
       name: name.clone(),
       scope,
-      mutability,
       span,
     }
   }
@@ -71,10 +51,5 @@ impl Symbol {
   /// Devuelve el `ScopeId` asociado al bloque donde fue declarado el simbolo.
   pub fn scope(&self) -> ScopeId {
     self.scope
-  }
-
-  /// Indica si el simbolo es mutable.
-  pub fn is_mutable(&self) -> bool {
-    self.mutability.is_mutable()
   }
 }

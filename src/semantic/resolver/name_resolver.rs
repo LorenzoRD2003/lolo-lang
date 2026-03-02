@@ -17,7 +17,6 @@ use crate::{
   semantic::{
     resolver::{error::ResolverError, resolution_info::ResolutionInfo},
     scope::ScopeArena,
-    symbol::Mutability,
     symbol_table::SymbolTable,
   },
 };
@@ -112,7 +111,7 @@ impl<'a> NameResolver<'a> {
           // Insertar el simbolo en la tabla
           None => self
             .symbol_table
-            .add_symbol(&name, Mutability::Mutable, self.ast.expr_span(var)),
+            .add_symbol(&name, self.ast.expr_span(var)),
         };
         self.resolution_info.insert_expr_symbol(var, symbol);
         self.resolution_info.insert_declared_symbol(stmt_id, symbol);

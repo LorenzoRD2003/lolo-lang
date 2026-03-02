@@ -10,7 +10,7 @@ use crate::{
   common::span::Span,
   semantic::{
     scope::{ScopeArena, ScopeId},
-    symbol::{Mutability, Symbol, SymbolId},
+    symbol::{Symbol, SymbolId},
   },
 };
 
@@ -61,11 +61,10 @@ impl SymbolTable {
   /// - Agrega un simbolo a la tabla.
   /// - Lo inserta en el `current_scope`.
   /// - Devuelve el `SymbolId` del simbolo.
-  /// - No Debe chequear redeclaraciones legales/ilegales. TODO: Hacer esa parte en el analyzer que es quien tiene diagnostics
+  /// - No debe chequear redeclaraciones legales/ilegales.
   pub fn add_symbol(
     &mut self,
     name: &VarId,
-    mutability: Mutability,
     span: Span,
   ) -> SymbolId {
     let current_scope = match self.current_scope {
@@ -73,7 +72,7 @@ impl SymbolTable {
       None => self.enter_scope(),
     };
     let symbol_id = SymbolId(self.symbols.len());
-    let symbol = Symbol::new(symbol_id, &name, current_scope, mutability, span);
+    let symbol = Symbol::new(symbol_id, &name, current_scope, span);
     self.symbols.push(symbol);
     self.scopes.insert_symbol(name, current_scope, symbol_id);
     symbol_id

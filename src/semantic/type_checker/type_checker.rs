@@ -82,11 +82,9 @@ impl<'a> TypeChecker<'a> {
     match self.ast.stmt(stmt_id) {
       Stmt::LetBinding { var, initializer } => {
         let initializer_type = self.check_expr(initializer);
-        let symbol = self
-          .resolution_info
-          .symbol_of(var)
-          .expect("la variable debe tener un simbolo");
-        self.type_info.set_symbol_type(symbol, initializer_type);
+        if let Some(symbol) = self.resolution_info.symbol_of(var) {
+          self.type_info.set_symbol_type(symbol, initializer_type);
+        }
       }
       Stmt::Assign { var, value_expr } => {
         let value_expr_type = self.check_expr(value_expr);
@@ -141,13 +139,13 @@ impl<'a> TypeChecker<'a> {
     let expr = self.ast.expr(expr_id);
     let ty = match expr {
       Expr::Var(_) => {
-        let symbol = self
-          .resolution_info
-          .symbol_of(expr_id)
-          .expect("la variable debe tener un simbolo");
-        match self.type_info.type_of_symbol(symbol) {
-          Some(t) => t,
-          None => Type::DefaultErrorType,
+        if let Some(symbol) = self.resolution_info.symbol_of(expr_id) {
+          match self.type_info.type_of_symbol(symbol) {
+            Some(t) => t,
+            None => Type::DefaultErrorType,
+          }
+        } else {
+          Type::DefaultErrorType
         }
       }
       Expr::Const(const_value) => const_value.into(),
