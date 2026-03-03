@@ -10,12 +10,16 @@ use crate::{
   semantic::{
     category_checker::category_checker::{CategoryChecker, CategoryInfo},
     compile_time_constant::compile_time_constant_checker::CompileTimeConstantChecker,
+    resolver::name_resolver::NameResolver,
   },
 };
 
 fn category_check(source: &str) -> (CategoryInfo, Vec<Diagnostic>, Ast, Program) {
   let (ast, program) = parse_program(source);
-  let mut compile_time_constant_checker = CompileTimeConstantChecker::new(&ast);
+  let mut resolver = NameResolver::new(&ast);
+  resolver.resolve_program(&program);
+  let resolution_info = resolver.into_resolution_info();
+  let mut compile_time_constant_checker = CompileTimeConstantChecker::new(&ast, &resolution_info);
   compile_time_constant_checker.check_program(&program);
   let const_info = compile_time_constant_checker.into_compile_time_constant_info();
   let mut category_checker = CategoryChecker::new(&ast, &const_info);
@@ -130,7 +134,11 @@ fn assignment_to_non_place_is_error() {
   let block = ast.add_block(Block::with_stmts(vec![stmt]), 0..4);
   let program = Program::new(block, 0..4);
 
-  let mut compile_time_constant_checker = CompileTimeConstantChecker::new(&ast);
+  let mut resolver = NameResolver::new(&ast);
+  resolver.resolve_program(&program);
+  let resolution_info = resolver.into_resolution_info();
+
+  let mut compile_time_constant_checker = CompileTimeConstantChecker::new(&ast, &resolution_info);
   compile_time_constant_checker.check_program(&program);
   let compile_time_constant_info = compile_time_constant_checker.into_compile_time_constant_info();
 
@@ -205,4 +213,166 @@ fn check_if_stmt() {
   "#;
   let (_, diagnostics, _, _) = category_check(source);
   assert!(diagnostics.is_empty());
+}
+
+#[test]
+fn const_binding_literal_is_valid() {
+  let source = r#"
+    main {
+      const x = 5;
+      x;
+    }
+  "#;
+  let (_, diagnostics, _, _) = category_check(source);
+  assert!(diagnostics.is_empty());
+}
+
+#[test]
+fn const_binding_constant_expression_is_valid() {
+  let source = r#"
+    main {
+      const x = (5 + 3) * 2 - 4 / 2;
+    }
+  "#;
+  let (_, diagnostics, _, _) = category_check(source);
+  assert!(diagnostics.is_empty());
+}
+
+#[test]
+fn const_binding_with_non_constant_variable_is_error() {
+  let source = r#"
+    main {
+      let y = 10;
+      const x = y;
+    }
+  "#;
+  let (_, diagnostics, _, _) = category_check(source);
+  assert!(!diagnostics.is_empty());
+  assert!(
+    diagnostics[0]
+      .msg()
+      .contains("se esperaba una constant expression")
+  );
+}
+
+#[test]
+fn const_binding_with_non_constant_expression_is_error() {
+  let source = r#"
+    main {
+      let y = 2;
+      const x = y + 3;
+    }
+  "#;
+  let (_, diagnostics, _, _) = category_check(source);
+  assert!(!diagnostics.is_empty());
+  assert!(
+    diagnostics[0]
+      .msg()
+      .contains("se esperaba una constant expression")
+  );
+}
+
+#[test]
+fn const_binding_lhs_must_be_place() {
+  let mut ast = Ast::empty();
+  let lhs = ast.add_expr(Expr::Const(ConstValue::Int32(5)), 0..1);
+  let rhs = ast.add_expr(Expr::Const(ConstValue::Int32(10)), 3..4);
+  let stmt = ast.add_stmt(
+    Stmt::ConstBinding {
+      var: lhs,
+      initializer: rhs,
+    },
+    0..4,
+  );
+  let block = ast.add_block(Block::with_stmts(vec![stmt]), 0..4);
+  let program = Program::new(block, 0..4);
+
+  let mut resolver = NameResolver::new(&ast);
+  resolver.resolve_program(&program);
+  let resolution_info = resolver.into_resolution_info();
+
+  let mut compile_time_constant_checker = CompileTimeConstantChecker::new(&ast, &resolution_info);
+  compile_time_constant_checker.check_program(&program);
+  let compile_time_constant_info = compile_time_constant_checker.into_compile_time_constant_info();
+
+  let mut category_checker = CategoryChecker::new(&ast, &compile_time_constant_info);
+  category_checker.check_program(&program);
+
+  assert_eq!(category_checker.diagnostics().len(), 1);
+  assert!(
+    category_checker.diagnostics()[0]
+      .msg()
+      .contains(&format!("se esperaba una place expression"))
+  );
+}
+
+#[test]
+fn shadowing_const_with_let_breaks_constness() {
+  let source = r#"
+    main {
+      const x = 5;
+      if true {
+        let x = 10;
+        const y = x + 1;
+      }
+    }
+  "#;
+  let (_, diagnostics, _, _) = category_check(source);
+  assert!(!diagnostics.is_empty());
+  assert!(
+    diagnostics[0]
+      .msg()
+      .contains("se esperaba una constant expression")
+  );
+}
+
+#[test]
+fn shadowing_let_with_const_restores_constness() {
+  let source = r#"
+    main {
+      let x = 10;
+      if false {
+        const x = 5;
+        const y = x + 1;
+      }
+    }
+  "#;
+  let (_, diagnostics, _, _) = category_check(source);
+  assert!(diagnostics.is_empty());
+}
+
+#[test]
+fn const_cannot_use_later_const_definition() {
+  let source = r#"
+    main {
+      const y = x + 1;
+      const x = 5;
+    }
+  "#;
+  let (_, diagnostics, _, _) = category_check(source);
+  assert!(
+    diagnostics[0]
+      .msg()
+      .contains("se esperaba una constant expression")
+  );
+}
+
+#[test]
+fn shadowing_does_not_leak_outer_const_value() {
+  // aca queremos testear que x + 1 no es una constant expression, porque hay shadowing del const binding.
+  let source = r#"
+    main {
+      const x = 5;
+      if true {
+        let x = 10;
+        const y = x + 1;
+      }
+    }
+  "#;
+  let (_, diagnostics, _, _) = category_check(source);
+  assert!(
+    diagnostics[0]
+      .msg()
+      .contains("se esperaba una constant expression")
+  );
 }

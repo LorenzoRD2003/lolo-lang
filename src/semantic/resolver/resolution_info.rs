@@ -18,8 +18,16 @@ pub struct ResolutionInfo {
   block_scope_by_id: FxHashMap<BlockId, ScopeId>,
   /// Simbolo declarado por este statement (solamente para bindings).
   stmt_declared_symbol: FxHashMap<StmtId, SymbolId>,
-  /// Stmt que declaro un simbolo (util para buscar redeclaraciones)
-  symbol_declared_by_stmt: FxHashMap<SymbolId, StmtId>,
+  /// Metadata adicional util por simbolo
+  symbol_data: FxHashMap<SymbolId, SymbolData>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct SymbolData {
+  // Stmt que declaro un simbolo (util para buscar redeclaraciones)
+  pub declaration_stmt: StmtId,
+  // Util para verificar const bindings
+  pub is_const: bool,
 }
 
 impl ResolutionInfo {
@@ -30,7 +38,7 @@ impl ResolutionInfo {
       stmt_scope_by_id: FxHashMap::default(),
       block_scope_by_id: FxHashMap::default(),
       stmt_declared_symbol: FxHashMap::default(),
-      symbol_declared_by_stmt: FxHashMap::default(),
+      symbol_data: FxHashMap::default(),
     }
   }
 
@@ -52,7 +60,10 @@ impl ResolutionInfo {
 
   pub fn insert_declared_symbol(&mut self, stmt: StmtId, symbol: SymbolId) {
     self.stmt_declared_symbol.insert(stmt, symbol);
-    self.symbol_declared_by_stmt.insert(symbol, stmt);
+  }
+
+  pub fn insert_symbol_data(&mut self, symbol: SymbolId, data: SymbolData) {
+    self.symbol_data.insert(symbol, data);
   }
 
   pub fn symbol_of(&self, expr: ExprId) -> Option<SymbolId> {
@@ -85,7 +96,11 @@ impl ResolutionInfo {
     self.stmt_declared_symbol.get(&stmt).copied()
   }
 
-  pub fn get_stmt_for_symbol_declaration(&self, symbol: SymbolId) -> Option<StmtId> {
-    self.symbol_declared_by_stmt.get(&symbol).copied()
+  pub fn symbol_data_of(&self, symbol: SymbolId) -> Option<SymbolData> {
+    self.symbol_data.get(&symbol).copied()
+  }
+
+  pub fn expr_symbol_by_id(&self) -> &FxHashMap<ExprId, SymbolId> {
+    &self.expr_symbol_by_id
   }
 }

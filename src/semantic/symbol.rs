@@ -3,11 +3,7 @@
 // Por ejemplo, puede representar una variable, una funcion, un parametro, una constante, un tipo, etc.
 // No todas esas las tenemos aun en lolo-lang.
 
-use crate::{
-  ast::expr::VarId,
-  common::span::Span,
-  semantic::scope::ScopeId,
-};
+use crate::{ast::expr::VarId, common::span::Span, semantic::scope::ScopeId};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct SymbolId(pub usize);
@@ -24,12 +20,7 @@ pub struct Symbol {
 }
 
 impl Symbol {
-  pub fn new(
-    id: SymbolId,
-    name: &VarId,
-    scope: ScopeId,
-    span: Span,
-  ) -> Self {
+  pub fn new(id: SymbolId, name: &VarId, scope: ScopeId, span: Span) -> Self {
     Self {
       id,
       name: name.clone(),

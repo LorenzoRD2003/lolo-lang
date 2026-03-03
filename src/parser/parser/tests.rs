@@ -305,6 +305,26 @@ fn parse_assign_stmt_structure() {
 }
 
 #[test]
+fn const_span_is_correct() {
+  let (ast, stmt_id) = parse_stmt("const x = abc;");
+  let stmt_id = stmt_id.unwrap();
+  assert_eq!(ast.stmt_span(stmt_id), 0..14);
+}
+
+#[test]
+fn parse_const_stmt_structure() {
+  let (ast, stmt_id) = parse_stmt("const x = abc;");
+  let stmt_id = stmt_id.unwrap();
+  match ast.stmt(stmt_id) {
+    Stmt::ConstBinding { var, initializer } => {
+      assert_eq!(ast.expr(var), Expr::Var(VarId("x".into())));
+      assert!(matches!(ast.expr(initializer), Expr::Var(_)));
+    }
+    _ => panic!("Expected Const"),
+  }
+}
+
+#[test]
 fn print_span_is_correct() {
   let (ast, stmt_id) = parse_stmt("print abc;");
   let stmt_id = stmt_id.unwrap();

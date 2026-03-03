@@ -74,20 +74,14 @@ impl<'a> PhaseGraph<'a> {
 
   // Grafo de dependencias asociado al compilador
   // (fase1)
-  // NameResolver
-  // CompileTimeConstantChecker
+  // -> NameResolver
   // (fase2)
-  // NameResolver → TypeChecker
-  // NameResolver → MutabilityChecker
+  // NameResolver -> {TypeChecker, MutabilityChecker, CompileTimeConstantChecker}
+  // (fase3)
   // CompileTimeConstantChecker → CategoryChecker
   pub fn default_semantic_graph() -> Self {
     PhaseGraph::from(vec![
       PhaseNode::new("NameResolver", Box::new(NameResolverPhase), vec![]),
-      PhaseNode::new(
-        "CompileTimeConstantChecker",
-        Box::new(CompileTimeConstantCheckerPhase),
-        vec![],
-      ),
       PhaseNode::new(
         "TypeChecker",
         Box::new(TypeCheckerPhase),
@@ -96,6 +90,11 @@ impl<'a> PhaseGraph<'a> {
       PhaseNode::new(
         "MutabilityChecker",
         Box::new(MutabilityCheckerPhase),
+        vec!["NameResolver"],
+      ),
+      PhaseNode::new(
+        "CompileTimeConstantChecker",
+        Box::new(CompileTimeConstantCheckerPhase),
         vec!["NameResolver"],
       ),
       PhaseNode::new(

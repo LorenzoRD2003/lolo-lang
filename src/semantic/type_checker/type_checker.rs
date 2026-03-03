@@ -80,7 +80,7 @@ impl<'a> TypeChecker<'a> {
   /// Resuelve los tipos para el statement indicado.
   fn check_stmt(&mut self, stmt_id: StmtId) {
     match self.ast.stmt(stmt_id) {
-      Stmt::LetBinding { var, initializer } => {
+      Stmt::LetBinding { var, initializer } | Stmt::ConstBinding { var, initializer } => {
         let initializer_type = self.check_expr(initializer);
         if let Some(symbol) = self.resolution_info.symbol_of(var) {
           self.type_info.set_symbol_type(symbol, initializer_type);

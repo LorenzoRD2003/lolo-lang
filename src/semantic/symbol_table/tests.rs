@@ -142,7 +142,7 @@ proptest! {
     for name in names {
       let id = table.add_symbol(
         &VarId(name),
-        0..1
+        0..1,
       );
       ids.push(id.0);
     }

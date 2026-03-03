@@ -76,6 +76,14 @@ impl<'a> MutabilityChecker<'a> {
           self.mutability_info.insert(symbol, Mutability::Mutable);
         }
       }
+      Stmt::ConstBinding {
+        var,
+        initializer: _,
+      } => {
+        if let Some(symbol) = self.resolution_info.symbol_of(var) {
+          self.mutability_info.insert(symbol, Mutability::Immutable);
+        }
+      }
       Stmt::Assign { var, value_expr: _ } => {
         if let Expr::Var(name) = self.ast.expr(var)
           && let Some(symbol) = self.resolution_info.symbol_of(var)

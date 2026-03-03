@@ -64,7 +64,7 @@ The next planned phase is **lowering to an intermediate representation (IR)**.
 
 ### Statements
 
-- `let` bindings
+- `let` and `const` bindings
 - `assign` to already declared variables
 - `return`
 - `if`

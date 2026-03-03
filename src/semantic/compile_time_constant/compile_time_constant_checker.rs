@@ -8,7 +8,11 @@ use crate::{
     stmt::Stmt,
   },
   diagnostics::diagnostic::{Diagnosable, Diagnostic},
-  semantic::compile_time_constant::error::CompileTimeConstantError,
+  semantic::{
+    compile_time_constant::error::CompileTimeConstantError,
+    resolver::resolution_info::{ResolutionInfo, SymbolData},
+    symbol::SymbolId,
+  },
 };
 
 pub type CompileTimeConstantInfo = FxHashMap<ExprId, ConstValue>;
@@ -18,17 +22,23 @@ pub struct CompileTimeConstantChecker<'a> {
   /// El AST. Forma parte del mundo sintactico, asi que si debe ser una referencia y no tomamos ownership.
   /// Vamos a generar mucha metadata para el AST sin tocarlo.
   ast: &'a Ast,
+  /// Informacion de resolucion de nombres, recibida al consumir el NameResolver.
+  resolution_info: &'a ResolutionInfo,
   /// Donde se van acumulando los errores encontrados durante el analisis.
   diagnostics: Vec<Diagnostic>,
+  /// Tabla donde guardo valores constantes de bindings.
+  const_bindings: FxHashMap<SymbolId, ConstValue>,
   /// Informacion sobre compile time constants que se va acumulando.
   compile_time_constant_info: CompileTimeConstantInfo,
 }
 
 impl<'a> CompileTimeConstantChecker<'a> {
-  pub fn new(ast: &'a Ast) -> Self {
+  pub fn new(ast: &'a Ast, resolution_info: &'a ResolutionInfo) -> Self {
     Self {
       ast,
+      resolution_info,
       diagnostics: Vec::new(),
+      const_bindings: FxHashMap::default(),
       compile_time_constant_info: FxHashMap::default(),
     }
   }
@@ -58,6 +68,14 @@ impl<'a> CompileTimeConstantChecker<'a> {
 
   fn check_stmt(&mut self, stmt_id: StmtId) {
     match self.ast.stmt(stmt_id) {
+      Stmt::ConstBinding { var, initializer } => {
+        // Asocio un const binding al simbolo de la variable, si el initializer es constante
+        if let Some(value) = self.check_expr(initializer)
+          && let Some(symbol_id) = self.resolution_info.symbol_of(var)
+        {
+          self.const_bindings.insert(symbol_id, value);
+        }
+      }
       Stmt::LetBinding {
         var: _,
         initializer: expr_id,
@@ -95,7 +113,15 @@ impl<'a> CompileTimeConstantChecker<'a> {
     let expr = self.ast.expr(expr_id);
     let compile_time_constant = match expr {
       Expr::Const(v) => Some(v),
-      Expr::Var(_) => None, // En un futuro cuando implemente `const` esto puede cambiar.
+      Expr::Var(_) => {
+        let symbol_id = self.resolution_info.symbol_of(expr_id)?;
+        let SymbolData { is_const, .. } = self.resolution_info.symbol_data_of(symbol_id)?;
+        if is_const {
+          self.const_bindings.get(&symbol_id).cloned()
+        } else {
+          None
+        }
+      }
       // Todos los operadores que tenemos son puros asi que esto está bien
       Expr::Unary(UnaryExpr { op, operand }) => {
         let operand_value = self.check_expr(operand);

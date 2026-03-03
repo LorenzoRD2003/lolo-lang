@@ -15,7 +15,10 @@ use crate::{
   },
   diagnostics::diagnostic::{Diagnosable, Diagnostic},
   semantic::{
-    resolver::{error::ResolverError, resolution_info::ResolutionInfo},
+    resolver::{
+      error::ResolverError,
+      resolution_info::{ResolutionInfo, SymbolData},
+    },
     scope::ScopeArena,
     symbol_table::SymbolTable,
   },
@@ -88,7 +91,7 @@ impl<'a> NameResolver<'a> {
     self.resolution_info.insert_stmt_scope(stmt_id, scope);
     let stmt = self.ast.stmt(stmt_id);
     match stmt {
-      Stmt::LetBinding { var, initializer } => {
+      Stmt::LetBinding { var, initializer } | Stmt::ConstBinding { var, initializer } => {
         // Confirmar que var sea Expr::Var
         let name = match self.ast.expr(var) {
           Expr::Var(name) => name,
@@ -97,14 +100,16 @@ impl<'a> NameResolver<'a> {
         // Chequear redeclaracion en el scope actual
         let symbol = match self.symbol_table.was_declared_in_current_scope(&name) {
           Some(previous_symbol) => {
-            let previous_stmt = self
+            let SymbolData {
+              declaration_stmt, ..
+            } = self
               .resolution_info
-              .get_stmt_for_symbol_declaration(previous_symbol)
+              .symbol_data_of(previous_symbol)
               .expect("debe existir una declaracion anterior");
             self.emit_error(&ResolverError::RedeclaredVariable {
               name,
               span: self.ast.stmt_span(stmt_id),
-              previous_span: self.ast.stmt_span(previous_stmt),
+              previous_span: self.ast.stmt_span(declaration_stmt),
             });
             return;
           }
@@ -113,6 +118,15 @@ impl<'a> NameResolver<'a> {
         };
         self.resolution_info.insert_expr_symbol(var, symbol);
         self.resolution_info.insert_declared_symbol(stmt_id, symbol);
+        let symbol_data = SymbolData {
+          declaration_stmt: stmt_id,
+          is_const: match stmt {
+            Stmt::ConstBinding { .. } => true,
+            Stmt::LetBinding { .. } => false,
+            _ => unreachable!(),
+          },
+        };
+        self.resolution_info.insert_symbol_data(symbol, symbol_data);
         // Resolver initializer por nombres
         self.resolve_expr(initializer);
       }
@@ -149,10 +163,9 @@ impl<'a> NameResolver<'a> {
         self.resolve_block(if_block);
         self.resolve_block(else_block);
       }
-      Stmt::Expr(expr) => {
+      Stmt::Expr(expr) | Stmt::Print(expr) | Stmt::Return(expr) => {
         self.resolve_expr(expr);
       }
-      _ => return,
     }
   }
 

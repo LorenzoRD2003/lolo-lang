@@ -32,12 +32,13 @@ fn lex_simple_delimiters_tokens() {
 #[test]
 fn lex_keywords() {
   let mut diagnostics = Vec::new();
-  let mut lexer = Lexer::new("let true false if else return");
+  let mut lexer = Lexer::new("let true false if const else return");
   let expected_tokens = vec![
     TokenKind::Let,
     TokenKind::BooleanLiteral,
     TokenKind::BooleanLiteral,
     TokenKind::If,
+    TokenKind::Const,
     TokenKind::Else,
     TokenKind::Return,
     TokenKind::EOF,

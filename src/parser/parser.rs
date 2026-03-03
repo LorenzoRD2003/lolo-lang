@@ -194,12 +194,16 @@ impl<'a> Parser<'a> {
     let token = self.tokens.peek_first(self.diagnostics)?;
     let (stmt, span) = match token.kind() {
       TokenKind::Let => self.parse_let_stmt()?,
+      TokenKind::Const => self.parse_const_stmt()?,
       TokenKind::Return => self.parse_return_stmt()?,
       TokenKind::If => self.parse_if_stmt()?,
       TokenKind::Print => self.parse_print_stmt()?,
       _ => {
         // Ahora depende si el segundo token es un `=` o no
-        if self.tokens.check_kind(1, TokenKind::Equal, self.diagnostics) {
+        if self
+          .tokens
+          .check_kind(1, TokenKind::Equal, self.diagnostics)
+        {
           self.parse_assign_stmt()?
         } else {
           let expr_id = self.parse_expression()?;
@@ -219,6 +223,16 @@ impl<'a> Parser<'a> {
     // corregimos el span_start porque el let fue consumido antes
     self
       .parse_assignment_like(|var, initializer| Stmt::LetBinding { var, initializer })
+      .map(|(stmt, span)| (stmt, span_start..span.end))
+  }
+
+  /// const <var_expr> = <expr>
+  fn parse_const_stmt(&mut self) -> Option<(Stmt, Span)> {
+    // Consumimos el `const`
+    let span_start = self.tokens.peek_first(self.diagnostics)?.span().start;
+    self.expect_token(TokenKind::Const);
+    self
+      .parse_assignment_like(|var, initializer| Stmt::ConstBinding { var, initializer })
       .map(|(stmt, span)| (stmt, span_start..span.end))
   }
 
@@ -320,7 +334,10 @@ impl<'a> Parser<'a> {
   pub fn parse_block(&mut self) -> Option<BlockId> {
     // block ::== { stmt* }
     let mut block = Block::new();
-    let lbrace = self.tokens.expect(TokenKind::LCurlyBrace, self.diagnostics).ok()?;
+    let lbrace = self
+      .tokens
+      .expect(TokenKind::LCurlyBrace, self.diagnostics)
+      .ok()?;
     let span_start = lbrace.span().start;
     loop {
       // el bloque termina cuando encontramos el `}` correspondiente, o con un error si se teremina el archivo
@@ -337,7 +354,10 @@ impl<'a> Parser<'a> {
       block.add_stmt(stmt);
     }
     // hay que avanzar una ultima vez porque estabamos haciendo peek_first()
-    let rbrace = self.tokens.expect(TokenKind::RCurlyBrace, self.diagnostics).ok()?;
+    let rbrace = self
+      .tokens
+      .expect(TokenKind::RCurlyBrace, self.diagnostics)
+      .ok()?;
     let span_end = rbrace.span().end;
     Some(self.ast.add_block(block, span_start..span_end))
   }

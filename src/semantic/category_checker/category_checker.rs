@@ -69,6 +69,7 @@ impl<'a> CategoryChecker<'a> {
         initializer: value_expr,
       }
       | Stmt::Assign { var, value_expr } => self.check_assignment(var, value_expr),
+      Stmt::ConstBinding { var, initializer } => self.check_const_binding(var, initializer),
       Stmt::Return(expr_id) | Stmt::Print(expr_id) | Stmt::Expr(expr_id) => {
         self.check_expr(expr_id);
       }
@@ -104,6 +105,26 @@ impl<'a> CategoryChecker<'a> {
     if !value_expr_category.is_value() {
       self.emit_error(&CategoryError::ExpectedValueExpression {
         span: self.ast.expr_span(value_expr),
+      });
+    }
+  }
+
+  fn check_const_binding(&mut self, var: ExprId, initializer: ExprId) {
+    let var_category = self.check_expr(var);
+    if !var_category.is_place() {
+      self.emit_error(&CategoryError::ExpectedPlaceExpression {
+        span: self.ast.expr_span(var),
+      });
+    }
+    let init_category = self.check_expr(initializer);
+    if !init_category.is_value() {
+      self.emit_error(&CategoryError::ExpectedValueExpression {
+        span: self.ast.expr_span(initializer),
+      });
+    }
+    if !init_category.is_constant() {
+      self.emit_error(&CategoryError::ExpectedConstantExpression {
+        span: self.ast.expr_span(initializer),
       });
     }
   }

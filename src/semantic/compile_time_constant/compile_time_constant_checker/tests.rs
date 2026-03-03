@@ -7,8 +7,11 @@ use crate::{
   },
   diagnostics::diagnostic::Diagnostic,
   parser::program_parsing::parse_program,
-  semantic::compile_time_constant::compile_time_constant_checker::{
-    CompileTimeConstantChecker, CompileTimeConstantInfo,
+  semantic::{
+    compile_time_constant::compile_time_constant_checker::{
+      CompileTimeConstantChecker, CompileTimeConstantInfo,
+    },
+    resolver::name_resolver::NameResolver,
   },
 };
 
@@ -16,7 +19,10 @@ pub(crate) fn compile_time_check(
   source: &str,
 ) -> (CompileTimeConstantInfo, Vec<Diagnostic>, Ast, Program) {
   let (ast, program) = parse_program(source);
-  let mut compile_time_constant_checker = CompileTimeConstantChecker::new(&ast);
+  let mut resolver = NameResolver::new(&ast);
+  resolver.resolve_program(&program);
+  let resolution_info = resolver.into_resolution_info();
+  let mut compile_time_constant_checker = CompileTimeConstantChecker::new(&ast, &resolution_info);
   compile_time_constant_checker.check_program(&program);
   let diagnostics = compile_time_constant_checker.diagnostics().to_vec();
   let resolution_info = compile_time_constant_checker.into_compile_time_constant_info();
@@ -180,5 +186,50 @@ fn subexpressions_can_be_constant_even_if_parent_is_not() {
       assert_eq!(info.get(&lhs), Some(&ConstValue::Int32(6)));
       assert!(info.get(&rhs).is_none());
     }
+  }
+}
+
+#[test]
+fn const_propagation_chain() {
+  let source = r#"
+    main {
+      const x = 5;
+      const y = x + 3;
+      const z = 2 * y;
+      return z;
+    }
+  "#;
+  let (compile_time_constant_info, diagnostics, ast, program) = compile_time_check(source);
+  assert!(diagnostics.is_empty());
+  let block = ast.block(program.main_block());
+  let stmt_id = block.stmts()[3];
+  if let Stmt::Return(expr_id) = ast.stmt(stmt_id) {
+    assert_eq!(
+      compile_time_constant_info.get(&expr_id),
+      Some(&ConstValue::Int32(16))
+    );
+  }
+}
+
+#[test]
+fn division_by_zero_in_const_is_error() {
+  let source = r#"
+    main {
+      const x = 5 / 0;
+      print x;
+    }
+  "#;
+
+  let (info, diagnostics, ast, program) = compile_time_check(source);
+  assert_eq!(diagnostics.len(), 1);
+  assert!(
+    diagnostics[0]
+      .msg()
+      .contains(&format!("division por cero encontrada"))
+  );
+  let block = ast.block(program.main_block());
+  let stmt = block.stmts()[1];
+  if let Stmt::Print(expr_id) = ast.stmt(stmt) {
+    assert!(info.get(&expr_id).is_none());
   }
 }

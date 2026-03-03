@@ -27,6 +27,7 @@ pub enum TokenKind {
   CaretCaret,   // ^^
   // Statements
   Let,
+  Const,
   Return,
   If,
   Else,
