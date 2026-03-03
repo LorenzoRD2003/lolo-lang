@@ -12,10 +12,6 @@ use crate::{
 pub struct ParsingStage;
 
 impl Stage for ParsingStage {
-  fn name(&self) -> &'static str {
-    "parsing"
-  }
-
   fn run(&self, ctx: &mut PipelineContext, config: &FrontendConfig) -> StageResult {
     let lexer = Lexer::new(&ctx.source);
     let mut ts = TokenStream::new(lexer);
@@ -23,16 +19,16 @@ impl Stage for ParsingStage {
     let program_opt = parser.parse_program();
     ctx.ast = Some(parser.into_ast());
 
-    let program = match program_opt {
-      Some(p) => p,
-      None => return StageResult::Stop,
-    };
-
-    ctx.program = Some(program);
-    if !ctx.diagnostics.is_empty() && config.stop_after_parse_errors {
-      StageResult::Stop
-    } else {
-      StageResult::Continue
+    match program_opt {
+      Some(p) => {
+        ctx.program = Some(p);
+        if !ctx.diagnostics.is_empty() && config.stop_after_parse_errors {
+          StageResult::Stop
+        } else {
+          StageResult::Continue
+        }
+      }
+      None => StageResult::Stop,
     }
   }
 }

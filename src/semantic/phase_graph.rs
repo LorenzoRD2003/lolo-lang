@@ -12,22 +12,12 @@ use crate::semantic::phase::{
 };
 
 pub struct PhaseNode<'a> {
-  pub name: &'static str,
   pub phase: Box<dyn SemanticPhase<'a>>,
-  pub dependencies: Vec<&'static str>,
 }
 
 impl<'a> PhaseNode<'a> {
-  pub fn new(
-    name: &'static str,
-    phase: Box<dyn SemanticPhase<'a>>,
-    dependencies: Vec<&'static str>,
-  ) -> Self {
-    Self {
-      name,
-      phase,
-      dependencies,
-    }
+  pub fn new(phase: Box<dyn SemanticPhase<'a>>) -> Self {
+    Self { phase }
   }
 }
 
@@ -52,9 +42,10 @@ impl<'a> PhaseGraph<'a> {
       .nodes
       .iter()
       .filter(|node| {
-        !self.completed_phases.contains(node.name)
+        !self.completed_phases.contains(node.phase.name())
           && node
-            .dependencies
+            .phase
+            .dependencies()
             .iter()
             .all(|dep| self.completed_phases.contains(dep))
       })
@@ -81,27 +72,11 @@ impl<'a> PhaseGraph<'a> {
   // CompileTimeConstantChecker → CategoryChecker
   pub fn default_semantic_graph() -> Self {
     PhaseGraph::from(vec![
-      PhaseNode::new("NameResolver", Box::new(NameResolverPhase), vec![]),
-      PhaseNode::new(
-        "TypeChecker",
-        Box::new(TypeCheckerPhase),
-        vec!["NameResolver"],
-      ),
-      PhaseNode::new(
-        "MutabilityChecker",
-        Box::new(MutabilityCheckerPhase),
-        vec!["NameResolver"],
-      ),
-      PhaseNode::new(
-        "CompileTimeConstantChecker",
-        Box::new(CompileTimeConstantCheckerPhase),
-        vec!["NameResolver"],
-      ),
-      PhaseNode::new(
-        "CategoryChecker",
-        Box::new(CategoryCheckerPhase),
-        vec!["CompileTimeConstantChecker"],
-      ),
+      PhaseNode::new(Box::new(NameResolverPhase)),
+      PhaseNode::new(Box::new(TypeCheckerPhase)),
+      PhaseNode::new(Box::new(MutabilityCheckerPhase)),
+      PhaseNode::new(Box::new(CompileTimeConstantCheckerPhase)),
+      PhaseNode::new(Box::new(CategoryCheckerPhase)),
     ])
   }
 }

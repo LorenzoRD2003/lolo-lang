@@ -29,18 +29,18 @@ impl Symbol {
     }
   }
 
-  /// Devuelve el `SymbolId` unico del simbolo.
-  pub fn id(&self) -> SymbolId {
-    self.id
-  }
+  // Devuelve el `SymbolId` unico del simbolo.
+  // pub fn id(&self) -> SymbolId {
+  //   self.id
+  // }
 
   /// Devuelve el nombre del simbolo.
   pub fn name(&self) -> VarId {
     self.name.clone()
   }
 
-  /// Devuelve el `ScopeId` asociado al bloque donde fue declarado el simbolo.
-  pub fn scope(&self) -> ScopeId {
-    self.scope
-  }
+  // Devuelve el `ScopeId` asociado al bloque donde fue declarado el simbolo.
+  // pub fn scope(&self) -> ScopeId {
+  //   self.scope
+  // }
 }

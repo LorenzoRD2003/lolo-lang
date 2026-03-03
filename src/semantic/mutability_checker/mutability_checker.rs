@@ -136,6 +136,17 @@ mod tests {
   }
 
   #[test]
+  fn const_binding_is_immutable() {
+    let (_, diagnostics) = mutability_check("main { const x = 5; x = 10; }");
+    assert!(!diagnostics.is_empty());
+    assert!(
+      diagnostics[0]
+        .msg()
+        .contains(&format!("se intento modificar la variable inmutable 'x'"))
+    );
+  }
+
+  #[test]
   fn multiple_let_bindings_are_all_mutable() {
     let source = r#"
       main {

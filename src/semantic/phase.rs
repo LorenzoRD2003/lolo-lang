@@ -145,7 +145,7 @@ impl<'a> SemanticPhase<'a> for CompileTimeConstantCheckerPhase {
   }
 
   fn dependencies(&self) -> &'static [&'static str] {
-    &[]
+    &["NameResolver"]
   }
 
   fn run(&self, ast: &'a Ast, program: &Program, ctx: &SemanticContext) -> PhaseOutput {
@@ -160,11 +160,11 @@ impl<'a> SemanticPhase<'a> for CompileTimeConstantCheckerPhase {
 
 impl<'a> SemanticPhase<'a> for CategoryCheckerPhase {
   fn name(&self) -> &'static str {
-    "CompileTimeConstantChecker"
+    "CategoryChecker"
   }
 
   fn dependencies(&self) -> &'static [&'static str] {
-    &[]
+    &["CompileTimeConstantChecker"]
   }
 
   fn run(&self, ast: &'a Ast, program: &Program, ctx: &SemanticContext) -> PhaseOutput {

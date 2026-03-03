@@ -33,7 +33,7 @@ impl Executor {
         .par_iter()
         .map(|node| {
           let output = node.phase.run(ast, program, ctx);
-          (node.name, output)
+          (node.phase.name(), output)
         })
         .collect();
 

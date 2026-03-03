@@ -14,7 +14,7 @@ impl Diagnosable for MutabilityError {
   fn to_diagnostic(&self) -> Diagnostic {
     match self {
       Self::ImmutableVariable { name, span } => Diagnostic::error(format!(
-        "se intento modificar la variable inmutable {}",
+        "se intento modificar la variable inmutable '{}'",
         name.0
       ))
       .with_span(span.clone()),
