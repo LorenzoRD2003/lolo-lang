@@ -23,6 +23,9 @@ use crate::{
   },
 };
 
+type Spanned<T> = (T, Span);
+type ParseResult<T> = Option<Spanned<T>>;
+
 #[derive(Debug)]
 pub struct Parser<'a> {
   /// Parser NO habla con Lexer. El lookahead esta centralizado en el TokenStream. Handlea EOF.
@@ -216,7 +219,7 @@ impl<'a> Parser<'a> {
   }
 
   /// let <var_expr> = <expr>;
-  fn parse_let_stmt(&mut self) -> Option<(Stmt, Span)> {
+  fn parse_let_stmt(&mut self) -> ParseResult<Stmt> {
     // Consumimos el `let`
     let span_start = self.tokens.peek_first(self.diagnostics)?.span().start;
     self.expect_token(TokenKind::Let);
@@ -227,7 +230,7 @@ impl<'a> Parser<'a> {
   }
 
   /// const <var_expr> = <expr>
-  fn parse_const_stmt(&mut self) -> Option<(Stmt, Span)> {
+  fn parse_const_stmt(&mut self) -> ParseResult<Stmt> {
     // Consumimos el `const`
     let span_start = self.tokens.peek_first(self.diagnostics)?.span().start;
     self.expect_token(TokenKind::Const);
@@ -237,12 +240,12 @@ impl<'a> Parser<'a> {
   }
 
   /// <var> = <expr>
-  fn parse_assign_stmt(&mut self) -> Option<(Stmt, Span)> {
+  fn parse_assign_stmt(&mut self) -> ParseResult<Stmt> {
     self.parse_assignment_like(|var, value_expr| Stmt::Assign { var, value_expr })
   }
 
   /// Helper para parse_assign, parse_let, y en un futuro parse_const
-  fn parse_assignment_like<F>(&mut self, constructor: F) -> Option<(Stmt, Span)>
+  fn parse_assignment_like<F>(&mut self, constructor: F) -> ParseResult<Stmt>
   where
     F: FnOnce(ExprId, ExprId) -> Stmt,
   {
@@ -276,7 +279,7 @@ impl<'a> Parser<'a> {
     }
   }
 
-  fn parse_return_stmt(&mut self) -> Option<(Stmt, Span)> {
+  fn parse_return_stmt(&mut self) -> ParseResult<Stmt> {
     // return <expr>;
     let span_start = self.tokens.peek_first(self.diagnostics)?.span().start;
     self.expect_token(TokenKind::Return);
@@ -286,7 +289,7 @@ impl<'a> Parser<'a> {
     Some((Stmt::Return(expr_id), span_start..span_end))
   }
 
-  fn parse_if_stmt(&mut self) -> Option<(Stmt, Span)> {
+  fn parse_if_stmt(&mut self) -> ParseResult<Stmt> {
     // if expr { block } [ else { block } ]
     let span_start = self.tokens.peek_first(self.diagnostics)?.span().start;
     self.expect_token(TokenKind::If);
@@ -321,7 +324,7 @@ impl<'a> Parser<'a> {
     }
   }
 
-  fn parse_print_stmt(&mut self) -> Option<(Stmt, Span)> {
+  fn parse_print_stmt(&mut self) -> ParseResult<Stmt> {
     // print <expr>;
     let span_start = self.tokens.peek_first(self.diagnostics)?.span().start;
     self.expect_token(TokenKind::Print);
