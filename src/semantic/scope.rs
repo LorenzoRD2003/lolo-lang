@@ -4,8 +4,15 @@
 // - Shadowing rules
 // Por ejemplo, aca viven el scope padre, las variables visibles y el lookup jerarquico.
 
-use crate::semantic::id_generator::{IdGenerator, IncrementalIdGenerator, ScopeId, SymbolId};
 use std::collections::HashMap;
+
+use crate::{
+  common::id_generator::{IdGenerator, IncrementalId, IncrementalIdGenerator},
+  semantic::symbol::SymbolId,
+};
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct ScopeId(pub usize);
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Scope {
@@ -14,6 +21,12 @@ pub struct Scope {
   parent: Option<ScopeId>,
   /// Referencias a los simbolos declarados en este scope
   symbols: HashMap<String, SymbolId>,
+}
+
+impl IncrementalId for ScopeId {
+  fn from_usize(value: usize) -> Self {
+    ScopeId(value)
+  }
 }
 
 impl Scope {

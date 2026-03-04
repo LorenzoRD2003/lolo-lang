@@ -3,11 +3,10 @@
 // Por ejemplo, puede representar una variable, una funcion, un parametro, una constante, un tipo, etc.
 // No todas esas las tenemos aun en lolo-lang.
 
-use crate::{
-  ast::ast::StmtId,
-  common::span::Span,
-  semantic::id_generator::{ScopeId, SymbolId},
-};
+use crate::{ast::ast::StmtId, common::{id_generator::IncrementalId, span::Span}, semantic::scope::ScopeId};
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct SymbolId(pub usize);
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Symbol {
@@ -19,6 +18,12 @@ pub struct Symbol {
   scope: ScopeId,
   /// Lugar que ocupa en el programa. Lo heredamos directamente de la parte sintactica
   span: Span,
+}
+
+impl IncrementalId for SymbolId {
+  fn from_usize(value: usize) -> Self {
+    SymbolId(value)
+  }
 }
 
 impl Symbol {
@@ -52,4 +57,3 @@ pub struct SymbolData {
   // Stmt que declaro un simbolo (util para buscar redeclaraciones)
   pub declaration_stmt: StmtId,
 }
-

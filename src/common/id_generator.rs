@@ -1,25 +1,7 @@
 use std::marker::PhantomData;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct ScopeId(pub usize);
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct SymbolId(pub usize);
-
-trait IncrementalId: Sized {
+pub trait IncrementalId: Sized {
   fn from_usize(value: usize) -> Self;
-}
-
-impl IncrementalId for ScopeId {
-  fn from_usize(value: usize) -> Self {
-    ScopeId(value)
-  }
-}
-
-impl IncrementalId for SymbolId {
-  fn from_usize(value: usize) -> Self {
-    SymbolId(value)
-  }
 }
 
 pub trait IdGenerator {

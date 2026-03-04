@@ -1,9 +1,6 @@
 use rustc_hash::FxHashMap;
 
-use crate::{
-  ast::ast::ExprId,
-  semantic::{id_generator::SymbolId, types::Type},
-};
+use crate::{ast::ast::ExprId, semantic::{symbol::SymbolId, types::Type}};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct TypeInfo {

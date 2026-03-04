@@ -9,8 +9,8 @@ use crate::{
   },
   diagnostics::diagnostic::{Diagnosable, Diagnostic},
   semantic::{
-    compile_time_constant::error::CompileTimeConstantError, id_generator::SymbolId,
-    resolver::resolution_info::ResolutionInfo,
+    compile_time_constant::error::CompileTimeConstantError,
+    resolver::resolution_info::ResolutionInfo, symbol::SymbolId,
   },
 };
 

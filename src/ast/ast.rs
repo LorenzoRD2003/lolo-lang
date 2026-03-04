@@ -5,17 +5,38 @@
 
 use crate::{
   ast::{block::Block, expr::Expr, stmt::Stmt},
-  common::span::Span,
+  common::{
+    id_generator::{IdGenerator, IncrementalId, IncrementalIdGenerator},
+    span::Span,
+  },
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ExprId(pub usize);
 
+impl IncrementalId for ExprId {
+  fn from_usize(value: usize) -> Self {
+    ExprId(value)
+  }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct StmtId(pub usize);
 
+impl IncrementalId for StmtId {
+  fn from_usize(value: usize) -> Self {
+    StmtId(value)
+  }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct BlockId(pub usize);
+
+impl IncrementalId for BlockId {
+  fn from_usize(value: usize) -> Self {
+    BlockId(value)
+  }
+}
 
 /// Esto es arena-based allocation
 /// por como escalaria en un futuro, es mejor que un Vec<(Expr, Span)>.
@@ -24,12 +45,15 @@ pub struct Ast {
   /// Se debe cumplir el invariante de que los expr_arena, expr_spans esten asociados por el indice ExprId.
   expr_arena: Vec<Expr>,
   expr_spans: Vec<Span>,
+  expr_id_gen: IncrementalIdGenerator<ExprId>,
   /// Se debe cumplir el invariante de que los stmt_arena, stmt_spans esten asociados por el indice StmtId.
   stmt_arena: Vec<Stmt>,
   stmt_spans: Vec<Span>,
+  stmt_id_gen: IncrementalIdGenerator<StmtId>,
   /// Se debe cumplir el invariante de que los block_arena, block_spans esten asociados por el indice BlockId.
   block_arena: Vec<Block>,
   block_spans: Vec<Span>,
+  block_id_gen: IncrementalIdGenerator<BlockId>,
 }
 
 impl Ast {
@@ -37,10 +61,13 @@ impl Ast {
     Self {
       expr_arena: Vec::new(),
       expr_spans: Vec::new(),
+      expr_id_gen: IncrementalIdGenerator::new(),
       stmt_arena: Vec::new(),
       stmt_spans: Vec::new(),
+      stmt_id_gen: IncrementalIdGenerator::new(),
       block_arena: Vec::new(),
       block_spans: Vec::new(),
+      block_id_gen: IncrementalIdGenerator::new(),
     }
   }
 
@@ -53,9 +80,10 @@ impl Ast {
   }
 
   pub fn add_expr(&mut self, expr: Expr, span: Span) -> ExprId {
+    let expr_id = self.expr_id_gen.next_id();
     self.expr_arena.push(expr);
     self.expr_spans.push(span);
-    ExprId(self.expr_arena.len() - 1)
+    expr_id
   }
 
   pub fn update_expr_span(&mut self, id: ExprId, span: Span) -> ExprId {
@@ -72,9 +100,10 @@ impl Ast {
   }
 
   pub fn add_stmt(&mut self, stmt: Stmt, span: Span) -> StmtId {
+    let stmt_id = self.stmt_id_gen.next_id();
     self.stmt_arena.push(stmt);
     self.stmt_spans.push(span);
-    StmtId(self.stmt_arena.len() - 1)
+    stmt_id
   }
 
   pub fn update_stmt_span(&mut self, id: StmtId, span: Span) -> StmtId {
@@ -91,9 +120,9 @@ impl Ast {
   }
 
   pub fn add_block(&mut self, block: Block, span: Span) -> BlockId {
+    let block_id = self.block_id_gen.next_id();
     self.block_arena.push(block);
     self.block_spans.push(span);
-    let block_id = BlockId(self.block_arena.len() - 1);
     block_id
   }
 

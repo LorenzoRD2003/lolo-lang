@@ -1,7 +1,6 @@
 pub mod category_checker;
 pub mod compile_time_constant;
 pub mod context;
-pub mod id_generator;
 pub mod mutability_checker;
 pub mod phase;
 pub mod phase_executor;

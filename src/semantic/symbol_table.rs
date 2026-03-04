@@ -6,11 +6,13 @@
 // cambiar cual es el scope en el cual vive.
 
 use crate::{
-  common::span::Span,
+  common::{
+    id_generator::{IdGenerator, IncrementalIdGenerator},
+    span::Span,
+  },
   semantic::{
-    id_generator::{IdGenerator, IncrementalIdGenerator, ScopeId, SymbolId},
-    scope::ScopeArena,
-    symbol::Symbol,
+    scope::{ScopeArena, ScopeId},
+    symbol::{Symbol, SymbolId},
   },
 };
 
