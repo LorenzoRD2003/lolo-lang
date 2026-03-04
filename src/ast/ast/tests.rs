@@ -5,7 +5,7 @@ use crate::{
     expr::{ConstValue, Expr},
     stmt::Stmt,
   },
-  parser::program_parsing::parse_program,
+  parser::parse_program,
 };
 use proptest::prelude::*;
 

@@ -5,7 +5,7 @@ use crate::{
     stage::{Stage, StageResult},
   },
   lexer::Lexer,
-  parser::{parser::Parser, token_stream::TokenStream},
+  parser::{Parser, TokenStream},
 };
 
 #[derive(Debug, Clone)]

@@ -1,7 +1,7 @@
 use crate::{
   ast::{Ast, AstVisitor, Block, ConstValue, Expr, Program, Stmt},
   diagnostics::Diagnostic,
-  parser::program_parsing::parse_program,
+  parser::parse_program,
   semantic::{
     category_checker::category_checker::{CategoryChecker, CategoryInfo},
     compile_time_constant::compile_time_constant_checker::CompileTimeConstantChecker,

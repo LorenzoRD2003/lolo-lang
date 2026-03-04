@@ -25,7 +25,7 @@ type Spanned<T> = (T, Span);
 type ParseResult<T> = Option<Spanned<T>>;
 
 #[derive(Debug)]
-pub struct Parser<'a> {
+pub(crate) struct Parser<'a> {
   /// Parser NO habla con Lexer. El lookahead esta centralizado en el TokenStream. Handlea EOF.
   tokens: &'a mut TokenStream<'a>,
   /// El parser es quien construye nodos, fusiona coherementemente los spans del Ast arena-based
@@ -35,7 +35,7 @@ pub struct Parser<'a> {
 }
 
 impl<'a> Parser<'a> {
-  pub fn new(tokens: &'a mut TokenStream<'a>, diagnostics: &'a mut Vec<Diagnostic>) -> Self {
+  pub(crate) fn new(tokens: &'a mut TokenStream<'a>, diagnostics: &'a mut Vec<Diagnostic>) -> Self {
     Self {
       tokens,
       ast: Ast::empty(),
@@ -45,7 +45,7 @@ impl<'a> Parser<'a> {
 
   /// Esta funcion es el punto de entrada cuando queremos parsear una expresion
   /// Luego de generarse la expresion, se guarda en el AST obteniendose un ExprId, y se lo devuelve.
-  pub fn parse_expression(&mut self) -> Option<ExprId> {
+  pub(crate) fn parse_expression(&mut self) -> Option<ExprId> {
     // Internamente llama a parse_expr_bp(...)
     self.parse_expr_bp(0)
   }
@@ -191,7 +191,7 @@ impl<'a> Parser<'a> {
   }
 
   /// Funcion de punto de entrada para parsear un Statement. Se introduce la expresion en el AST mediante su StmtId
-  pub fn parse_statement(&mut self) -> Option<StmtId> {
+  pub(crate) fn parse_statement(&mut self) -> Option<StmtId> {
     // decidir que tipo de statement es.
     // uso peek_first() en vez de bump() porque el bump() lo uso al parsear en cada branch
     let token = self.tokens.peek_first(self.diagnostics)?;
@@ -341,7 +341,7 @@ impl<'a> Parser<'a> {
     Some((Stmt::Print(expr_id), span_start..span_end))
   }
 
-  pub fn parse_block(&mut self) -> Option<BlockId> {
+  pub(crate) fn parse_block(&mut self) -> Option<BlockId> {
     let lbrace = self
       .tokens
       .expect(TokenKind::LCurlyBrace, self.diagnostics)
@@ -410,12 +410,12 @@ impl<'a> Parser<'a> {
     Some(Program::new(main_block_expr, span_start..span_end))
   }
 
-  pub fn diagnostics(&self) -> &[Diagnostic] {
+  pub(crate) fn diagnostics(&self) -> &[Diagnostic] {
     &self.diagnostics
   }
 
   /// Devuelve el Ast generado, consumiendose.
-  pub fn into_ast(self) -> Ast {
+  pub(crate) fn into_ast(self) -> Ast {
     self.ast
   }
 }

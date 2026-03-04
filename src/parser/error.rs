@@ -5,7 +5,7 @@ use crate::{
 };
 
 #[derive(Debug, Clone)]
-pub enum ParserError {
+pub(crate) enum ParserError {
   ChainedAssociativeOperator(Token),
   StatementAfterReturn(Span),
   MainMustBeBlock(Span),

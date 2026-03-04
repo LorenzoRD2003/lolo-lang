@@ -14,7 +14,7 @@ use crate::{
 };
 
 #[derive(Debug)]
-pub struct TokenStream<'a> {
+pub(crate) struct TokenStream<'a> {
   /// El token stream va a poseer al lexer
   lexer: Lexer<'a>,
   /// Buffer de tokens
@@ -22,7 +22,7 @@ pub struct TokenStream<'a> {
 }
 
 impl<'a> TokenStream<'a> {
-  pub fn new(lexer: Lexer<'a>) -> Self {
+  pub(crate) fn new(lexer: Lexer<'a>) -> Self {
     Self {
       lexer,
       buffer: VecDeque::new(),
@@ -48,18 +48,18 @@ impl<'a> TokenStream<'a> {
   // =========================
 
   /// Lookahead sin consumir.
-  pub fn peek(&mut self, n: usize, diagnostics: &mut Vec<Diagnostic>) -> Option<&Token> {
+  pub(crate) fn peek(&mut self, n: usize, diagnostics: &mut Vec<Diagnostic>) -> Option<&Token> {
     self.ensure_buffered(n, diagnostics);
     self.buffer.get(n)
   }
 
   /// peek(0) = token actual
-  pub fn peek_first(&mut self, diagnostics: &mut Vec<Diagnostic>) -> Option<&Token> {
+  pub(crate) fn peek_first(&mut self, diagnostics: &mut Vec<Diagnostic>) -> Option<&Token> {
     self.peek(0, diagnostics)
   }
 
   /// Consume y devuelve el siguiente token
-  pub fn bump(&mut self, diagnostics: &mut Vec<Diagnostic>) -> Option<Token> {
+  pub(crate) fn bump(&mut self, diagnostics: &mut Vec<Diagnostic>) -> Option<Token> {
     if self.buffer.is_empty() {
       return self.lexer.next(diagnostics);
     }
@@ -67,7 +67,7 @@ impl<'a> TokenStream<'a> {
   }
 
   /// Siempre avanza. Devuelve error si el token no es del tipo esperado.
-  pub fn expect(
+  pub(crate) fn expect(
     &mut self,
     kind: TokenKind,
     diagnostics: &mut Vec<Diagnostic>,
@@ -80,7 +80,7 @@ impl<'a> TokenStream<'a> {
   }
 
   /// Chequea el kind del token en posición `n` sin consumir.
-  pub fn check_kind(
+  pub(crate) fn check_kind(
     &mut self,
     n: usize,
     kind: TokenKind,
