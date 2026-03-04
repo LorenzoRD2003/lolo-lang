@@ -100,17 +100,13 @@ impl SymbolTable {
   /// Busca hacia arriba en la jerarquia de scopes hasta encontrar el simbolo.
   /// Permite hallar variables usadas pero no declaradas (si `resolve()` devuelve `None`).
   pub fn resolve(&self, name: &str) -> Option<SymbolId> {
-    self.scopes.resolve(name, self.current_scope?)
+    self.scopes.resolve(name, self.current_scope()?)
   }
 
   /// Busca el simbolo exactamente en el scope actual. Tiene que resolverlo para el scope actual,
   /// pero no para un scope por encima del actual.
-  pub fn was_declared_in_current_scope(&mut self, name: &str) -> Option<SymbolId> {
-    let symbol = self.resolve(name)?;
-    self.exit_scope();
-    let exists_in_parent = self.resolve(name).is_some();
-    self.enter_scope();
-    if exists_in_parent { None } else { Some(symbol) }
+  pub fn declared_in_scope(&mut self, name: &str) -> Option<SymbolId> {
+    self.scopes.declared_in_scope(name, self.current_scope()?)
   }
 }
 
