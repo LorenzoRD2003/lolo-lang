@@ -15,8 +15,8 @@ use crate::{
   },
   diagnostics::{Diagnosable, Diagnostic},
   semantic::{
-    resolver::resolution_info::ResolutionInfo,
-    type_checker::{error::TypeError, type_info::TypeInfo},
+    resolver::ResolutionInfo,
+    type_checker::{TypeInfo, error::TypeError},
     types::Type,
   },
 };
@@ -27,7 +27,7 @@ use crate::{
 /// - Emitir errores
 /// - Guardar tipo de cada expresión
 #[derive(Debug)]
-pub struct TypeChecker<'a> {
+pub(crate) struct TypeChecker<'a> {
   /// El AST. Forma parte del mundo sintactico, asi que si debe ser una referencia y no tomamos ownership.
   /// Vamos a generar mucha metadata para el AST sin tocarlo.
   ast: &'a Ast,
@@ -40,7 +40,7 @@ pub struct TypeChecker<'a> {
 }
 
 impl<'a> TypeChecker<'a> {
-  pub fn new(ast: &'a Ast, resolution_info: &'a ResolutionInfo) -> Self {
+  pub(crate) fn new(ast: &'a Ast, resolution_info: &'a ResolutionInfo) -> Self {
     Self {
       ast,
       resolution_info,
@@ -49,12 +49,12 @@ impl<'a> TypeChecker<'a> {
     }
   }
 
-  pub fn diagnostics(&self) -> &[Diagnostic] {
+  pub(crate) fn diagnostics(&self) -> &[Diagnostic] {
     &self.diagnostics
   }
 
   /// Devuelve la informacion de resolucion de tipos, consumiendo `self`.
-  pub fn into_type_info(self) -> TypeInfo {
+  pub(crate) fn into_type_info(self) -> TypeInfo {
     self.type_info
   }
 

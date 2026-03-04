@@ -7,14 +7,14 @@ use crate::{
   },
 };
 
-pub struct SemanticAnalyzer<'a> {
+pub(crate) struct SemanticAnalyzer<'a> {
   ast: &'a Ast,
   graph: PhaseGraph<'a>,
   diagnostics: &'a mut Vec<Diagnostic>,
 }
 
 impl<'a> SemanticAnalyzer<'a> {
-  pub fn new(ast: &'a Ast, graph: PhaseGraph<'a>, diagnostics: &'a mut Vec<Diagnostic>) -> Self {
+  pub(crate) fn new(ast: &'a Ast, graph: PhaseGraph<'a>, diagnostics: &'a mut Vec<Diagnostic>) -> Self {
     Self {
       ast,
       graph,
@@ -22,7 +22,7 @@ impl<'a> SemanticAnalyzer<'a> {
     }
   }
 
-  pub fn analyze(&mut self, program: &Program) -> SemanticResult {
+  pub(crate) fn analyze(&mut self, program: &Program) -> SemanticResult {
     let mut ctx = SemanticContext::new(self.diagnostics);
     Executor::execute(self.ast, program, &mut self.graph, &mut ctx);
     ctx.into()

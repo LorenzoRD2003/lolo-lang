@@ -17,10 +17,10 @@ use crate::{
   semantic::{context::SemanticContext, phase::PhaseOutput, phase_graph::PhaseGraph},
 };
 
-pub struct Executor;
+pub(crate) struct Executor;
 
 impl Executor {
-  pub fn execute<'a>(
+  pub(crate) fn execute<'a>(
     ast: &'a Ast,
     program: &Program,
     graph: &mut PhaseGraph<'a>,

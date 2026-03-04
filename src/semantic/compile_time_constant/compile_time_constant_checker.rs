@@ -8,14 +8,14 @@ use crate::{
   diagnostics::{Diagnosable, Diagnostic},
   semantic::{
     compile_time_constant::error::CompileTimeConstantError,
-    resolver::resolution_info::ResolutionInfo, symbol::SymbolId,
+    resolver::ResolutionInfo, symbol::SymbolId,
   },
 };
 
-pub type CompileTimeConstantInfo = FxHashMap<ExprId, ConstValue>;
+pub(crate) type CompileTimeConstantInfo = FxHashMap<ExprId, ConstValue>;
 
 #[derive(Debug)]
-pub struct CompileTimeConstantChecker<'a> {
+pub(crate) struct CompileTimeConstantChecker<'a> {
   /// El AST. Forma parte del mundo sintactico, asi que si debe ser una referencia y no tomamos ownership.
   /// Vamos a generar mucha metadata para el AST sin tocarlo.
   ast: &'a Ast,
@@ -30,7 +30,7 @@ pub struct CompileTimeConstantChecker<'a> {
 }
 
 impl<'a> CompileTimeConstantChecker<'a> {
-  pub fn new(ast: &'a Ast, resolution_info: &'a ResolutionInfo) -> Self {
+  pub(crate) fn new(ast: &'a Ast, resolution_info: &'a ResolutionInfo) -> Self {
     Self {
       ast,
       resolution_info,
@@ -40,11 +40,11 @@ impl<'a> CompileTimeConstantChecker<'a> {
     }
   }
 
-  pub fn diagnostics(&self) -> &[Diagnostic] {
+  pub(crate) fn diagnostics(&self) -> &[Diagnostic] {
     &self.diagnostics
   }
 
-  pub fn into_compile_time_constant_info(self) -> CompileTimeConstantInfo {
+  pub(crate) fn into_compile_time_constant_info(self) -> CompileTimeConstantInfo {
     self.compile_time_constant_info
   }
 

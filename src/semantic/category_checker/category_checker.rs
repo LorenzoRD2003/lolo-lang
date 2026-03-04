@@ -5,11 +5,11 @@ use crate::{
   diagnostics::{Diagnosable, Diagnostic},
   semantic::{
     category_checker::{category::ExprCategory, error::CategoryError},
-    compile_time_constant::compile_time_constant_checker::CompileTimeConstantInfo,
+    compile_time_constant::CompileTimeConstantInfo,
   },
 };
 
-pub type CategoryInfo = FxHashMap<ExprId, ExprCategory>;
+pub(crate) type CategoryInfo = FxHashMap<ExprId, ExprCategory>;
 
 #[derive(Debug)]
 pub struct CategoryChecker<'a> {
@@ -25,7 +25,7 @@ pub struct CategoryChecker<'a> {
 }
 
 impl<'a> CategoryChecker<'a> {
-  pub fn new(ast: &'a Ast, compile_time_constant_info: &'a CompileTimeConstantInfo) -> Self {
+  pub(crate) fn new(ast: &'a Ast, compile_time_constant_info: &'a CompileTimeConstantInfo) -> Self {
     Self {
       ast,
       compile_time_constant_info,
@@ -34,11 +34,11 @@ impl<'a> CategoryChecker<'a> {
     }
   }
 
-  pub fn diagnostics(&self) -> &[Diagnostic] {
+  pub(crate) fn diagnostics(&self) -> &[Diagnostic] {
     &self.diagnostics
   }
 
-  pub fn into_category_info(self) -> CategoryInfo {
+  pub(crate) fn into_category_info(self) -> CategoryInfo {
     self.category_info
   }
 

@@ -4,7 +4,7 @@ use crate::{
 };
 
 #[derive(Debug, Clone)]
-pub enum MutabilityError {
+pub(crate) enum MutabilityError {
   /// Se intento modificar una variable inmutable
   ImmutableVariable { name: String, span: Span },
 }

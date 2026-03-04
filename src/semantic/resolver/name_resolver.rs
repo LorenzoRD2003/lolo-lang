@@ -7,10 +7,13 @@
 // - Hay variables no definidas?
 
 use crate::{
-  ast::{Ast, AstVisitor, BlockId, Expr, ExprId, Stmt, StmtId, walk_block, walk_expr, walk_stmt},
+  ast::{
+    Ast, AstVisitor, BlockId, Expr, ExprId, Program, Stmt, StmtId, walk_block, walk_expr, walk_stmt,
+  },
   diagnostics::{Diagnosable, Diagnostic},
+  parser::parse_program,
   semantic::{
-    resolver::{error::ResolverError, resolution_info::ResolutionInfo},
+    resolver::{ResolutionInfo, error::ResolverError},
     scope::ScopeArena,
     symbol::SymbolData,
     symbol_table::SymbolTable,
@@ -18,7 +21,7 @@ use crate::{
 };
 
 #[derive(Debug, PartialEq)]
-pub struct NameResolver<'a> {
+pub(crate) struct NameResolver<'a> {
   /// El AST. Forma parte del mundo sintactico, asi que si debe ser una referencia y no tomamos ownership.
   /// Vamos a generar mucha metadata para el AST sin tocarlo.
   ast: &'a Ast,
@@ -32,7 +35,7 @@ pub struct NameResolver<'a> {
 }
 
 impl<'a> NameResolver<'a> {
-  pub fn new(ast: &'a Ast) -> Self {
+  pub(crate) fn new(ast: &'a Ast) -> Self {
     let scopes = ScopeArena::new();
     let mut resolver = Self {
       ast,
@@ -44,12 +47,12 @@ impl<'a> NameResolver<'a> {
     resolver
   }
 
-  pub fn diagnostics(&self) -> &[Diagnostic] {
+  pub(crate) fn diagnostics(&self) -> &[Diagnostic] {
     &self.diagnostics
   }
 
   /// Devuelve la informacion de resolucion de nombres, consumiendo `self`.
-  pub fn into_semantic_info(self) -> (ResolutionInfo, SymbolTable) {
+  pub(crate) fn into_semantic_info(self) -> (ResolutionInfo, SymbolTable) {
     (self.resolution_info, self.symbol_table)
   }
 
@@ -158,6 +161,17 @@ impl AstVisitor for NameResolver<'_> {
 
     walk_expr(self, self.ast, expr_id);
   }
+}
+
+pub(crate) fn resolve(
+  source: &str,
+) -> (ResolutionInfo, SymbolTable, Vec<Diagnostic>, Ast, Program) {
+  let (ast, program) = parse_program(source);
+  let mut resolver = NameResolver::new(&ast);
+  resolver.visit_program(&program);
+  let diagnostics = resolver.diagnostics().to_vec();
+  let (resolution_info, symbol_table) = resolver.into_semantic_info();
+  (resolution_info, symbol_table, diagnostics, ast, program)
 }
 
 #[cfg(test)]

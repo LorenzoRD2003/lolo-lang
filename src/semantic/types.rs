@@ -6,7 +6,7 @@ use std::fmt::Display;
 use crate::ast::ConstValue;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub enum Type {
+pub(crate) enum Type {
   Int32,
   Bool,
   Unknown,
@@ -17,7 +17,7 @@ pub enum Type {
 }
 
 impl Type {
-  pub fn to_string(&self) -> &str {
+  fn to_string(&self) -> &str {
     match &self {
       Self::Int32 => "Int32",
       Self::Bool => "Bool",
@@ -27,14 +27,14 @@ impl Type {
     }
   }
 
-  pub fn is_number(&self) -> bool {
+  pub(crate) fn is_number(&self) -> bool {
     match &self {
       Self::Int32 => true,
       _ => false,
     }
   }
 
-  pub fn is_boolean(&self) -> bool {
+  pub(crate) fn is_boolean(&self) -> bool {
     match &self {
       Self::Bool => true,
       _ => false,

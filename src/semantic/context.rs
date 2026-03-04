@@ -3,29 +3,29 @@
 use crate::{
   diagnostics::Diagnostic,
   semantic::{
-    category_checker::category_checker::CategoryInfo,
-    compile_time_constant::compile_time_constant_checker::CompileTimeConstantInfo,
-    mutability_checker::mutability_checker::MutabilityInfo,
+    category_checker::CategoryInfo,
+    compile_time_constant::CompileTimeConstantInfo,
+    mutability_checker::MutabilityInfo,
     phase::{PhaseOutput, PhaseOutputInfo},
-    resolver::resolution_info::ResolutionInfo,
+    resolver::ResolutionInfo,
     symbol_table::SymbolTable,
-    type_checker::type_info::TypeInfo,
+    type_checker::TypeInfo,
   },
 };
 
 #[derive(Debug)]
-pub struct SemanticContext<'a> {
-  pub resolution_info: Option<ResolutionInfo>,
-  pub symbol_table: Option<SymbolTable>,
-  pub type_info: Option<TypeInfo>,
-  pub mutability_info: Option<MutabilityInfo>,
-  pub compile_time_constant_info: Option<CompileTimeConstantInfo>,
-  pub category_info: Option<CategoryInfo>,
-  pub diagnostics: &'a mut Vec<Diagnostic>,
+pub(crate) struct SemanticContext<'a> {
+  pub(crate) resolution_info: Option<ResolutionInfo>,
+  pub(crate) symbol_table: Option<SymbolTable>,
+  pub(crate) type_info: Option<TypeInfo>,
+  pub(crate) mutability_info: Option<MutabilityInfo>,
+  pub(crate) compile_time_constant_info: Option<CompileTimeConstantInfo>,
+  pub(crate) category_info: Option<CategoryInfo>,
+  pub(crate) diagnostics: &'a mut Vec<Diagnostic>,
 }
 
 impl<'a> SemanticContext<'a> {
-  pub fn new(diagnostics: &'a mut Vec<Diagnostic>) -> Self {
+  pub(crate) fn new(diagnostics: &'a mut Vec<Diagnostic>) -> Self {
     Self {
       resolution_info: None,
       symbol_table: None,
@@ -37,7 +37,7 @@ impl<'a> SemanticContext<'a> {
     }
   }
 
-  pub fn apply_phase_output(&mut self, output: PhaseOutput) {
+  pub(crate) fn apply_phase_output(&mut self, output: PhaseOutput) {
     let (info, diagnostics) = output.consume();
     match info {
       PhaseOutputInfo::Resolution {

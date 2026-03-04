@@ -6,7 +6,7 @@ use crate::{
 };
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct ResolutionInfo {
+pub(crate) struct ResolutionInfo {
   // Mapeos desde los IDs del AST a simbolos y scope
   /// ExprId -> SymbolId. La clave es el ID en el AST.
   expr_symbol_by_id: FxHashMap<ExprId, SymbolId>,
@@ -23,7 +23,7 @@ pub struct ResolutionInfo {
 }
 
 impl ResolutionInfo {
-  pub fn new() -> Self {
+  pub(crate) fn new() -> Self {
     Self {
       expr_symbol_by_id: FxHashMap::default(),
       expr_scope_by_id: FxHashMap::default(),
@@ -34,61 +34,61 @@ impl ResolutionInfo {
     }
   }
 
-  pub fn insert_expr_symbol(&mut self, expr: ExprId, symbol: SymbolId) {
+  pub(crate) fn insert_expr_symbol(&mut self, expr: ExprId, symbol: SymbolId) {
     self.expr_symbol_by_id.insert(expr, symbol);
   }
 
-  pub fn insert_expr_scope(&mut self, expr: ExprId, scope: ScopeId) {
+  pub(crate) fn insert_expr_scope(&mut self, expr: ExprId, scope: ScopeId) {
     self.expr_scope_by_id.insert(expr, scope);
   }
 
-  pub fn insert_stmt_scope(&mut self, stmt: StmtId, scope: ScopeId) {
+  pub(crate) fn insert_stmt_scope(&mut self, stmt: StmtId, scope: ScopeId) {
     self.stmt_scope_by_id.insert(stmt, scope);
   }
 
-  pub fn insert_block_scope(&mut self, block: BlockId, scope: ScopeId) {
+  pub(crate) fn insert_block_scope(&mut self, block: BlockId, scope: ScopeId) {
     self.block_scope_by_id.insert(block, scope);
   }
 
-  pub fn insert_declared_symbol(&mut self, stmt: StmtId, symbol: SymbolId) {
+  pub(crate) fn insert_declared_symbol(&mut self, stmt: StmtId, symbol: SymbolId) {
     self.stmt_declared_symbol.insert(stmt, symbol);
   }
 
-  pub fn insert_symbol_data(&mut self, symbol: SymbolId, data: SymbolData) {
+  pub(crate) fn insert_symbol_data(&mut self, symbol: SymbolId, data: SymbolData) {
     self.symbol_data.insert(symbol, data);
   }
 
-  pub fn symbol_of(&self, expr: ExprId) -> Option<SymbolId> {
+  pub(crate) fn symbol_of(&self, expr: ExprId) -> Option<SymbolId> {
     self.expr_symbol_by_id.get(&expr).copied()
   }
 
-  pub fn has_symbol(&self, expr: ExprId) -> bool {
+  pub(crate) fn has_symbol(&self, expr: ExprId) -> bool {
     self.expr_symbol_by_id.contains_key(&expr)
   }
 
-  pub fn scope_of_expr(&self, expr: ExprId) -> Option<ScopeId> {
+  pub(crate) fn scope_of_expr(&self, expr: ExprId) -> Option<ScopeId> {
     self.expr_scope_by_id.get(&expr).copied()
   }
 
-  pub fn scope_of_stmt(&self, stmt: StmtId) -> ScopeId {
+  pub(crate) fn scope_of_stmt(&self, stmt: StmtId) -> ScopeId {
     *self
       .stmt_scope_by_id
       .get(&stmt)
       .expect("todo statement debe tener scope")
   }
 
-  pub fn scope_of_block(&self, block: BlockId) -> ScopeId {
+  pub(crate) fn scope_of_block(&self, block: BlockId) -> ScopeId {
     *self
       .block_scope_by_id
       .get(&block)
       .expect("todo bloque debe tener scope")
   }
 
-  pub fn declared_symbol_of_stmt(&self, stmt: StmtId) -> Option<SymbolId> {
+  pub(crate) fn declared_symbol_of_stmt(&self, stmt: StmtId) -> Option<SymbolId> {
     self.stmt_declared_symbol.get(&stmt).copied()
   }
 
-  pub fn symbol_data_of(&self, symbol: SymbolId) -> Option<SymbolData> {
+  pub(crate) fn symbol_data_of(&self, symbol: SymbolId) -> Option<SymbolData> {
     self.symbol_data.get(&symbol).copied()
   }
 

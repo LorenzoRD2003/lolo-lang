@@ -4,15 +4,13 @@ use crate::{
   ast::{Ast, AstVisitor, Program},
   diagnostics::Diagnostic,
   semantic::{
-    category_checker::category_checker::{CategoryChecker, CategoryInfo},
-    compile_time_constant::compile_time_constant_checker::{
-      CompileTimeConstantChecker, CompileTimeConstantInfo,
-    },
+    compile_time_constant::{CompileTimeConstantChecker, CompileTimeConstantInfo},
     context::SemanticContext,
-    mutability_checker::mutability_checker::{MutabilityChecker, MutabilityInfo},
-    resolver::{name_resolver::NameResolver, resolution_info::ResolutionInfo},
+    mutability_checker::{MutabilityChecker, MutabilityInfo},
+    resolver::{NameResolver, ResolutionInfo},
     symbol_table::SymbolTable,
-    type_checker::{type_checker::TypeChecker, type_info::TypeInfo},
+    type_checker::{TypeChecker, TypeInfo},
+    category_checker::{CategoryChecker, CategoryInfo},
   },
 };
 

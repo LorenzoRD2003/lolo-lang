@@ -1,2 +1,4 @@
-pub mod error;
-pub mod mutability_checker;
+mod error;
+mod mutability_checker;
+
+pub(crate) use mutability_checker::{MutabilityChecker, MutabilityInfo};

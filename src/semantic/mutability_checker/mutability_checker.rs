@@ -4,19 +4,19 @@ use crate::{
   ast::{Ast, AstVisitor, BlockId, ExprId, Stmt, StmtId, walk_block, walk_expr, walk_stmt},
   diagnostics::{Diagnosable, Diagnostic},
   semantic::{
-    mutability_checker::error::MutabilityError, resolver::resolution_info::ResolutionInfo,
-    symbol::SymbolId, symbol_table::SymbolTable,
+    mutability_checker::error::MutabilityError, resolver::ResolutionInfo, symbol::SymbolId,
+    symbol_table::SymbolTable,
   },
 };
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub enum Mutability {
+pub(crate) enum Mutability {
   Mutable,
   Immutable,
 }
 
 impl Mutability {
-  pub fn is_mutable(&self) -> bool {
+  pub(crate) fn is_mutable(&self) -> bool {
     match self {
       Mutability::Mutable => true,
       Mutability::Immutable => false,
@@ -24,10 +24,10 @@ impl Mutability {
   }
 }
 
-pub type MutabilityInfo = FxHashMap<SymbolId, Mutability>;
+pub(crate) type MutabilityInfo = FxHashMap<SymbolId, Mutability>;
 
 #[derive(Debug)]
-pub struct MutabilityChecker<'a> {
+pub(crate) struct MutabilityChecker<'a> {
   /// El AST. Forma parte del mundo sintactico, asi que si debe ser una referencia y no tomamos ownership.
   /// Vamos a generar mucha metadata para el AST sin tocarlo.
   ast: &'a Ast,
@@ -42,7 +42,7 @@ pub struct MutabilityChecker<'a> {
 }
 
 impl<'a> MutabilityChecker<'a> {
-  pub fn new(
+  pub(crate) fn new(
     ast: &'a Ast,
     resolution_info: &'a ResolutionInfo,
     symbol_table: &'a SymbolTable,
@@ -56,11 +56,11 @@ impl<'a> MutabilityChecker<'a> {
     }
   }
 
-  pub fn diagnostics(&self) -> &[Diagnostic] {
+  pub(crate) fn diagnostics(&self) -> &[Diagnostic] {
     &self.diagnostics
   }
 
-  pub fn into_mutability_info(self) -> MutabilityInfo {
+  pub(crate) fn into_mutability_info(self) -> MutabilityInfo {
     self.mutability_info
   }
 
@@ -122,7 +122,7 @@ impl AstVisitor for MutabilityChecker<'_> {
 #[cfg(test)]
 mod tests {
   use super::*;
-  use crate::semantic::resolver::name_resolver::tests::resolve;
+  use crate::semantic::resolver::resolve;
 
   fn mutability_check(source: &str) -> (MutabilityInfo, Vec<Diagnostic>) {
     let (resolution_info, symbol_table, _, ast, program) = resolve(source);

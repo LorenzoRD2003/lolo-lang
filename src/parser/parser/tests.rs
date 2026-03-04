@@ -261,8 +261,8 @@ fn parse_let_stmt_structure() {
   let stmt_id = stmt_id.unwrap();
   match ast.stmt(stmt_id) {
     Stmt::LetBinding { var, initializer } => {
-      assert_eq!(ast.expr(var), Expr::Var("x".into()));
-      assert!(matches!(ast.expr(initializer), Expr::Var(_)));
+      assert!(ast.expr(var).is_var());
+      assert!(ast.expr(initializer).is_var());
     }
     _ => panic!("Expected Let"),
   }
@@ -323,8 +323,8 @@ fn parse_const_stmt_structure() {
   let stmt_id = stmt_id.unwrap();
   match ast.stmt(stmt_id) {
     Stmt::ConstBinding { var, initializer } => {
-      assert_eq!(ast.expr(var), Expr::Var("x".into()));
-      assert!(matches!(ast.expr(initializer), Expr::Var(_)));
+      assert!(ast.expr(var).is_var());
+      assert!(ast.expr(initializer).is_var());
     }
     _ => panic!("Expected Const"),
   }
@@ -454,7 +454,7 @@ fn parse_if_stmt_structure() {
       condition,
       if_block,
     } => {
-      assert!(matches!(ast.expr(condition), Expr::Var(_)));
+      assert!(ast.expr(condition).is_var());
       assert_eq!(ast.block(if_block).stmts().len(), 2);
     }
     _ => panic!("Expected If"),

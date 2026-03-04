@@ -3,9 +3,9 @@ use crate::{
   diagnostics::Diagnostic,
   parser::parse_program,
   semantic::{
-    category_checker::category_checker::{CategoryChecker, CategoryInfo},
-    compile_time_constant::compile_time_constant_checker::CompileTimeConstantChecker,
-    resolver::name_resolver::NameResolver,
+    category_checker::{CategoryChecker, CategoryInfo},
+    compile_time_constant::CompileTimeConstantChecker,
+    resolver::NameResolver,
   },
 };
 

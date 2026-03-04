@@ -3,7 +3,7 @@
 use crate::{
   ast::{Ast, Program},
   diagnostics::Diagnostic,
-  semantic::result::SemanticResult,
+  semantic::SemanticResult,
 };
 pub type IrModule = ();
 

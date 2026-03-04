@@ -12,10 +12,10 @@ use crate::{
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct ScopeId(pub usize);
+pub(crate) struct ScopeId(pub usize);
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Scope {
+pub(crate) struct Scope {
   id: ScopeId,
   /// Puede tener un padre para permitir scopes anidados.
   parent: Option<ScopeId>,
@@ -30,32 +30,32 @@ impl IncrementalId for ScopeId {
 }
 
 impl Scope {
-  pub fn add_symbol(&mut self, name: &str, id: SymbolId) {
+  pub(crate) fn add_symbol(&mut self, name: &str, id: SymbolId) {
     self.symbols.insert(name.to_string(), id);
   }
 
-  pub fn id(&self) -> ScopeId {
+  pub(crate) fn id(&self) -> ScopeId {
     self.id
   }
 
-  pub fn parent(&self) -> Option<ScopeId> {
+  pub(crate) fn parent(&self) -> Option<ScopeId> {
     self.parent
   }
 
-  pub fn symbols(&self) -> &HashMap<String, SymbolId> {
+  pub(crate) fn symbols(&self) -> &HashMap<String, SymbolId> {
     &self.symbols
   }
 }
 
 /// En `ScopeArena` van a vivir las referencias a todos los scopes
 #[derive(Debug, Clone, PartialEq)]
-pub struct ScopeArena {
+pub(crate) struct ScopeArena {
   scopes: Vec<Scope>,
   id_gen: IncrementalIdGenerator<ScopeId>,
 }
 
 impl ScopeArena {
-  pub fn new() -> Self {
+  pub(crate) fn new() -> Self {
     Self {
       scopes: Vec::new(),
       id_gen: IncrementalIdGenerator::<ScopeId>::new(),
@@ -63,7 +63,7 @@ impl ScopeArena {
   }
 
   /// Crea un scope hijo del padre dado.
-  pub fn new_scope(&mut self, parent: Option<ScopeId>) -> ScopeId {
+  pub(crate) fn new_scope(&mut self, parent: Option<ScopeId>) -> ScopeId {
     let scope_id = self.id_gen.next_id();
     let scope = Scope {
       id: scope_id,
@@ -75,7 +75,7 @@ impl ScopeArena {
   }
 
   /// Devuelve una referencia al scope.
-  pub fn scope(&self, id: ScopeId) -> &Scope {
+  pub(crate) fn scope(&self, id: ScopeId) -> &Scope {
     &self.scopes[id.0]
   }
 
@@ -86,18 +86,18 @@ impl ScopeArena {
   }
 
   /// Agrega simbolo a scope existente.
-  pub fn insert_symbol(&mut self, name: &str, scope: ScopeId, symbol: SymbolId) {
+  pub(crate) fn insert_symbol(&mut self, name: &str, scope: ScopeId, symbol: SymbolId) {
     self.scope_mut(scope).add_symbol(name, symbol);
   }
 
   /// Devuelve el padre de un scope.
-  pub fn parent_of(&self, scope: ScopeId) -> Option<ScopeId> {
+  pub(crate) fn parent_of(&self, scope: ScopeId) -> Option<ScopeId> {
     self.scope(scope).parent()
   }
 
   /// Busca hacia arriba en la jerarquía de scopes hasta encontrar el símbolo.
   /// Permite hallar variables usadas pero no declaradas (si `resolve()` devuelve `None`).
-  pub fn resolve(&self, name: &str, current_scope: ScopeId) -> Option<SymbolId> {
+  pub(crate) fn resolve(&self, name: &str, current_scope: ScopeId) -> Option<SymbolId> {
     let mut current_scope_opt = Some(current_scope);
     while let Some(current_scope) = current_scope_opt {
       // Busco el simbolo en este scope
@@ -113,7 +113,7 @@ impl ScopeArena {
     None
   }
 
-  pub fn declared_in_scope(&self, name: &str, scope: ScopeId) -> Option<SymbolId> {
+  pub(crate) fn declared_in_scope(&self, name: &str, scope: ScopeId) -> Option<SymbolId> {
     let symbol = self.resolve(name, scope)?;
     let declared_in_parent = self.resolve(name, self.parent_of(scope)?).is_some();
     if declared_in_parent {

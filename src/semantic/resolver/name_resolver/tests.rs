@@ -3,21 +3,10 @@ use crate::{
   diagnostics::Diagnostic,
   parser::parse_program,
   semantic::{
-    resolver::{name_resolver::NameResolver, resolution_info::ResolutionInfo},
+    resolver::{NameResolver, ResolutionInfo, name_resolver::resolve},
     symbol_table::SymbolTable,
   },
 };
-
-pub(crate) fn resolve(
-  source: &str,
-) -> (ResolutionInfo, SymbolTable, Vec<Diagnostic>, Ast, Program) {
-  let (ast, program) = parse_program(source);
-  let mut resolver = NameResolver::new(&ast);
-  resolver.visit_program(&program);
-  let diagnostics = resolver.diagnostics().to_vec();
-  let (resolution_info, symbol_table) = resolver.into_semantic_info();
-  (resolution_info, symbol_table, diagnostics, ast, program)
-}
 
 #[test]
 fn resolves_simple_let_binding() {

@@ -6,7 +6,7 @@ use crate::{
 };
 
 #[derive(Debug, Clone)]
-pub enum ResolverError {
+pub(crate) enum ResolverError {
   /// Redeclaracion ilegal en el mismo scope
   RedeclaredVariable {
     name: String,

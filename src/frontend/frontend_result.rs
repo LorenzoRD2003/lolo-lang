@@ -1,7 +1,7 @@
 // Representa el resultado final del frontend.
 
 use crate::{
-  ast::Ast, diagnostics::Diagnostic, semantic::result::SemanticResult
+  ast::Ast, diagnostics::Diagnostic, semantic::SemanticResult
 };
 
 #[derive(Debug, Clone, PartialEq)]

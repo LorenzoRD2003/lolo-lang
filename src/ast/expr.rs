@@ -5,7 +5,7 @@ use std::fmt::Display;
 use crate::{
   ast::ast::{BlockId, ExprId},
   lexer::{Token, TokenKind},
-  semantic::types::Type,
+  semantic::Type,
 };
 
 #[derive(Debug, Clone, PartialEq)]

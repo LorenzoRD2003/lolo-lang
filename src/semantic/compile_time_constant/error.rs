@@ -7,7 +7,7 @@ use crate::{
 };
 
 #[derive(Debug, Clone)]
-pub enum CompileTimeConstantError {
+pub(crate) enum CompileTimeConstantError {
   /// Una operacion de suma/resta/multiplicacion hizo overflow en 32 bits
   ArithmeticOverflow {
     op: BinaryOp,

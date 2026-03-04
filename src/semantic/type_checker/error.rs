@@ -8,7 +8,7 @@ use crate::{
 };
 
 #[derive(Debug, Clone)]
-pub enum TypeError {
+pub(crate) enum TypeError {
   /// Una operacion binaria es invalida
   InvalidBinaryOperation {
     op: BinaryOp,

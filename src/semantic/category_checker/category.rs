@@ -3,7 +3,7 @@
 /// Este modelo es extensible en un futuro: VoidExpr, FunctionExpr, CallExpr, ReferenceExpr, etc.
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct ExprCategory(u8);
+pub(crate) struct ExprCategory(u8);
 
 impl ExprCategory {
   /// La expresion se puede evaluar y se puede leer su valor, pero no es conocida
@@ -15,32 +15,32 @@ impl ExprCategory {
   /// En un futuro cuando implemente `const`, tambien iria aca.
   const CONSTANT: u8 = 0b00000100;
 
-  pub const fn value() -> Self {
+  pub(crate) const fn value() -> Self {
     Self(Self::VALUE)
   }
 
-  pub const fn place() -> Self {
+  pub(crate) const fn place() -> Self {
     Self(Self::PLACE)
   }
 
-  pub const fn constant() -> Self {
+  pub(crate) const fn constant() -> Self {
     Self(Self::CONSTANT)
   }
 
   /// Combina dos categorias en una sola. Por ejemplo: Place + Value
-  pub fn with(self, other: ExprCategory) -> Self {
+  pub(crate) fn with(self, other: ExprCategory) -> Self {
     Self(self.0 | other.0)
   }
 
-  pub fn is_value(self) -> bool {
+  pub(crate) fn is_value(self) -> bool {
     self.0 & Self::VALUE != 0
   }
 
-  pub fn is_place(self) -> bool {
+  pub(crate) fn is_place(self) -> bool {
     self.0 & Self::PLACE != 0
   }
 
-  pub fn is_constant(self) -> bool {
+  pub(crate) fn is_constant(self) -> bool {
     self.0 & Self::CONSTANT != 0
   }
 }

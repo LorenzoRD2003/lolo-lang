@@ -6,7 +6,7 @@ use crate::{
 };
 
 #[derive(Debug, Clone)]
-pub enum CategoryError {
+pub(crate) enum CategoryError {
   /// Se esperaba una PlaceExpr (a la hora de recibir un valor).
   ExpectedPlaceExpression { span: Span },
   /// Se esperaba una ValueExpr (a la hora de emitir un valor).

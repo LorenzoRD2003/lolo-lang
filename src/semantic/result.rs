@@ -1,8 +1,7 @@
 use crate::semantic::{
-  category_checker::category_checker::CategoryInfo,
-  compile_time_constant::compile_time_constant_checker::CompileTimeConstantInfo,
-  context::SemanticContext, mutability_checker::mutability_checker::MutabilityInfo,
-  resolver::resolution_info::ResolutionInfo, type_checker::type_info::TypeInfo,
+  category_checker::CategoryInfo, compile_time_constant::CompileTimeConstantInfo,
+  context::SemanticContext, mutability_checker::MutabilityInfo, resolver::ResolutionInfo,
+  type_checker::TypeInfo,
 };
 
 #[derive(Debug, Clone, PartialEq)]

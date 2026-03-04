@@ -11,7 +11,7 @@ use crate::semantic::phase::{
   SemanticPhase, TypeCheckerPhase,
 };
 
-pub struct PhaseNode<'a> {
+pub(crate) struct PhaseNode<'a> {
   pub phase: Box<dyn SemanticPhase<'a>>,
 }
 
@@ -21,13 +21,13 @@ impl<'a> PhaseNode<'a> {
   }
 }
 
-pub struct PhaseGraph<'a> {
+pub(crate) struct PhaseGraph<'a> {
   nodes: Vec<PhaseNode<'a>>,
   completed_phases: HashSet<&'static str>,
 }
 
 impl<'a> PhaseGraph<'a> {
-  pub fn from(nodes: Vec<PhaseNode<'a>>) -> Self {
+  pub(crate) fn from(nodes: Vec<PhaseNode<'a>>) -> Self {
     Self {
       nodes,
       completed_phases: HashSet::new(),
@@ -36,7 +36,7 @@ impl<'a> PhaseGraph<'a> {
 
   /// Indica cuales fases estan listas para ser ejecutadas, pero aun no fueron completadas.
   /// Por ejemplo, si `completed = { NameResolver }`, entonces devuelve `[TypeChecker, MutabilityChecker]`
-  pub fn ready_phases(&self) -> Vec<&PhaseNode<'a>> {
+  pub(crate) fn ready_phases(&self) -> Vec<&PhaseNode<'a>> {
     // es cuadratico pero no me importa. son pocos nodos. hacer un orden topologico aca es mucho laburo.
     self
       .nodes
@@ -54,12 +54,12 @@ impl<'a> PhaseGraph<'a> {
 
   /// Registra que una fase termino correctamente.
   /// Entonces, en la siguiente ejecucion del iterador, `ready_phases` puede detectar nuevas fases ejecutables.
-  pub fn mark_phase_completed(&mut self, name: &'static str) {
+  pub(crate) fn mark_phase_completed(&mut self, name: &'static str) {
     self.completed_phases.insert(name);
   }
 
   /// Indica si todas las fases terminaron correctamente.
-  pub fn all_phases_completed(&self) -> bool {
+  pub(crate) fn all_phases_completed(&self) -> bool {
     self.nodes.len() == self.completed_phases.len()
   }
 
@@ -70,7 +70,7 @@ impl<'a> PhaseGraph<'a> {
   // NameResolver -> {TypeChecker, MutabilityChecker, CompileTimeConstantChecker}
   // (fase3)
   // CompileTimeConstantChecker → CategoryChecker
-  pub fn default_semantic_graph() -> Self {
+  pub(crate) fn default_semantic_graph() -> Self {
     PhaseGraph::from(vec![
       PhaseNode::new(Box::new(NameResolverPhase)),
       PhaseNode::new(Box::new(TypeCheckerPhase)),

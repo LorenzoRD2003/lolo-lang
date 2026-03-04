@@ -1,3 +1,5 @@
-pub mod category;
-pub mod category_checker;
-pub mod error;
+mod category;
+mod category_checker;
+mod error;
+
+pub(crate) use category_checker::{CategoryChecker, CategoryInfo};

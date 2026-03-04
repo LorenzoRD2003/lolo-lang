@@ -10,10 +10,10 @@ use crate::{
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct SymbolId(pub usize);
+pub(crate) struct SymbolId(pub(crate) usize);
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Symbol {
+pub(crate) struct Symbol {
   /// Id interno unico del simbolo, para referenciarlo desde el `SemanticInfo`
   id: SymbolId,
   /// Nombre de la variable.
@@ -31,7 +31,7 @@ impl IncrementalId for SymbolId {
 }
 
 impl Symbol {
-  pub fn new(id: SymbolId, name: String, scope: ScopeId, span: Span) -> Self {
+  pub(crate) fn new(id: SymbolId, name: String, scope: ScopeId, span: Span) -> Self {
     Self {
       id,
       name,
@@ -46,7 +46,7 @@ impl Symbol {
   // }
 
   /// Devuelve el nombre del simbolo.
-  pub fn name(&self) -> &str {
+  pub(crate) fn name(&self) -> &str {
     &self.name
   }
 
@@ -57,7 +57,7 @@ impl Symbol {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub struct SymbolData {
+pub(crate) struct SymbolData {
   // Stmt que declaro un simbolo (util para buscar redeclaraciones)
-  pub declaration_stmt: StmtId,
+  pub(crate) declaration_stmt: StmtId,
 }
