@@ -103,11 +103,6 @@ impl Ast {
     stmt_id
   }
 
-  pub(crate) fn update_stmt_span(&mut self, id: StmtId, span: Span) -> StmtId {
-    self.stmt_spans[id.0] = span;
-    id
-  }
-
   pub(crate) fn block(&self, id: BlockId) -> Block {
     self.block_arena[id.0].clone()
   }
@@ -127,11 +122,6 @@ impl Ast {
     let span = self.block_span(block_id);
     let expr_id = self.add_expr(Expr::Block(block_id), span);
     expr_id
-  }
-
-  pub(crate) fn update_block_span(&mut self, id: BlockId, span: Span) -> BlockId {
-    self.block_spans[id.0] = span;
-    id
   }
 }
 

@@ -95,38 +95,6 @@ fn test_add_and_retrieve_stmt() {
 }
 
 #[test]
-fn test_update_stmt_span() {
-  let mut ast = Ast::empty();
-  let span1 = 0..4;
-  let span2 = 2..6;
-  let stmt = Stmt::Return(Some(ExprId(0)));
-  let id = ast.add_stmt(stmt, span1);
-  ast.update_stmt_span(id, span2.clone());
-  assert_eq!(ast.stmt_span(id), span2);
-}
-
-#[test]
-fn test_add_and_retrieve_block() {
-  let mut ast = Ast::empty();
-  let span = 0..10;
-  let block = Block::new();
-  let id = ast.add_block(block.clone(), span.clone());
-  assert_eq!(ast.block(id), block.clone());
-  assert_eq!(ast.block_span(id), span);
-}
-
-#[test]
-fn test_update_block_span() {
-  let mut ast = Ast::empty();
-  let span1 = 0..10;
-  let span2 = 3..15;
-  let block = Block::new();
-  let id = ast.add_block(block, span1);
-  ast.update_block_span(id, span2.clone());
-  assert_eq!(ast.block_span(id), span2);
-}
-
-#[test]
 fn test_multiple_exprs_stmts_blocks() {
   let mut ast = Ast::empty();
 
