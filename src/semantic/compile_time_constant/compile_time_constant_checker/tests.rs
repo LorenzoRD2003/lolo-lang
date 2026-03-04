@@ -24,7 +24,7 @@ pub(crate) fn compile_time_check(
   resolver.visit_program(&program);
   let (resolution_info, _) = resolver.into_semantic_info();
   let mut compile_time_constant_checker = CompileTimeConstantChecker::new(&ast, &resolution_info);
-  compile_time_constant_checker.check_program(&program);
+  compile_time_constant_checker.visit_program(&program);
   let diagnostics = compile_time_constant_checker.diagnostics().to_vec();
   let resolution_info = compile_time_constant_checker.into_compile_time_constant_info();
   (resolution_info, diagnostics, ast, program)

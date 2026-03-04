@@ -4,8 +4,8 @@ use crate::{
   ast::{
     ast::{Ast, BlockId, ExprId, StmtId},
     expr::{BinaryExpr, BinaryOp, ConstValue, Expr, UnaryExpr, UnaryOp},
-    program::Program,
     stmt::Stmt,
+    visitor::{AstVisitor, walk_block, walk_expr, walk_stmt},
   },
   diagnostics::diagnostic::{Diagnosable, Diagnostic},
   semantic::{
@@ -42,10 +42,6 @@ impl<'a> CompileTimeConstantChecker<'a> {
     }
   }
 
-  pub fn check_program(&mut self, program: &Program) {
-    self.check_expr(program.main_block_expr());
-  }
-
   pub fn diagnostics(&self) -> &[Diagnostic] {
     &self.diagnostics
   }
@@ -54,87 +50,57 @@ impl<'a> CompileTimeConstantChecker<'a> {
     self.compile_time_constant_info
   }
 
-  // ===================
-  // Metodos internos
-  // ===================
+  fn emit_error(&mut self, err: &CompileTimeConstantError) {
+    self.diagnostics.push(err.to_diagnostic());
+  }
+}
 
-  fn check_block(&mut self, block_id: BlockId) {
-    let block = self.ast.block(block_id);
-    for stmt_id in block.stmts() {
-      self.check_stmt(*stmt_id);
-    }
+impl AstVisitor for CompileTimeConstantChecker<'_> {
+  /// Resuelve las constantes en tiempo de compilacion para el bloque indicado.
+  fn visit_block(&mut self, block_id: BlockId) {
+    walk_block(self, self.ast, block_id);
   }
 
-  fn check_block_expr(&mut self, block_id: BlockId) -> Option<ConstValue> {
-    self.check_block(block_id);
-    let block = self.ast.block(block_id);
-    if let Stmt::Return(Some(expr)) = self.ast.stmt(block.terminator()?) {
-      self.compile_time_constant_info.get(&expr).cloned()
-    } else {
-      None
-    }
-  }
+  /// Resuelve las constantes en tiempo de compilacion para el statement indicado.
+  fn visit_stmt(&mut self, stmt_id: StmtId) {
+    walk_stmt(self, self.ast, stmt_id);
 
-  fn check_stmt(&mut self, stmt_id: StmtId) {
     match self.ast.stmt(stmt_id) {
       Stmt::ConstBinding { var, initializer } => {
         // Asocio un const binding al simbolo de la variable, si el initializer es constante
-        if let Some(value) = self.check_expr(initializer)
+        if let Some(value) = self.compile_time_constant_info.get(&initializer)
           && let Some(symbol_id) = self.resolution_info.symbol_of(var)
         {
-          self.const_bindings.insert(symbol_id, value);
+          self.const_bindings.insert(symbol_id, value.clone());
         }
       }
-      Stmt::LetBinding {
-        var: _,
-        initializer: expr_id,
-      }
-      | Stmt::Assign {
-        var: _,
-        value_expr: expr_id,
-      }
-      | Stmt::Return(Some(expr_id))
-      | Stmt::Print(expr_id)
-      | Stmt::Expr(expr_id) => {
-        self.check_expr(expr_id);
-      }
-      Stmt::If {
-        condition,
-        if_block,
-      } => {
-        self.check_expr(condition);
-        self.check_block(if_block);
-      }
-      Stmt::IfElse {
-        condition,
-        if_block,
-        else_block,
-      } => {
-        self.check_expr(condition);
-        self.check_block(if_block);
-        self.check_block(else_block);
-      }
-      Stmt::Return(None) => {}
+      _ => {}
     }
   }
 
-  /// Resuelve si la expresion indicada es una constante en tiempo de compilacion. La devuelve.
-  fn check_expr(&mut self, expr_id: ExprId) -> Option<ConstValue> {
-    if let Some(const_value) = self.compile_time_constant_info.get(&expr_id) {
-      return Some(const_value.clone());
-    }
+  /// Resuelve las constantes en tiempo de compilacion para la expresion indicada.
+  fn visit_expr(&mut self, expr_id: ExprId) {
+    walk_expr(self, self.ast, expr_id);
 
-    let expr = self.ast.expr(expr_id);
-    let compile_time_constant = match expr {
+    let ctc_value = match self.ast.expr(expr_id) {
       Expr::Const(v) => Some(v),
-      Expr::Var(_) => {
-        let symbol_id = self.resolution_info.symbol_of(expr_id)?;
-        self.const_bindings.get(&symbol_id).cloned()
+      Expr::Var(_) => self
+        .resolution_info
+        .symbol_of(expr_id)
+        .and_then(|symbol_id| self.const_bindings.get(&symbol_id).cloned()),
+      Expr::Block(block_id) => {
+        let block = self.ast.block(block_id);
+        block.terminator().and_then(|stmt| {
+          if let Stmt::Return(Some(expr)) = self.ast.stmt(stmt) {
+            self.compile_time_constant_info.get(&expr).cloned()
+          } else {
+            None
+          }
+        })
       }
-      Expr::Block(block_id) => self.check_block_expr(block_id),
       // Todos los operadores que tenemos son puros asi que esto está bien
       Expr::Unary(UnaryExpr { op, operand }) => {
-        let operand_value = self.check_expr(operand);
+        let operand_value = self.compile_time_constant_info.get(&operand).cloned();
         match (operand_value, op) {
           (Some(ConstValue::Int32(x)), UnaryOp::Neg) => Some(ConstValue::Int32(-x)),
           (Some(ConstValue::Bool(b)), UnaryOp::Not) => Some(ConstValue::Bool(!b)),
@@ -142,8 +108,8 @@ impl<'a> CompileTimeConstantChecker<'a> {
         }
       }
       Expr::Binary(BinaryExpr { op, lhs, rhs }) => {
-        let lvalue = self.check_expr(lhs);
-        let rvalue = self.check_expr(rhs);
+        let lvalue = self.compile_time_constant_info.get(&lhs).cloned();
+        let rvalue = self.compile_time_constant_info.get(&rhs).cloned();
         match (lvalue, op, rvalue) {
           (Some(ConstValue::Int32(x)), BinaryOp::Add, Some(ConstValue::Int32(y))) => {
             match x.checked_add(y) {
@@ -227,14 +193,7 @@ impl<'a> CompileTimeConstantChecker<'a> {
         }
       }
     };
-    if let Some(const_value) = compile_time_constant.clone() {
-      self.compile_time_constant_info.insert(expr_id, const_value);
-    }
-    compile_time_constant
-  }
-
-  fn emit_error(&mut self, err: &CompileTimeConstantError) {
-    self.diagnostics.push(err.to_diagnostic());
+    ctc_value.and_then(|const_value| self.compile_time_constant_info.insert(expr_id, const_value));
   }
 }
 

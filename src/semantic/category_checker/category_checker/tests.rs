@@ -22,7 +22,7 @@ fn category_check(source: &str) -> (CategoryInfo, Vec<Diagnostic>, Ast, Program)
   resolver.visit_program(&program);
   let (resolution_info, _) = resolver.into_semantic_info();
   let mut compile_time_constant_checker = CompileTimeConstantChecker::new(&ast, &resolution_info);
-  compile_time_constant_checker.check_program(&program);
+  compile_time_constant_checker.visit_program(&program);
   let const_info = compile_time_constant_checker.into_compile_time_constant_info();
   let mut category_checker = CategoryChecker::new(&ast, &const_info);
   category_checker.check_program(&program);
@@ -142,7 +142,7 @@ fn assignment_to_non_place_is_error() {
   let (resolution_info, _) = resolver.into_semantic_info();
 
   let mut compile_time_constant_checker = CompileTimeConstantChecker::new(&ast, &resolution_info);
-  compile_time_constant_checker.check_program(&program);
+  compile_time_constant_checker.visit_program(&program);
   let compile_time_constant_info = compile_time_constant_checker.into_compile_time_constant_info();
 
   let mut category_checker = CategoryChecker::new(&ast, &compile_time_constant_info);
@@ -296,7 +296,7 @@ fn const_binding_lhs_must_be_place() {
   let (resolution_info, _) = resolver.into_semantic_info();
 
   let mut compile_time_constant_checker = CompileTimeConstantChecker::new(&ast, &resolution_info);
-  compile_time_constant_checker.check_program(&program);
+  compile_time_constant_checker.visit_program(&program);
   let compile_time_constant_info = compile_time_constant_checker.into_compile_time_constant_info();
 
   let mut category_checker = CategoryChecker::new(&ast, &compile_time_constant_info);
