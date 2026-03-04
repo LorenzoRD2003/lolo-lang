@@ -1,8 +1,7 @@
 use rustc_hash::FxHashMap;
 
 use crate::{
-  ast::ast::{BlockId, ExprId, StmtId},
-  semantic::{scope::ScopeId, symbol::SymbolId},
+  ast::ast::{BlockId, ExprId, StmtId}, semantic::{id_generator::{ScopeId, SymbolId}, symbol::SymbolData},
 };
 
 #[derive(Debug, Clone, PartialEq)]
@@ -20,14 +19,6 @@ pub struct ResolutionInfo {
   stmt_declared_symbol: FxHashMap<StmtId, SymbolId>,
   /// Metadata adicional util por simbolo
   symbol_data: FxHashMap<SymbolId, SymbolData>,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct SymbolData {
-  // Stmt que declaro un simbolo (util para buscar redeclaraciones)
-  pub declaration_stmt: StmtId,
-  // Util para verificar const bindings
-  pub is_const: bool,
 }
 
 impl ResolutionInfo {
@@ -100,7 +91,7 @@ impl ResolutionInfo {
     self.symbol_data.get(&symbol).copied()
   }
 
-  pub fn expr_symbol_by_id(&self) -> &FxHashMap<ExprId, SymbolId> {
-    &self.expr_symbol_by_id
-  }
+  // pub fn var_symbol_by_id(&self) -> &FxHashMap<ExprId, SymbolId> {
+  //   &self.expr_symbol_by_id
+  // }
 }

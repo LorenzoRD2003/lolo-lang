@@ -1,9 +1,10 @@
 use crate::{
   ast::{
     ast::Ast,
+    block::Block,
     expr::{ConstValue, Expr},
     program::Program,
-    stmt::{Block, Stmt},
+    stmt::Stmt,
   },
   diagnostics::diagnostic::Diagnostic,
   parser::program_parsing::parse_program,
@@ -18,7 +19,7 @@ fn category_check(source: &str) -> (CategoryInfo, Vec<Diagnostic>, Ast, Program)
   let (ast, program) = parse_program(source);
   let mut resolver = NameResolver::new(&ast);
   resolver.resolve_program(&program);
-  let resolution_info = resolver.into_resolution_info();
+  let (resolution_info, _) = resolver.into_semantic_info();
   let mut compile_time_constant_checker = CompileTimeConstantChecker::new(&ast, &resolution_info);
   compile_time_constant_checker.check_program(&program);
   let const_info = compile_time_constant_checker.into_compile_time_constant_info();
@@ -33,7 +34,7 @@ fn category_check(source: &str) -> (CategoryInfo, Vec<Diagnostic>, Ast, Program)
 fn int_literal_is_value_and_constant() {
   let (info, diagnostics, ast, program) = category_check("main { 5; }");
   assert!(diagnostics.is_empty());
-  let stmt = ast.block(program.main_block()).stmts()[0];
+  let stmt = ast.block(program.main_block(&ast)).stmts()[0];
   if let Stmt::Expr(expr_id) = ast.stmt(stmt) {
     let cat = info.get(&expr_id).unwrap();
     assert!(cat.is_value());
@@ -46,7 +47,7 @@ fn int_literal_is_value_and_constant() {
 fn variable_is_value_and_place() {
   let (info, diagnostics, ast, program) = category_check("main { let x = 5; x; }");
   assert!(diagnostics.is_empty());
-  let block = ast.block(program.main_block());
+  let block = ast.block(program.main_block(&ast));
   let stmts = block.stmts();
   if let Stmt::Expr(expr_id) = ast.stmt(stmts[1]) {
     let cat = info.get(&expr_id).unwrap();
@@ -60,7 +61,7 @@ fn variable_is_value_and_place() {
 fn binary_constant_is_value_and_constant() {
   let (info, diagnostics, ast, program) = category_check("main { 2 + 3; }");
   assert!(diagnostics.is_empty());
-  let stmt = ast.block(program.main_block()).stmts()[0];
+  let stmt = ast.block(program.main_block(&ast)).stmts()[0];
   if let Stmt::Expr(expr_id) = ast.stmt(stmt) {
     let cat = info.get(&expr_id).unwrap();
     assert!(cat.is_value());
@@ -73,7 +74,7 @@ fn binary_constant_is_value_and_constant() {
 fn binary_non_constant_is_only_value() {
   let (info, diagnostics, ast, program) = category_check("main { let x = 5; x + 3; }");
   assert!(diagnostics.is_empty());
-  let block = ast.block(program.main_block());
+  let block = ast.block(program.main_block(&ast));
   let stmts = block.stmts();
   if let Stmt::Expr(expr_id) = ast.stmt(stmts[1]) {
     let cat = info.get(&expr_id).unwrap();
@@ -87,7 +88,7 @@ fn binary_non_constant_is_only_value() {
 fn unary_constant_is_value_and_constant() {
   let (info, diagnostics, ast, program) = category_check("main { -5; }");
   assert!(diagnostics.is_empty());
-  let stmt = ast.block(program.main_block()).stmts()[0];
+  let stmt = ast.block(program.main_block(&ast)).stmts()[0];
   if let Stmt::Expr(expr_id) = ast.stmt(stmt) {
     let cat = info.get(&expr_id).unwrap();
     assert!(cat.is_value());
@@ -100,7 +101,7 @@ fn unary_constant_is_value_and_constant() {
 fn unary_non_constant_is_only_value() {
   let (info, diagnostics, ast, program) = category_check("main { let x = 5; -x; }");
   assert!(diagnostics.is_empty());
-  let block = ast.block(program.main_block());
+  let block = ast.block(program.main_block(&ast));
   let stmts = block.stmts();
   if let Stmt::Expr(expr_id) = ast.stmt(stmts[1]) {
     let cat = info.get(&expr_id).unwrap();
@@ -131,12 +132,13 @@ fn assignment_to_non_place_is_error() {
     },
     0..4,
   );
-  let block = ast.add_block(Block::with_stmts(vec![stmt]), 0..4);
-  let program = Program::new(block, 0..4);
+  let block = ast.add_block(Block::with_stmts(&ast, vec![stmt]), 0..4);
+  let block_expr = ast.add_block_expr(block);
+  let program = Program::new(block_expr, 0..4);
 
   let mut resolver = NameResolver::new(&ast);
   resolver.resolve_program(&program);
-  let resolution_info = resolver.into_resolution_info();
+  let (resolution_info, _) = resolver.into_semantic_info();
 
   let mut compile_time_constant_checker = CompileTimeConstantChecker::new(&ast, &resolution_info);
   compile_time_constant_checker.check_program(&program);
@@ -165,7 +167,7 @@ fn assignment_to_non_place_is_error() {
 fn subexpression_constant_marked_correctly() {
   let (info, diagnostics, ast, program) = category_check("main { (2 + 3) + 4; }");
   assert!(diagnostics.is_empty());
-  let stmt = ast.block(program.main_block()).stmts()[0];
+  let stmt = ast.block(program.main_block(&ast)).stmts()[0];
   if let Stmt::Expr(root_id) = ast.stmt(stmt) {
     // root debería ser constante
     let root_cat = info.get(&root_id).unwrap();
@@ -177,7 +179,7 @@ fn subexpression_constant_marked_correctly() {
 fn variable_is_never_constant() {
   let (info, diagnostics, ast, program) = category_check("main { let x = 5; x; }");
   assert!(diagnostics.is_empty());
-  let block = ast.block(program.main_block());
+  let block = ast.block(program.main_block(&ast));
   let stmts = block.stmts();
   if let Stmt::Expr(expr_id) = ast.stmt(stmts[1]) {
     let cat = info.get(&expr_id).unwrap();
@@ -189,7 +191,7 @@ fn variable_is_never_constant() {
 fn constant_flag_depends_on_compile_time_analysis() {
   let (info, diagnostics, ast, program) = category_check("main { let x = 5; (2 + 3) + x; }");
   assert!(diagnostics.is_empty());
-  let block = ast.block(program.main_block());
+  let block = ast.block(program.main_block(&ast));
   let stmts = block.stmts();
   if let Stmt::Expr(expr_id) = ast.stmt(stmts[1]) {
     let cat = info.get(&expr_id).unwrap();
@@ -284,12 +286,13 @@ fn const_binding_lhs_must_be_place() {
     },
     0..4,
   );
-  let block = ast.add_block(Block::with_stmts(vec![stmt]), 0..4);
-  let program = Program::new(block, 0..4);
+  let block = ast.add_block(Block::with_stmts(&ast, vec![stmt]), 0..4);
+  let block_expr = ast.add_block_expr(block);
+  let program = Program::new(block_expr, 0..4);
 
   let mut resolver = NameResolver::new(&ast);
   resolver.resolve_program(&program);
-  let resolution_info = resolver.into_resolution_info();
+  let (resolution_info, _) = resolver.into_semantic_info();
 
   let mut compile_time_constant_checker = CompileTimeConstantChecker::new(&ast, &resolution_info);
   compile_time_constant_checker.check_program(&program);
@@ -375,4 +378,49 @@ fn shadowing_does_not_leak_outer_const_value() {
       .msg()
       .contains("se esperaba una constant expression")
   );
+}
+
+#[test]
+fn const_initialized_with_block() {
+  let source = r#"
+    main {
+      const x = { return 2 + 7; };
+    }
+  "#;
+  let (category_info, diagnostics, ast, program) = category_check(source);
+  assert!(diagnostics.is_empty());
+  let block = ast.block(program.main_block(&ast));
+  let stmt_id = block.stmts()[0];
+  dbg!(&category_info);
+  if let Stmt::ConstBinding { var, initializer } = ast.stmt(stmt_id) {
+    let var_cat = category_info.get(&var).unwrap();
+    // dbg!(const_cat);
+    assert!(var_cat.is_value() && !var_cat.is_constant() && var_cat.is_place());
+    let block_cat = category_info.get(&initializer).unwrap();
+    assert!(block_cat.is_value() && block_cat.is_constant() && !block_cat.is_place());
+  }
+}
+
+#[test]
+fn const_initialized_with_block_without_value() {
+  let source = r#"
+    main {
+      const x = { return; };
+    }
+  "#;
+  let (category_info, diagnostics, ast, program) = category_check(source);
+  assert!(!diagnostics.is_empty());
+  assert!(
+    diagnostics[0]
+      .msg()
+      .contains("se esperaba una constant expression")
+  );
+  let block = ast.block(program.main_block(&ast));
+  let stmt_id = block.stmts()[0];
+  if let Stmt::ConstBinding { var, initializer } = ast.stmt(stmt_id) {
+    let var_cat = category_info.get(&var).unwrap();
+    let block_cat = category_info.get(&initializer).unwrap();
+    assert!(var_cat.is_value() && !var_cat.is_constant() && var_cat.is_place());
+    assert!(block_cat.is_value() && !block_cat.is_constant() && !block_cat.is_place());
+  }
 }

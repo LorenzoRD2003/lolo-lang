@@ -2,16 +2,21 @@ use crate::{
   ast::{ast::Ast, expr::Expr, program::Program, stmt::Stmt},
   diagnostics::diagnostic::Diagnostic,
   parser::program_parsing::parse_program,
-  semantic::resolver::{name_resolver::NameResolver, resolution_info::ResolutionInfo},
+  semantic::{
+    resolver::{name_resolver::NameResolver, resolution_info::ResolutionInfo},
+    symbol_table::SymbolTable,
+  },
 };
 
-pub(crate) fn resolve(source: &str) -> (ResolutionInfo, Vec<Diagnostic>, Ast, Program) {
+pub(crate) fn resolve(
+  source: &str,
+) -> (ResolutionInfo, SymbolTable, Vec<Diagnostic>, Ast, Program) {
   let (ast, program) = parse_program(source);
   let mut resolver = NameResolver::new(&ast);
   resolver.resolve_program(&program);
   let diagnostics = resolver.diagnostics().to_vec();
-  let resolution_info = resolver.into_resolution_info();
-  (resolution_info, diagnostics, ast, program)
+  let (resolution_info, symbol_table) = resolver.into_semantic_info();
+  (resolution_info, symbol_table, diagnostics, ast, program)
 }
 
 #[test]
@@ -22,9 +27,9 @@ fn resolves_simple_let_binding() {
     }
   "#;
 
-  let (resolution_info, diagnostics, ast, program) = resolve(source);
+  let (resolution_info, _, diagnostics, ast, program) = resolve(source);
   assert!(diagnostics.is_empty());
-  let main_block = program.main_block();
+  let main_block = program.main_block(&ast);
   let stmt_id = ast.block(main_block).stmts()[0];
 
   let declared_symbol = resolution_info
@@ -52,9 +57,9 @@ fn resolves_variable_usage() {
     }
   "#;
 
-  let (resolution_info, diagnostics, ast, program) = resolve(source);
+  let (resolution_info, _, diagnostics, ast, program) = resolve(source);
   assert!(diagnostics.is_empty());
-  let block = ast.block(program.main_block());
+  let block = ast.block(program.main_block(&ast));
   let stmts = block.stmts();
   let assign_stmt = ast.stmt(stmts[1]);
 
@@ -76,7 +81,7 @@ fn detects_redeclaration_in_same_scope() {
     }
   "#;
 
-  let (_, diagnostics, _, _) = resolve(source);
+  let (_, _, diagnostics, _, _) = resolve(source);
   assert_eq!(diagnostics.len(), 1);
   assert!(
     diagnostics[0]
@@ -96,7 +101,7 @@ fn allows_shadowing_in_inner_scope() {
     }
     "#;
 
-  let (_, diagnostics, _, _) = resolve(source);
+  let (_, _, diagnostics, _, _) = resolve(source);
   assert!(diagnostics.is_empty());
 }
 
@@ -108,7 +113,7 @@ fn detects_undefined_variable_in_assign() {
     }
     "#;
 
-  let (_, diagnostics, _, _) = resolve(source);
+  let (_, _, diagnostics, _, _) = resolve(source);
   assert_eq!(diagnostics.len(), 1);
   assert!(diagnostics[0].msg().contains("variable 'x' indefinida"))
 }
@@ -121,7 +126,7 @@ fn detects_undefined_variable_in_expression() {
     }
     "#;
 
-  let (_, diagnostics, _, _) = resolve(source);
+  let (_, _, diagnostics, _, _) = resolve(source);
   assert_eq!(diagnostics.len(), 1);
   assert!(diagnostics[0].msg().contains("variable 'y' indefinida"))
 }
@@ -134,8 +139,8 @@ fn assigns_scopes_to_block_stmt_and_expr() {
     }
   "#;
 
-  let (resolution_info, _, ast, program) = resolve(source);
-  let main_block = program.main_block();
+  let (resolution_info, _, _, ast, program) = resolve(source);
+  let main_block = program.main_block(&ast);
   let block_scope = resolution_info.scope_of_block(main_block);
   let stmt_id = ast.block(main_block).stmts()[0];
   let stmt_scope = resolution_info.scope_of_stmt(stmt_id);
@@ -151,9 +156,9 @@ fn resolves_binary_expression_operands() {
     }
   "#;
 
-  let (resolution_info, diagnostics, ast, program) = resolve(source);
+  let (resolution_info, _, diagnostics, ast, program) = resolve(source);
   assert!(diagnostics.is_empty());
-  let block = ast.block(program.main_block());
+  let block = ast.block(program.main_block(&ast));
   let stmts = block.stmts();
 
   let stmt = ast.stmt(stmts[1]);
@@ -178,9 +183,9 @@ fn assignment_in_inner_scope_resolves_to_the_same_symbol_id() {
     }
   "#;
 
-  let (resolution_info, diagnostics, ast, program) = resolve(source);
+  let (resolution_info, _, diagnostics, ast, program) = resolve(source);
   assert!(diagnostics.is_empty());
-  let main_block = ast.block(program.main_block());
+  let main_block = ast.block(program.main_block(&ast));
   let main_block_stmts = main_block.stmts();
   assert!(
     resolution_info

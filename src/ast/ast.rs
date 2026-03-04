@@ -4,10 +4,7 @@
 // es importante remarcar que una Expr NO TIENE Span, sino que el compilador guarda un Span asociado a cada nodo del "arbol"
 
 use crate::{
-  ast::{
-    expr::Expr,
-    stmt::{Block, Stmt},
-  },
+  ast::{block::Block, expr::Expr, stmt::Stmt},
   common::span::Span,
 };
 
@@ -38,12 +35,12 @@ pub struct Ast {
 impl Ast {
   pub fn empty() -> Self {
     Self {
-      expr_arena: vec![],
-      expr_spans: vec![],
-      stmt_arena: vec![],
-      stmt_spans: vec![],
-      block_arena: vec![],
-      block_spans: vec![],
+      expr_arena: Vec::new(),
+      expr_spans: Vec::new(),
+      stmt_arena: Vec::new(),
+      stmt_spans: Vec::new(),
+      block_arena: Vec::new(),
+      block_spans: Vec::new(),
     }
   }
 
@@ -96,7 +93,14 @@ impl Ast {
   pub fn add_block(&mut self, block: Block, span: Span) -> BlockId {
     self.block_arena.push(block);
     self.block_spans.push(span);
-    BlockId(self.block_arena.len() - 1)
+    let block_id = BlockId(self.block_arena.len() - 1);
+    block_id
+  }
+
+  pub fn add_block_expr(&mut self, block_id: BlockId) -> ExprId {
+    let span = self.block_span(block_id);
+    let expr_id = self.add_expr(Expr::Block(block_id), span);
+    expr_id
   }
 
   pub fn update_block_span(&mut self, id: BlockId, span: Span) -> BlockId {

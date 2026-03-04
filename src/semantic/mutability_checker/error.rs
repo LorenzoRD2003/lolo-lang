@@ -1,5 +1,4 @@
 use crate::{
-  ast::expr::VarId,
   common::span::Span,
   diagnostics::diagnostic::{Diagnosable, Diagnostic},
 };
@@ -7,7 +6,7 @@ use crate::{
 #[derive(Debug, Clone)]
 pub enum MutabilityError {
   /// Se intento modificar una variable inmutable
-  ImmutableVariable { name: VarId, span: Span },
+  ImmutableVariable { name: String, span: Span },
 }
 
 impl Diagnosable for MutabilityError {
@@ -15,7 +14,7 @@ impl Diagnosable for MutabilityError {
     match self {
       Self::ImmutableVariable { name, span } => Diagnostic::error(format!(
         "se intento modificar la variable inmutable '{}'",
-        name.0
+        name
       ))
       .with_span(span.clone()),
     }

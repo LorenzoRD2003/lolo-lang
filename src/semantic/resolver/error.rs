@@ -1,7 +1,6 @@
 // Responsable de los errores del name resolver.
 
 use crate::{
-  ast::expr::VarId,
   common::span::Span,
   diagnostics::{
     diagnostic::{Diagnosable, Diagnostic},
@@ -13,12 +12,12 @@ use crate::{
 pub enum ResolverError {
   /// Redeclaracion ilegal en el mismo scope
   RedeclaredVariable {
-    name: VarId,
+    name: String,
     span: Span,
     previous_span: Span,
   },
   /// Uso de variable inexistente
-  UndefinedVariable { name: VarId, span: Span },
+  UndefinedVariable { name: String, span: Span },
 }
 
 impl Diagnosable for ResolverError {
@@ -31,13 +30,13 @@ impl Diagnosable for ResolverError {
       } => {
         Diagnostic::error(format!(
           "la variable '{}' ya fue declarada en este scope",
-          name.0
+          name
         ))
         // primary_span apunta al span de la nueva declaracion, igual que el label principal
         .with_span(span.clone())
         .with_label(Label::primary(
           span.clone(),
-          Some(format!("redeclara '{}'", name.0)),
+          Some(format!("redeclara '{}'", name)),
         ))
         // label secundaria para la declaracion de variable original
         .with_label(Label::secondary(
@@ -46,7 +45,7 @@ impl Diagnosable for ResolverError {
         ))
       }
       Self::UndefinedVariable { name, span } => {
-        Diagnostic::error(format!("variable '{}' indefinida", name.0)).with_span(span.clone())
+        Diagnostic::error(format!("variable '{}' indefinida", name)).with_span(span.clone())
       }
     }
   }

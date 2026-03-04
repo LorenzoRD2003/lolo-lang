@@ -9,17 +9,15 @@
 use crate::{
   ast::{
     ast::{Ast, BlockId, ExprId, StmtId},
-    expr::{Expr, VarId},
+    expr::Expr,
     program::Program,
     stmt::Stmt,
   },
   diagnostics::diagnostic::{Diagnosable, Diagnostic},
   semantic::{
-    resolver::{
-      error::ResolverError,
-      resolution_info::{ResolutionInfo, SymbolData},
-    },
+    resolver::{error::ResolverError, resolution_info::ResolutionInfo},
     scope::ScopeArena,
+    symbol::SymbolData,
     symbol_table::SymbolTable,
   },
 };
@@ -52,7 +50,7 @@ impl<'a> NameResolver<'a> {
   }
 
   pub fn resolve_program(&mut self, program: &Program) {
-    self.resolve_block(program.main_block());
+    self.resolve_expr(program.main_block_expr());
   }
 
   pub fn diagnostics(&self) -> &[Diagnostic] {
@@ -60,8 +58,8 @@ impl<'a> NameResolver<'a> {
   }
 
   /// Devuelve la informacion de resolucion de nombres, consumiendo `self`.
-  pub fn into_resolution_info(self) -> ResolutionInfo {
-    self.resolution_info
+  pub fn into_semantic_info(self) -> (ResolutionInfo, SymbolTable) {
+    (self.resolution_info, self.symbol_table)
   }
 
   // ===================
@@ -120,11 +118,6 @@ impl<'a> NameResolver<'a> {
         self.resolution_info.insert_declared_symbol(stmt_id, symbol);
         let symbol_data = SymbolData {
           declaration_stmt: stmt_id,
-          is_const: match stmt {
-            Stmt::ConstBinding { .. } => true,
-            Stmt::LetBinding { .. } => false,
-            _ => unreachable!(),
-          },
         };
         self.resolution_info.insert_symbol_data(symbol, symbol_data);
         // Resolver initializer por nombres
@@ -163,9 +156,10 @@ impl<'a> NameResolver<'a> {
         self.resolve_block(if_block);
         self.resolve_block(else_block);
       }
-      Stmt::Expr(expr) | Stmt::Print(expr) | Stmt::Return(expr) => {
+      Stmt::Expr(expr) | Stmt::Print(expr) | Stmt::Return(Some(expr)) => {
         self.resolve_expr(expr);
       }
+      Stmt::Return(None) => {}
     }
   }
 
@@ -184,12 +178,13 @@ impl<'a> NameResolver<'a> {
         self.resolve_expr(binary.lhs);
         self.resolve_expr(binary.rhs);
       }
+      Expr::Block(block_id) => self.resolve_block(block_id),
       Expr::Const(_) => {}
     };
   }
 
   /// Resuelve el nombre de una expresion de identificador.
-  fn resolve_var_expr(&mut self, expr_id: ExprId, name: VarId) {
+  fn resolve_var_expr(&mut self, expr_id: ExprId, name: String) {
     match self.symbol_table.resolve(&name) {
       Some(symbol_id) => self.resolution_info.insert_expr_symbol(expr_id, symbol_id),
       None => self.emit_error(&ResolverError::UndefinedVariable {

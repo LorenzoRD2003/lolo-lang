@@ -1,6 +1,6 @@
 use crate::{
   ast::{
-    expr::{BinaryExpr, BinaryOp, ConstValue, Expr, UnaryExpr, UnaryOp, VarId},
+    expr::{BinaryExpr, BinaryOp, ConstValue, Expr, UnaryExpr, UnaryOp},
     stmt::Stmt,
   },
   diagnostics::diagnostic::Diagnostic,
@@ -12,6 +12,15 @@ use crate::{
   },
 };
 use proptest::prelude::*;
+
+fn source_to_parser_diagnostics(source: &str) -> Vec<Diagnostic> {
+  let mut diagnostics = Vec::new();
+  let lexer = Lexer::new(source);
+  let mut tokens = TokenStream::new(lexer);
+  let mut parser = Parser::new(&mut tokens, &mut diagnostics);
+  parser.parse_program();
+  diagnostics
+}
 
 #[test]
 fn parses_number_literal() {
@@ -31,7 +40,7 @@ fn parses_boolean_literal() {
 fn parses_identifier() {
   let (ast, expr_id) = parse_expr("x");
   let expr_id = expr_id.expect("expression expected");
-  assert_eq!(ast.expr(expr_id), Expr::Var(VarId("x".into())));
+  assert_eq!(ast.expr(expr_id), Expr::Var("x".into()));
 }
 
 #[test]
@@ -41,7 +50,7 @@ fn parses_unary_minus() {
   match ast.expr(expr_id) {
     Expr::Unary(unary) => {
       assert_eq!(unary.op, UnaryOp::Neg);
-      assert_eq!(ast.expr(unary.operand), Expr::Var(VarId("x".into())));
+      assert_eq!(ast.expr(unary.operand), Expr::Var("x".into()));
     }
     _ => panic!("expected unary expression"),
   }
@@ -86,7 +95,7 @@ fn parenthesis_not_closed_returns_inner_expr() {
 fn parses_nested_parens() {
   let (ast, expr_id) = parse_expr("(((x)))");
   let expr_id = expr_id.expect("expression expected");
-  assert_eq!(ast.expr(expr_id), Expr::Var(VarId("x".into())));
+  assert_eq!(ast.expr(expr_id), Expr::Var("x".into()));
 }
 
 #[test]
@@ -177,12 +186,12 @@ fn logical_and_has_higher_precedence_than_or() {
   match ast.expr(expr_id) {
     Expr::Binary(or) => {
       assert_eq!(or.op, BinaryOp::Or);
-      assert_eq!(ast.expr(or.lhs), Expr::Var(VarId("a".into())));
+      assert_eq!(ast.expr(or.lhs), Expr::Var("a".into()));
       match ast.expr(or.rhs) {
         Expr::Binary(and) => {
           assert_eq!(and.op, BinaryOp::And);
-          assert_eq!(ast.expr(and.lhs), Expr::Var(VarId("b".into())));
-          assert_eq!(ast.expr(and.rhs), Expr::Var(VarId("c".into())));
+          assert_eq!(ast.expr(and.lhs), Expr::Var("b".into()));
+          assert_eq!(ast.expr(and.rhs), Expr::Var("c".into()));
         }
         _ => panic!("expected AND on RHS"),
       }
@@ -255,7 +264,7 @@ fn parse_let_stmt_structure() {
   let stmt_id = stmt_id.unwrap();
   match ast.stmt(stmt_id) {
     Stmt::LetBinding { var, initializer } => {
-      assert_eq!(ast.expr(var), Expr::Var(VarId("x".into())));
+      assert_eq!(ast.expr(var), Expr::Var("x".into()));
       assert!(matches!(ast.expr(initializer), Expr::Var(_)));
     }
     _ => panic!("Expected Let"),
@@ -297,7 +306,7 @@ fn parse_assign_stmt_structure() {
       var,
       value_expr: expr,
     } => {
-      assert_eq!(ast.expr(var), Expr::Var(VarId("x".into())));
+      assert_eq!(ast.expr(var), Expr::Var("x".into()));
       assert!(matches!(ast.expr(expr), Expr::Const(ConstValue::Int32(18))));
     }
     _ => panic!("Expected Let"),
@@ -317,7 +326,7 @@ fn parse_const_stmt_structure() {
   let stmt_id = stmt_id.unwrap();
   match ast.stmt(stmt_id) {
     Stmt::ConstBinding { var, initializer } => {
-      assert_eq!(ast.expr(var), Expr::Var(VarId("x".into())));
+      assert_eq!(ast.expr(var), Expr::Var("x".into()));
       assert!(matches!(ast.expr(initializer), Expr::Var(_)));
     }
     _ => panic!("Expected Const"),
@@ -374,10 +383,10 @@ fn parse_return_stmt_structure() {
   let (ast, stmt_id) = parse_stmt("return false;");
   let stmt_id = stmt_id.unwrap();
   match ast.stmt(stmt_id) {
-    Stmt::Return(expr_id) => {
+    Stmt::Return(Some(expr_id)) => {
       assert_eq!(ast.expr(expr_id), Expr::Const(ConstValue::Bool(false)));
     }
-    _ => panic!("Expected Return"),
+    _ => panic!("Expected Return with some value"),
   }
 }
 
@@ -386,7 +395,7 @@ fn return_expression() {
   let (ast, stmt_id) = parse_stmt("return a ^^ !b;");
   let stmt_id = stmt_id.unwrap();
   match ast.stmt(stmt_id) {
-    Stmt::Return(expr_id) => {
+    Stmt::Return(Some(expr_id)) => {
       assert!(matches!(
         ast.expr(expr_id),
         Expr::Binary(BinaryExpr {
@@ -396,7 +405,7 @@ fn return_expression() {
         })
       ));
     }
-    _ => panic!("Expected Return"),
+    _ => panic!("Expected Return with some value"),
   }
 }
 
@@ -448,7 +457,7 @@ fn parse_if_stmt_structure() {
       condition,
       if_block,
     } => {
-      assert!(matches!(ast.expr(condition), Expr::Var(VarId(_))));
+      assert!(matches!(ast.expr(condition), Expr::Var(_)));
       assert_eq!(ast.block(if_block).stmts().len(), 2);
     }
     _ => panic!("Expected If"),
@@ -535,14 +544,14 @@ fn parse_empty_program() {
 #[test]
 fn parse_program_with_statements() {
   let (ast, program) = parse_program("main { a; b; }");
-  let block_id = program.main_block();
+  let block_id = program.main_block(&ast);
   assert_eq!(ast.block(block_id).stmts().len(), 2);
 }
 
 #[test]
 fn program_span_is_correct() {
   let (ast, program) = parse_program("main { a; }");
-  assert_eq!(ast.block_span(program.main_block()), 5..11);
+  assert_eq!(ast.block_span(program.main_block(&ast)), 5..11);
   assert_eq!(program.span(), 0..11);
 }
 
@@ -561,43 +570,164 @@ fn let_requires_identifier() {
   let mut parser = Parser::new(&mut tokens, &mut diagnostics);
   parser.parse_statement();
   assert!(
-    parser
-      .diagnostics()
-      .iter()
-      .any(|d: &Diagnostic| { d.msg().contains("hubo un token inesperado '123'") })
+    parser.diagnostics()[0]
+      .msg()
+      .contains("hubo un token inesperado '123'")
   );
 }
 
 #[test]
 fn unexpected_eof_in_block() {
-  let mut diagnostics = Vec::new();
   let source = "main { print 1; ";
-  let lexer = Lexer::new(source);
-  let mut tokens = TokenStream::new(lexer);
-  let mut parser = Parser::new(&mut tokens, &mut diagnostics);
-  parser.parse_program();
-  assert!(
-    parser
-      .diagnostics()
-      .iter()
-      .any(|d| d.msg().contains("hubo un EOF inesperado"))
-  );
+  let diagnostics = source_to_parser_diagnostics(source);
+  assert!(diagnostics[0].msg().contains("hubo un EOF inesperado"));
 }
 
 #[test]
 fn missing_semicolon_emits_error() {
-  let mut diagnostics = Vec::new();
   let source = "main { print 1 }";
-  let lexer = Lexer::new(source);
-  let mut tokens = TokenStream::new(lexer);
-  let mut parser = Parser::new(&mut tokens, &mut diagnostics);
-  parser.parse_program();
+  let diagnostics = source_to_parser_diagnostics(source);
   assert!(
-    parser
-      .diagnostics
-      .iter()
-      .any(|d| d.msg().contains("hubo un token inesperado '}'")),
+    diagnostics[0]
+      .msg()
+      .contains("hubo un token inesperado '}'")
   );
+}
+
+#[test]
+fn empty_block_expression() {
+  let source = r#"
+    main {
+      let x = {};
+    }
+  "#;
+  let diagnostics = source_to_parser_diagnostics(source);
+  assert!(diagnostics.is_empty());
+}
+
+#[test]
+fn return_without_expression_in_block_expression() {
+  let source = r#"
+    main {
+      let x = {
+        return;
+      };
+    }
+  "#;
+  let diagnostics = source_to_parser_diagnostics(source);
+  assert!(diagnostics.is_empty());
+}
+
+#[test]
+fn statement_after_return_in_block_expression() {
+  let source = r#"
+    main {
+      let x = {
+        return 5;
+        const y = 10;
+      };
+    }
+  "#;
+  let diagnostics = source_to_parser_diagnostics(source);
+  assert!(
+    diagnostics[0]
+      .msg()
+      .contains("se detecto un statement luego de un terminador de bloque")
+  )
+}
+
+#[test]
+fn block_expression_in_binary_operation() {
+  let source = r#"
+    main {
+      let x = { return 5; } + 3;
+    }
+  "#;
+  let diagnostics = source_to_parser_diagnostics(source);
+  assert!(diagnostics.is_empty());
+}
+
+#[test]
+fn unary_operator_with_block_expression() {
+  let source = r#"
+    main {
+      let x = -{ return 5; };
+    }
+  "#;
+  let diagnostics = source_to_parser_diagnostics(source);
+  assert!(diagnostics.is_empty());
+}
+
+#[test]
+fn parenthesized_block_expression() {
+  let source = r#"
+    main {
+      let x = ({ return 5; });
+    }
+  "#;
+  let diagnostics = source_to_parser_diagnostics(source);
+  assert!(diagnostics.is_empty());
+}
+
+#[test]
+fn missing_closing_brace_in_block_expression() {
+  let source = r#"
+    main {
+      let x = {
+        return 5;
+    }
+  "#;
+  let diagnostics = source_to_parser_diagnostics(source);
+  assert!(!diagnostics.is_empty());
+}
+
+#[test]
+fn block_expression_as_condition() {
+  let source = r#"
+    main {
+      if { return true; } {
+        return 1;
+      }
+    }
+  "#;
+  let diagnostics = source_to_parser_diagnostics(source);
+  assert!(diagnostics.is_empty());
+}
+
+#[test]
+fn two_consecutive_blocks_in_expression_should_fail() {
+  let source = r#"
+    main {
+      let x = {} {};
+    }
+  "#;
+  let diagnostics = source_to_parser_diagnostics(source);
+  assert!(!diagnostics.is_empty());
+}
+
+#[test]
+fn deeply_nested_block_expressions() {
+  let source = r#"
+    main {
+      let x = {
+        return {
+          return {
+            return 5;
+          };
+        };
+      };
+    }
+  "#;
+  let diagnostics = source_to_parser_diagnostics(source);
+  assert!(diagnostics.is_empty());
+}
+
+#[test]
+fn main_requires_block_error() {
+  let source = "main 42";
+  let diagnostics = source_to_parser_diagnostics(source);
+  assert!(!diagnostics.is_empty());
+  assert!(diagnostics[0].msg().contains("main debe ser un bloque"));
 }
 
 proptest! {

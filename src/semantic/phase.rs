@@ -11,22 +11,29 @@ use crate::{
     context::SemanticContext,
     mutability_checker::mutability_checker::{MutabilityChecker, MutabilityInfo},
     resolver::{name_resolver::NameResolver, resolution_info::ResolutionInfo},
+    symbol_table::SymbolTable,
     type_checker::{type_checker::TypeChecker, type_info::TypeInfo},
   },
 };
 
 #[derive(Debug, Clone)]
 pub enum PhaseOutputInfo {
-  Resolution(ResolutionInfo),
+  Resolution {
+    resolution_info: ResolutionInfo,
+    symbol_table: SymbolTable,
+  },
   Types(TypeInfo),
   Mutability(MutabilityInfo),
   Constants(CompileTimeConstantInfo),
   Categories(CategoryInfo),
 }
 
-impl From<ResolutionInfo> for PhaseOutputInfo {
-  fn from(value: ResolutionInfo) -> Self {
-    PhaseOutputInfo::Resolution(value)
+impl From<(ResolutionInfo, SymbolTable)> for PhaseOutputInfo {
+  fn from(value: (ResolutionInfo, SymbolTable)) -> Self {
+    PhaseOutputInfo::Resolution {
+      resolution_info: value.0,
+      symbol_table: value.1,
+    }
   }
 }
 
@@ -96,7 +103,7 @@ impl<'a> SemanticPhase<'a> for NameResolverPhase {
     let mut resolver = NameResolver::new(ast);
     resolver.resolve_program(program);
     let diagnostics = resolver.diagnostics().to_vec();
-    let info = resolver.into_resolution_info();
+    let info = resolver.into_semantic_info();
     PhaseOutput::from(info.into(), diagnostics)
   }
 }
@@ -131,7 +138,8 @@ impl<'a> SemanticPhase<'a> for MutabilityCheckerPhase {
 
   fn run(&self, ast: &'a Ast, program: &Program, ctx: &SemanticContext) -> PhaseOutput {
     let resolution_info = ctx.resolution_info.as_ref().unwrap();
-    let mut checker = MutabilityChecker::new(ast, resolution_info);
+    let symbol_table = ctx.symbol_table.as_ref().unwrap();
+    let mut checker = MutabilityChecker::new(ast, resolution_info, symbol_table);
     checker.check_program(program);
     let diagnostics = checker.diagnostics().to_vec();
     let info = checker.into_mutability_info();

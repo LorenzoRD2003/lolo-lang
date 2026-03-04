@@ -10,6 +10,8 @@ pub enum Type {
   Int32,
   Bool,
   Unknown,
+  /// `Unit` significa "no hay valor significativo". Es como `void` en C, `()` en Rust, etc.
+  Unit,
   /// `DefaultType` es para cuando hay un error a la hora de asignar un tipo a una expresion.
   DefaultErrorType,
 }
@@ -20,6 +22,7 @@ impl Type {
       Self::Int32 => "Int32",
       Self::Bool => "Bool",
       Self::Unknown => "Unknown",
+      Self::Unit => "()",
       Self::DefaultErrorType => "DefaultErrorType",
     }
   }

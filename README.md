@@ -214,11 +214,17 @@ cargo +nightly llvm-cov --html --branch
 
 ```
 src/
+ ├── diagnostics/
  ├── lexer/
  ├── parser/
  ├── ast/
- ├── diagnostics/
  ├── semantic/
+ ├   ├── resolver/
+ ├   ├── type_checker/
+ ├   ├── category_checker/
+ ├   ├── compile_time_constant_checker/
+ ├   ├── mutability_checker/
+ ├   └── semantic_analyzer.rs
  └── frontend/
  ├   ├── config.rs
  ├   ├── frontend.rs

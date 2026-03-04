@@ -3,17 +3,18 @@
 use std::fmt::Display;
 
 use crate::{
-  ast::ast::ExprId,
+  ast::ast::{BlockId, ExprId},
   lexer::token::{Token, TokenKind},
   semantic::types::Type,
 };
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Expr {
-  Var(VarId),
+  Var(String),
   Const(ConstValue),
   Unary(UnaryExpr),
   Binary(BinaryExpr),
+  Block(BlockId),
 }
 
 impl Expr {
@@ -36,9 +37,6 @@ impl Expr {
     )
   }
 }
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct VarId(pub String); // Identificador de cada variable
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ConstValue {

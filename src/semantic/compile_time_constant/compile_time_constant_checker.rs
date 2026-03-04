@@ -9,9 +9,8 @@ use crate::{
   },
   diagnostics::diagnostic::{Diagnosable, Diagnostic},
   semantic::{
-    compile_time_constant::error::CompileTimeConstantError,
-    resolver::resolution_info::{ResolutionInfo, SymbolData},
-    symbol::SymbolId,
+    compile_time_constant::error::CompileTimeConstantError, id_generator::SymbolId,
+    resolver::resolution_info::ResolutionInfo,
   },
 };
 
@@ -44,7 +43,7 @@ impl<'a> CompileTimeConstantChecker<'a> {
   }
 
   pub fn check_program(&mut self, program: &Program) {
-    self.check_block(program.main_block());
+    self.check_expr(program.main_block_expr());
   }
 
   pub fn diagnostics(&self) -> &[Diagnostic] {
@@ -66,6 +65,16 @@ impl<'a> CompileTimeConstantChecker<'a> {
     }
   }
 
+  fn check_block_expr(&mut self, block_id: BlockId) -> Option<ConstValue> {
+    self.check_block(block_id);
+    let block = self.ast.block(block_id);
+    if let Stmt::Return(Some(expr)) = self.ast.stmt(block.terminator()?) {
+      self.compile_time_constant_info.get(&expr).cloned()
+    } else {
+      None
+    }
+  }
+
   fn check_stmt(&mut self, stmt_id: StmtId) {
     match self.ast.stmt(stmt_id) {
       Stmt::ConstBinding { var, initializer } => {
@@ -84,7 +93,7 @@ impl<'a> CompileTimeConstantChecker<'a> {
         var: _,
         value_expr: expr_id,
       }
-      | Stmt::Return(expr_id)
+      | Stmt::Return(Some(expr_id))
       | Stmt::Print(expr_id)
       | Stmt::Expr(expr_id) => {
         self.check_expr(expr_id);
@@ -105,23 +114,24 @@ impl<'a> CompileTimeConstantChecker<'a> {
         self.check_block(if_block);
         self.check_block(else_block);
       }
+      Stmt::Return(None) => {}
     }
   }
 
   /// Resuelve si la expresion indicada es una constante en tiempo de compilacion. La devuelve.
   fn check_expr(&mut self, expr_id: ExprId) -> Option<ConstValue> {
+    if let Some(const_value) = self.compile_time_constant_info.get(&expr_id) {
+      return Some(const_value.clone());
+    }
+
     let expr = self.ast.expr(expr_id);
     let compile_time_constant = match expr {
       Expr::Const(v) => Some(v),
       Expr::Var(_) => {
         let symbol_id = self.resolution_info.symbol_of(expr_id)?;
-        let SymbolData { is_const, .. } = self.resolution_info.symbol_data_of(symbol_id)?;
-        if is_const {
-          self.const_bindings.get(&symbol_id).cloned()
-        } else {
-          None
-        }
+        self.const_bindings.get(&symbol_id).cloned()
       }
+      Expr::Block(block_id) => self.check_block_expr(block_id),
       // Todos los operadores que tenemos son puros asi que esto está bien
       Expr::Unary(UnaryExpr { op, operand }) => {
         let operand_value = self.check_expr(operand);

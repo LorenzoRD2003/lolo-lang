@@ -6,18 +6,18 @@
 // cambiar cual es el scope en el cual vive.
 
 use crate::{
-  ast::expr::VarId,
   common::span::Span,
   semantic::{
-    scope::{ScopeArena, ScopeId},
-    symbol::{Symbol, SymbolId},
+    id_generator::{IdGenerator, IncrementalIdGenerator, ScopeId, SymbolId},
+    scope::ScopeArena,
+    symbol::Symbol,
   },
 };
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct SymbolTable {
-  /// Arena de simbolos. Se indexan por su `SymbolId`.
   symbols: Vec<Symbol>,
+  id_gen: IncrementalIdGenerator<SymbolId>,
   /// Arena de Scopes. Solamente tiene sentido en el contexto de una SymbolTable, por lo tanto
   /// no es una referencia y tomamos ownership.
   scopes: ScopeArena,
@@ -28,7 +28,8 @@ pub struct SymbolTable {
 impl SymbolTable {
   pub fn new(scopes: ScopeArena) -> Self {
     Self {
-      symbols: Vec::<Symbol>::new(),
+      symbols: Vec::new(),
+      id_gen: IncrementalIdGenerator::<SymbolId>::new(),
       scopes,
       current_scope: None,
     }
@@ -62,24 +63,19 @@ impl SymbolTable {
   /// - Lo inserta en el `current_scope`.
   /// - Devuelve el `SymbolId` del simbolo.
   /// - No debe chequear redeclaraciones legales/ilegales.
-  pub fn add_symbol(
-    &mut self,
-    name: &VarId,
-    span: Span,
-  ) -> SymbolId {
+  pub fn add_symbol(&mut self, name: &str, span: Span) -> SymbolId {
     let current_scope = match self.current_scope {
       Some(scope) => scope,
       None => self.enter_scope(),
     };
-    let symbol_id = SymbolId(self.symbols.len());
-    let symbol = Symbol::new(symbol_id, &name, current_scope, span);
+    let symbol_id = self.id_gen.next_id();
+    let symbol = Symbol::new(symbol_id, name.to_string(), current_scope, span);
     self.symbols.push(symbol);
     self.scopes.insert_symbol(name, current_scope, symbol_id);
     symbol_id
   }
 
   pub fn symbol(&self, id: SymbolId) -> &Symbol {
-    debug_assert!(id.0 < self.symbols.len());
     &self.symbols[id.0]
   }
 
@@ -99,15 +95,15 @@ impl SymbolTable {
       .collect()
   }
 
-  /// Busca hacia arriba en la jerarquía de scopes hasta encontrar el simbolo.
+  /// Busca hacia arriba en la jerarquia de scopes hasta encontrar el simbolo.
   /// Permite hallar variables usadas pero no declaradas (si `resolve()` devuelve `None`).
-  pub fn resolve(&self, name: &VarId) -> Option<SymbolId> {
+  pub fn resolve(&self, name: &str) -> Option<SymbolId> {
     self.scopes.resolve(name, self.current_scope?)
   }
 
   /// Busca el simbolo exactamente en el scope actual. Tiene que resolverlo para el scope actual,
   /// pero no para un scope por encima del actual.
-  pub fn was_declared_in_current_scope(&mut self, name: &VarId) -> Option<SymbolId> {
+  pub fn was_declared_in_current_scope(&mut self, name: &str) -> Option<SymbolId> {
     let symbol = self.resolve(name)?;
     self.exit_scope();
     let exists_in_parent = self.resolve(name).is_some();

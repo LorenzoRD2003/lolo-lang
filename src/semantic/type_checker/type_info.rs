@@ -2,7 +2,7 @@ use rustc_hash::FxHashMap;
 
 use crate::{
   ast::ast::ExprId,
-  semantic::{symbol::SymbolId, types::Type},
+  semantic::{id_generator::SymbolId, types::Type},
 };
 
 #[derive(Debug, Clone, PartialEq)]

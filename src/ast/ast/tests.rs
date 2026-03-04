@@ -1,7 +1,11 @@
-use crate::ast::{
-  ast::{Ast, BlockId, ExprId, StmtId},
-  expr::{ConstValue, Expr},
-  stmt::{Block, Stmt},
+use crate::{
+  ast::{
+    ast::{Ast, BlockId, ExprId, StmtId},
+    block::Block,
+    expr::{ConstValue, Expr},
+    stmt::Stmt,
+  },
+  parser::program_parsing::parse_program,
 };
 use proptest::prelude::*;
 
@@ -20,7 +24,7 @@ use proptest::prelude::*;
 
 // fn arb_expr(depth: u32) -> BoxedStrategy<ExprGen> {
 //   if depth == 0 {
-//     return prop_oneof![
+//     return Some(prop_oneof![
 //       any::<i32>().prop_map(|v| {
 //         Box::new(move |ast: &mut Ast| ast.add_expr(Expr::Const(v.into()))) as ExprGen
 //       }),
@@ -84,7 +88,7 @@ fn test_update_expr_span() {
 fn test_add_and_retrieve_stmt() {
   let mut ast = Ast::empty();
   let span = 0..4;
-  let stmt = Stmt::Return(ExprId(0));
+  let stmt = Stmt::Return(Some(ExprId(0)));
   let id = ast.add_stmt(stmt.clone(), span.clone());
   assert_eq!(ast.stmt(id), stmt);
   assert_eq!(ast.stmt_span(id), span);
@@ -95,7 +99,7 @@ fn test_update_stmt_span() {
   let mut ast = Ast::empty();
   let span1 = 0..4;
   let span2 = 2..6;
-  let stmt = Stmt::Return(ExprId(0));
+  let stmt = Stmt::Return(Some(ExprId(0)));
   let id = ast.add_stmt(stmt, span1);
   ast.update_stmt_span(id, span2.clone());
   assert_eq!(ast.stmt_span(id), span2);
@@ -105,7 +109,7 @@ fn test_update_stmt_span() {
 fn test_add_and_retrieve_block() {
   let mut ast = Ast::empty();
   let span = 0..10;
-  let block = Block::with_stmts(vec![StmtId(0), StmtId(1)]);
+  let block = Block::new();
   let id = ast.add_block(block.clone(), span.clone());
   assert_eq!(ast.block(id), block.clone());
   assert_eq!(ast.block_span(id), span);
@@ -116,7 +120,7 @@ fn test_update_block_span() {
   let mut ast = Ast::empty();
   let span1 = 0..10;
   let span2 = 3..15;
-  let block = Block::with_stmts(vec![StmtId(0), StmtId(1)]);
+  let block = Block::new();
   let id = ast.add_block(block, span1);
   ast.update_block_span(id, span2.clone());
   assert_eq!(ast.block_span(id), span2);
@@ -136,7 +140,7 @@ fn test_multiple_exprs_stmts_blocks() {
   assert_eq!(ast.stmt(s1), Stmt::Expr(e1));
   assert_eq!(ast.stmt(s2), Stmt::Expr(e2));
 
-  let b1 = ast.add_block(Block::with_stmts(vec![s1, s2]), 0..3);
+  let b1 = ast.add_block(Block::with_stmts(&ast, vec![s1, s2]), 0..3);
   assert_eq!(ast.block(b1).stmts(), vec![s1, s2]);
 }
 
@@ -167,12 +171,12 @@ fn all_stmt_expr_ids_are_valid() {
   let e1 = ast.add_expr(Expr::Const(ConstValue::Int32(1)), 0..1);
   let e2 = ast.add_expr(Expr::Const(ConstValue::Int32(2)), 2..3);
   let s1 = ast.add_stmt(Stmt::Expr(e1), 0..1);
-  let s2 = ast.add_stmt(Stmt::Return(e2), 2..3);
+  let s2 = ast.add_stmt(Stmt::Return(Some(e2)), 2..3);
 
   // Verifico que todos los ExprId referenciados por Stmt existen
   for stmt_id in &[s1, s2] {
     match ast.stmt(*stmt_id) {
-      Stmt::Expr(eid) | Stmt::Return(eid) | Stmt::Print(eid) => {
+      Stmt::Expr(eid) | Stmt::Return(Some(eid)) | Stmt::Print(eid) => {
         let _ = ast.expr(eid); // si no existe -> panic
       }
       _ => {}
@@ -185,9 +189,9 @@ fn all_block_stmt_ids_are_valid() {
   let mut ast = Ast::empty();
   let e1 = ast.add_expr(Expr::Const(ConstValue::Int32(1)), 0..1);
   let s1 = ast.add_stmt(Stmt::Expr(e1), 0..1);
-  let s2 = ast.add_stmt(Stmt::Return(e1), 2..3);
+  let s2 = ast.add_stmt(Stmt::Return(Some(e1)), 2..3);
 
-  let block = ast.add_block(Block::with_stmts(vec![s1, s2]), 0..3);
+  let block = ast.add_block(Block::with_stmts(&ast, vec![s1, s2]), 0..3);
   // Cada StmtId dentro del Block debe existir, sino panickea
   for stmt_id in ast.block(block).stmts() {
     let _ = ast.stmt(*stmt_id);
@@ -200,21 +204,143 @@ fn all_expr_ids_in_nested_blocks_are_valid() {
   let e1 = ast.add_expr(Expr::Const(ConstValue::Int32(1)), 0..1);
   let e2 = ast.add_expr(Expr::Const(ConstValue::Int32(2)), 2..3);
   let s1 = ast.add_stmt(Stmt::Expr(e1), 0..1);
-  let s2 = ast.add_stmt(Stmt::Return(e2), 2..3);
-  let inner_block = ast.add_block(Block::with_stmts(vec![s1]), 0..1);
-  let outer_block = ast.add_block(Block::with_stmts(vec![s2]), 2..3);
+  let s2 = ast.add_stmt(Stmt::Return(Some(e2)), 2..3);
+  let inner_block = ast.add_block(Block::with_stmts(&ast, vec![s1]), 0..1);
+  let outer_block = ast.add_block(Block::with_stmts(&ast, vec![s2]), 2..3);
 
   // Chequeo recursivo: todos los ExprId referenciados existen
   for block_id in &[inner_block, outer_block] {
     for stmt_id in ast.block(*block_id).stmts() {
       match ast.stmt(*stmt_id) {
-        Stmt::Expr(eid) | Stmt::Return(eid) | Stmt::Print(eid) => {
+        Stmt::Expr(eid) | Stmt::Return(Some(eid)) | Stmt::Print(eid) => {
           let _ = ast.expr(eid);
         }
         _ => {}
       }
     }
   }
+}
+
+#[test]
+fn block_with_return_has_terminator() {
+  let source = r#"
+    main {
+      let x = {
+        const a = 5;
+        return a + 2;
+      };
+    }
+  "#;
+  let (ast, program) = parse_program(source);
+  let main_block = ast.block(program.main_block(&ast));
+  let stmt_id = main_block.stmts()[0];
+
+  let block_id = match ast.stmt(stmt_id) {
+    Stmt::LetBinding { initializer, .. } => match ast.expr(initializer) {
+      Expr::Block(bid) => bid,
+      _ => panic!("Expected block expression"),
+    },
+    _ => panic!("Expected let binding"),
+  };
+
+  let block = ast.block(block_id);
+  assert!(block.terminator().is_some());
+  let terminator_stmt = block.terminator().unwrap();
+  match ast.stmt(terminator_stmt) {
+    Stmt::Return(Some(_)) => {}
+    _ => panic!("Block terminator must be Stmt::Return"),
+  }
+}
+
+#[test]
+fn block_without_return_has_no_terminator() {
+  let source = r#"
+    main {
+      let x = {
+        const a = 5;
+      };
+    }
+  "#;
+  let (ast, program) = parse_program(source);
+  let main_block = ast.block(program.main_block(&ast));
+  let stmt_id = main_block.stmts()[0];
+
+  let block_id = match ast.stmt(stmt_id) {
+    Stmt::LetBinding { initializer, .. } => match ast.expr(initializer) {
+      Expr::Block(bid) => bid,
+      _ => panic!("Expected block expression"),
+    },
+    _ => panic!("Expected let binding"),
+  };
+  let block = ast.block(block_id);
+  assert!(block.terminator().is_none());
+}
+
+#[test]
+fn block_terminator_is_last_statement() {
+  let source = r#"
+    main {
+      let x = {
+        const a = 5;
+        return a + 1;
+      };
+    }
+  "#;
+  let (ast, program) = parse_program(source);
+  let main_block = ast.block(program.main_block(&ast));
+  let stmt_id = main_block.stmts()[0];
+
+  let block_id = match ast.stmt(stmt_id) {
+    Stmt::LetBinding { initializer, .. } => match ast.expr(initializer) {
+      Expr::Block(bid) => bid,
+      _ => panic!("Expected block expression"),
+    },
+    _ => panic!("Expected let binding"),
+  };
+  let block = ast.block(block_id);
+  let last_stmt = *block.stmts().last().unwrap();
+  let terminator = block.terminator().unwrap();
+  assert_eq!(last_stmt, terminator);
+}
+
+#[test]
+fn nested_block_has_independent_terminator() {
+  let source = r#"
+    main {
+      let x = {
+        const y = {
+          return 5;
+        };
+        return y;
+      };
+    }
+  "#;
+  let (ast, program) = parse_program(source);
+  let main_block = ast.block(program.main_block(&ast));
+  let stmt_id = main_block.stmts()[0];
+
+  let outer_block_id = match ast.stmt(stmt_id) {
+    Stmt::LetBinding { initializer, .. } => match ast.expr(initializer) {
+      Expr::Block(bid) => bid,
+      _ => panic!("Expected outer block"),
+    },
+    _ => panic!("Expected let binding"),
+  };
+  let outer_block = ast.block(outer_block_id);
+  assert!(outer_block.terminator().is_some());
+
+  // Buscar el inner block
+  let first_stmt = outer_block.stmts()[0];
+  let inner_block_id = match ast.stmt(first_stmt) {
+    Stmt::ConstBinding { initializer, .. } => match ast.expr(initializer) {
+      Expr::Block(bid) => bid,
+      _ => panic!("Expected inner block"),
+    },
+    _ => panic!("Expected const binding"),
+  };
+
+  let inner_block = ast.block(inner_block_id);
+  assert!(inner_block.terminator().is_some());
 }
 
 proptest! {
@@ -233,7 +359,7 @@ proptest! {
   fn stmt_span_indices_proptest(stmts in 0usize..100, start in 0usize..50, end in 51usize..100) {
     let mut ast = Ast::empty();
     for i in 0..stmts {
-      let id = ast.add_stmt(Stmt::Return(ExprId(i)), start..end);
+      let id = ast.add_stmt(Stmt::Return(Some(ExprId(i))), start..end);
       let _ = ast.stmt(id);
       let _ = ast.stmt_span(id);
     }
@@ -245,11 +371,11 @@ proptest! {
     let mut ast = Ast::empty();
     let mut stmt_ids = vec![];
     for i in 0..blocks * stmts_per_block {
-      stmt_ids.push(ast.add_stmt(Stmt::Return(ExprId(i)), start..end));
+      stmt_ids.push(ast.add_stmt(Stmt::Return(Some(ExprId(i))), start..end));
     }
     for i in 0..blocks {
       let block_stmt_ids = stmt_ids[i*stmts_per_block..(i+1)*stmts_per_block].to_vec();
-      let id = ast.add_block(Block::with_stmts(block_stmt_ids), start..end);
+      let id = ast.add_block(Block::with_stmts(&ast, block_stmt_ids), start..end);
       let _ = ast.block(id);
       let _ = ast.block_span(id);
     }

@@ -53,7 +53,7 @@ impl<'a> TypeChecker<'a> {
 
   /// Resuelve los tipos para el programa, guardando la informacion en type_info.
   pub fn check_program(&mut self, program: &Program) {
-    self.check_block(program.main_block());
+    self.check_expr(program.main_block_expr());
   }
 
   pub fn diagnostics(&self) -> &[Diagnostic] {
@@ -69,12 +69,25 @@ impl<'a> TypeChecker<'a> {
   // Metodos internos
   // ===================
 
-  /// Resuelve los tipos para el bloque indicado.
-  fn check_block(&mut self, block_id: BlockId) {
+  /// Resuelve los tipos para el bloque indicado. Como los bloques son expresiones, tienen tipo.
+  fn check_block(&mut self, block_id: BlockId) -> Type {
     let block = self.ast.block(block_id);
+    // 1. Recorrer statements normalmente
     for stmt_id in block.stmts() {
       self.check_stmt(*stmt_id);
     }
+    let ty = match block.terminator() {
+      // 2. Si hay terminator, debe ser Stmt::Return(...)
+      // Tipo del bloque = tipo del return
+      Some(stmt_id) => match self.ast.stmt(stmt_id) {
+        Stmt::Return(Some(expr_id)) => self.check_expr(expr_id),
+        Stmt::Return(None) => Type::Unit,
+        _ => unreachable!("el terminador de bloque debe ser un Return"),
+      },
+      // 3. Si no hay terminator, tipo del bloque = Unit
+      None => Type::Unit,
+    };
+    ty
   }
 
   /// Resuelve los tipos para el statement indicado.
@@ -100,9 +113,10 @@ impl<'a> TypeChecker<'a> {
           }
         }
       }
-      Stmt::Expr(expr_id) | Stmt::Return(expr_id) | Stmt::Print(expr_id) => {
+      Stmt::Expr(expr_id) | Stmt::Return(Some(expr_id)) | Stmt::Print(expr_id) => {
         self.check_expr(expr_id);
       }
+      Stmt::Return(None) => {}
       Stmt::If {
         condition,
         if_block,
@@ -136,6 +150,10 @@ impl<'a> TypeChecker<'a> {
   /// Resuelve el tipo de la expresion indicada. Devuelve el tipo inferido.
   /// Invariante: Si check_expr fue llamado, esa expresion tiene el tipo guardado.
   fn check_expr(&mut self, expr_id: ExprId) -> Type {
+    if let Some(ty) = self.type_info.type_of_expr(expr_id) {
+      return ty;
+    }
+
     let expr = self.ast.expr(expr_id);
     let ty = match expr {
       Expr::Var(_) => {
@@ -173,6 +191,7 @@ impl<'a> TypeChecker<'a> {
         }
         op.result_type()
       }
+      Expr::Block(block_id) => self.check_block(block_id),
     };
     self.type_info.insert_expr_type(expr_id, ty);
     ty

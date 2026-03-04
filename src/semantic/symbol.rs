@@ -3,27 +3,29 @@
 // Por ejemplo, puede representar una variable, una funcion, un parametro, una constante, un tipo, etc.
 // No todas esas las tenemos aun en lolo-lang.
 
-use crate::{ast::expr::VarId, common::span::Span, semantic::scope::ScopeId};
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct SymbolId(pub usize);
+use crate::{
+  ast::ast::StmtId,
+  common::span::Span,
+  semantic::id_generator::{ScopeId, SymbolId},
+};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Symbol {
-  name: VarId,
+  /// Id interno unico del simbolo, para referenciarlo desde el `SemanticInfo`
+  id: SymbolId,
+  /// Nombre de la variable.
+  name: String,
   /// Scope de declaracion. El ScopeId referente al scope que contiene a la entidad
   scope: ScopeId,
   /// Lugar que ocupa en el programa. Lo heredamos directamente de la parte sintactica
   span: Span,
-  /// Id interno unico del simbolo, para referenciarlo desde el `SemanticInfo`
-  id: SymbolId,
 }
 
 impl Symbol {
-  pub fn new(id: SymbolId, name: &VarId, scope: ScopeId, span: Span) -> Self {
+  pub fn new(id: SymbolId, name: String, scope: ScopeId, span: Span) -> Self {
     Self {
       id,
-      name: name.clone(),
+      name,
       scope,
       span,
     }
@@ -35,8 +37,8 @@ impl Symbol {
   // }
 
   /// Devuelve el nombre del simbolo.
-  pub fn name(&self) -> VarId {
-    self.name.clone()
+  pub fn name(&self) -> &str {
+    &self.name
   }
 
   // Devuelve el `ScopeId` asociado al bloque donde fue declarado el simbolo.
@@ -44,3 +46,10 @@ impl Symbol {
   //   self.scope
   // }
 }
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct SymbolData {
+  // Stmt que declaro un simbolo (util para buscar redeclaraciones)
+  pub declaration_stmt: StmtId,
+}
+
