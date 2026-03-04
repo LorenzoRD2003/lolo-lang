@@ -25,7 +25,7 @@ fn category_check(source: &str) -> (CategoryInfo, Vec<Diagnostic>, Ast, Program)
   compile_time_constant_checker.visit_program(&program);
   let const_info = compile_time_constant_checker.into_compile_time_constant_info();
   let mut category_checker = CategoryChecker::new(&ast, &const_info);
-  category_checker.check_program(&program);
+  category_checker.visit_program(&program);
   let diagnostics = category_checker.diagnostics().to_vec();
   let info = category_checker.into_category_info();
   (info, diagnostics, ast, program)
@@ -146,7 +146,7 @@ fn assignment_to_non_place_is_error() {
   let compile_time_constant_info = compile_time_constant_checker.into_compile_time_constant_info();
 
   let mut category_checker = CategoryChecker::new(&ast, &compile_time_constant_info);
-  category_checker.check_program(&program);
+  category_checker.visit_program(&program);
 
   assert_eq!(category_checker.diagnostics().len(), 1);
   assert!(
@@ -300,7 +300,7 @@ fn const_binding_lhs_must_be_place() {
   let compile_time_constant_info = compile_time_constant_checker.into_compile_time_constant_info();
 
   let mut category_checker = CategoryChecker::new(&ast, &compile_time_constant_info);
-  category_checker.check_program(&program);
+  category_checker.visit_program(&program);
 
   assert_eq!(category_checker.diagnostics().len(), 1);
   assert!(

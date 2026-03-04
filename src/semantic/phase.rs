@@ -178,7 +178,7 @@ impl<'a> SemanticPhase<'a> for CategoryCheckerPhase {
   fn run(&self, ast: &'a Ast, program: &Program, ctx: &SemanticContext) -> PhaseOutput {
     let compile_time_constant_info = ctx.compile_time_constant_info.as_ref().unwrap();
     let mut checker = CategoryChecker::new(ast, compile_time_constant_info);
-    checker.check_program(program);
+    checker.visit_program(program);
     let diagnostics = checker.diagnostics().to_vec();
     let info = checker.into_category_info();
     PhaseOutput::from(info.into(), diagnostics)
