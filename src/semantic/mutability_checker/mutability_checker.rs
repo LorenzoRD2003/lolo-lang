@@ -3,13 +3,13 @@ use rustc_hash::FxHashMap;
 use crate::{
   ast::{
     ast::{Ast, BlockId, ExprId, StmtId},
-    expr::Expr,
-    program::Program,
     stmt::Stmt,
+    visitor::{AstVisitor, walk_block, walk_expr, walk_stmt},
   },
   diagnostics::diagnostic::{Diagnosable, Diagnostic},
   semantic::{
-    mutability_checker::error::MutabilityError, resolver::resolution_info::ResolutionInfo, symbol::SymbolId, symbol_table::SymbolTable
+    mutability_checker::error::MutabilityError, resolver::resolution_info::ResolutionInfo,
+    symbol::SymbolId, symbol_table::SymbolTable,
   },
 };
 
@@ -60,10 +60,6 @@ impl<'a> MutabilityChecker<'a> {
     }
   }
 
-  pub fn check_program(&mut self, program: &Program) {
-    self.check_expr(program.main_block_expr());
-  }
-
   pub fn diagnostics(&self) -> &[Diagnostic] {
     &self.diagnostics
   }
@@ -72,31 +68,19 @@ impl<'a> MutabilityChecker<'a> {
     self.mutability_info
   }
 
-  // ===================
-  // Metodos internos
-  // ===================
-
-  /// Resuelve el analisis de mutabilidad para la expresion indicada.
-  fn check_expr(&mut self, expr_id: ExprId) {
-    match self.ast.expr(expr_id) {
-      Expr::Block(block) => {
-        self.check_block(block);
-      }
-      _ => {}
-    }
+  fn emit_error(&mut self, err: &MutabilityError) {
+    self.diagnostics.push(err.to_diagnostic())
   }
+}
 
+impl AstVisitor for MutabilityChecker<'_> {
   /// Resuelve el analisis de mutabilidad para el bloque indicado.
-  fn check_block(&mut self, block_id: BlockId) {
-    let block = self.ast.block(block_id);
-    for stmt_id in block.stmts() {
-      self.check_stmt(*stmt_id);
-    }
+  fn visit_block(&mut self, block_id: BlockId) {
+    walk_block(self, self.ast, block_id);
   }
 
   /// Resuelve el analisis de mutabilidad para el statement indicado.
-  fn check_stmt(&mut self, stmt_id: StmtId) {
-    dbg!(self.ast.stmt(stmt_id));
+  fn visit_stmt(&mut self, stmt_id: StmtId) {
     match self.ast.stmt(stmt_id) {
       Stmt::LetBinding {
         var,
@@ -128,24 +112,14 @@ impl<'a> MutabilityChecker<'a> {
           }
         }
       }
-      Stmt::If { if_block, .. } => self.check_block(if_block),
-      Stmt::IfElse {
-        if_block,
-        else_block,
-        ..
-      } => {
-        self.check_block(if_block);
-        self.check_block(else_block);
-      }
-      Stmt::Expr(expr_id) | Stmt::Print(expr_id) | Stmt::Return(Some(expr_id)) => {
-        self.check_expr(expr_id)
-      }
-      Stmt::Return(None) => {}
+      _ => {}
     }
+    walk_stmt(self, self.ast, stmt_id);
   }
 
-  fn emit_error(&mut self, err: &MutabilityError) {
-    self.diagnostics.push(err.to_diagnostic())
+  /// Resuelve el analisis de mutabilidad para la expresion indicada.
+  fn visit_expr(&mut self, expr_id: ExprId) {
+    walk_expr(self, self.ast, expr_id);
   }
 }
 
@@ -157,7 +131,7 @@ mod tests {
   fn mutability_check(source: &str) -> (MutabilityInfo, Vec<Diagnostic>) {
     let (resolution_info, symbol_table, _, ast, program) = resolve(source);
     let mut checker = MutabilityChecker::new(&ast, &resolution_info, &symbol_table);
-    checker.check_program(&program);
+    checker.visit_program(&program);
     let diagnostics = checker.diagnostics().to_vec();
     let type_info = checker.into_mutability_info();
     (type_info, diagnostics)

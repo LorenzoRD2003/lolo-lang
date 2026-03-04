@@ -1,7 +1,7 @@
 // Trait base para cada fase semantica. esto es importante para despues hacer el paralelismo
 
 use crate::{
-  ast::{ast::Ast, program::Program},
+  ast::{ast::Ast, program::Program, visitor::AstVisitor},
   diagnostics::diagnostic::Diagnostic,
   semantic::{
     category_checker::category_checker::{CategoryChecker, CategoryInfo},
@@ -140,7 +140,7 @@ impl<'a> SemanticPhase<'a> for MutabilityCheckerPhase {
     let resolution_info = ctx.resolution_info.as_ref().unwrap();
     let symbol_table = ctx.symbol_table.as_ref().unwrap();
     let mut checker = MutabilityChecker::new(ast, resolution_info, symbol_table);
-    checker.check_program(program);
+    checker.visit_program(program);
     let diagnostics = checker.diagnostics().to_vec();
     let info = checker.into_mutability_info();
     PhaseOutput::from(info.into(), diagnostics)

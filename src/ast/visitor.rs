@@ -9,11 +9,9 @@ pub trait AstVisitor {
   fn visit_block(&mut self, block_id: BlockId);
   fn visit_stmt(&mut self, stmt_id: StmtId);
   fn visit_expr(&mut self, expr_id: ExprId);
-}
-
-/// Caminata estandar de programa para un visitor del AST.
-pub fn walk_program<V: AstVisitor>(visitor: &mut V, program: &Program) {
-  visitor.visit_expr(program.main_block_expr());
+  fn visit_program(&mut self, program: &Program) {
+    self.visit_expr(program.main_block_expr());
+  }
 }
 
 /// Caminata estandar de bloque para un visitor del AST.
