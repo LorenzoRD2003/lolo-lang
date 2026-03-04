@@ -2,7 +2,7 @@
 
 use crate::lexer::token::TokenKind;
 
-pub fn match_operator(current: char, next: Option<char>) -> Option<(TokenKind, usize)> {
+pub(crate) fn match_operator(current: char, next: Option<char>) -> Option<(TokenKind, usize)> {
   let kind = match (current, next) {
     // ===== MULTI CHAR FIRST =====
     ('=', Some('=')) => TokenKind::EqualEqual,

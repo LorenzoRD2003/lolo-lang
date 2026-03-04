@@ -1,5 +1,8 @@
-pub mod error;
-pub mod keywords;
-pub mod lexer;
-pub mod operators;
-pub mod token;
+mod error;
+mod keywords;
+mod lexer;
+mod operators;
+mod token;
+
+pub(crate) use lexer::Lexer;
+pub(crate) use token::{Token, TokenKind};

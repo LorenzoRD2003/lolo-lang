@@ -7,7 +7,7 @@ fn eof_is_emitted() {
   let mut lexer = Lexer::new("");
   let mut diagnostics = Vec::new();
   let tok = lexer.next(&mut diagnostics).unwrap();
-  assert_eq!(tok.kind(), TokenKind::EOF);
+  assert!(tok.is_eof());
 }
 
 #[test]

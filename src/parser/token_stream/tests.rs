@@ -1,5 +1,5 @@
 use crate::{
-  lexer::{lexer::Lexer, token::TokenKind},
+  lexer::{Lexer, TokenKind},
   parser::{error::ParserError, token_stream::TokenStream},
 };
 use proptest::prelude::*;
@@ -44,7 +44,10 @@ fn match_kind_returns_true_and_peeks() {
   let mut ts = TokenStream::new(lexer);
   assert!(ts.check_kind(0, TokenKind::Plus, &mut diagnostics));
   // peek ahora debe seguir viendo el mismo token porque match_kind no avanza
-  assert_eq!(ts.peek_first(&mut diagnostics).unwrap().kind(), TokenKind::Plus);
+  assert_eq!(
+    ts.peek_first(&mut diagnostics).unwrap().kind(),
+    TokenKind::Plus
+  );
 }
 
 #[test]
@@ -54,7 +57,10 @@ fn match_kind_returns_false_without_advancing() {
   let mut ts = TokenStream::new(lexer);
   // peek sigue viendo el mismo token
   assert!(!ts.check_kind(0, TokenKind::BangEqual, &mut diagnostics));
-  assert_eq!(ts.peek_first(&mut diagnostics).unwrap().kind(), TokenKind::Minus);
+  assert_eq!(
+    ts.peek_first(&mut diagnostics).unwrap().kind(),
+    TokenKind::Minus
+  );
 }
 
 #[test]
@@ -65,7 +71,10 @@ fn expect_succeeds_and_advances() {
   let token = ts.expect(TokenKind::Plus, &mut diagnostics).unwrap();
   assert_eq!(token.kind(), TokenKind::Plus);
   // peek_first() ahora debe ver el siguiente token
-  assert_eq!(ts.peek_first(&mut diagnostics).unwrap().kind(), TokenKind::Minus);
+  assert_eq!(
+    ts.peek_first(&mut diagnostics).unwrap().kind(),
+    TokenKind::Minus
+  );
 }
 
 #[test]
@@ -79,7 +88,10 @@ fn expect_fails_and_advances_on_unexpected_token() {
     _ => panic!("Expected UnexpectedToken"),
   }
   // peek_first() ahora debe ver el siguiente token
-  assert_eq!(ts.peek_first(&mut diagnostics).unwrap().kind(), TokenKind::Minus);
+  assert_eq!(
+    ts.peek_first(&mut diagnostics).unwrap().kind(),
+    TokenKind::Minus
+  );
 }
 
 #[test]
@@ -88,7 +100,7 @@ fn expect_works_for_eof_on_empty_stream() {
   let lexer = Lexer::new("");
   let mut ts = TokenStream::new(lexer);
   let token = ts.expect(TokenKind::EOF, &mut diagnostics).unwrap();
-  assert_eq!(token.kind(), TokenKind::EOF);
+  assert!(token.is_eof());
 }
 
 #[test]

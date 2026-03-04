@@ -4,7 +4,7 @@ use crate::{
 };
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum LexerError {
+pub(crate) enum LexerError {
   InvalidCharacter(char, Span),
   IllFormedLiteral(String, Span),
 }

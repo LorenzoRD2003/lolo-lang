@@ -1,5 +1,5 @@
 use crate::{
-  lexer::token::TokenKind,
+  lexer::TokenKind,
   parser::precedence::{ADD_BP, AND_BP, CMP_BP, MUL_BP, OR_BP, UNARY_BP, XOR_BP},
 };
 

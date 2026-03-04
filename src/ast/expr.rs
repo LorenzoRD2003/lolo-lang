@@ -4,7 +4,7 @@ use std::fmt::Display;
 
 use crate::{
   ast::ast::{BlockId, ExprId},
-  lexer::token::{Token, TokenKind},
+  lexer::{Token, TokenKind},
   semantic::types::Type,
 };
 

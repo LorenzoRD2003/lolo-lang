@@ -9,10 +9,7 @@ use std::collections::VecDeque;
 
 use crate::{
   diagnostics::Diagnostic,
-  lexer::{
-    lexer::Lexer,
-    token::{Token, TokenKind},
-  },
+  lexer::{Lexer, Token, TokenKind},
   parser::error::ParserError,
 };
 

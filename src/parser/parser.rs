@@ -12,7 +12,7 @@ use crate::{
   },
   common::Span,
   diagnostics::{Diagnosable, Diagnostic},
-  lexer::token::{Token, TokenKind},
+  lexer::{Token, TokenKind},
   parser::{
     error::ParserError,
     precedence::ASSIGN_BP,
@@ -363,10 +363,10 @@ impl<'a> Parser<'a> {
       // el bloque termina cuando encontramos el `}` correspondiente, o con un error si se teremina el archivo
       let token = self.tokens.peek_first(self.diagnostics)?.clone();
       let token_kind = token.kind();
-      if matches!(token_kind, TokenKind::EOF) {
+      if token.is_eof() {
         self.emit_error(&ParserError::UnexpectedEOF);
       }
-      if matches!(token_kind, TokenKind::RCurlyBrace | TokenKind::EOF) {
+      if matches!(token_kind, TokenKind::RCurlyBrace) || token.is_eof() {
         break;
       }
       // hay que parsear un statement

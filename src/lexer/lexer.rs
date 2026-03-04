@@ -20,7 +20,7 @@ use crate::{
 // no necesitamos backtracking si hacemos bien las cosas
 
 #[derive(Debug)]
-pub struct Lexer<'a> {
+pub(crate) struct Lexer<'a> {
   source: &'a str,
   /// El estado primario del lexer es la posicion del puntero y el offset, nada mas.
   /// Fila/columna son para simplificar errores, son metadata derivada.
@@ -29,7 +29,7 @@ pub struct Lexer<'a> {
 }
 
 impl<'a> Lexer<'a> {
-  pub fn new(source: &'a str) -> Self {
+  pub(crate) fn new(source: &'a str) -> Self {
     Self {
       source,
       position: 0,
@@ -45,7 +45,7 @@ impl<'a> Lexer<'a> {
     3. Consumir caracteres segun las reglas
     4. Emitir token
   */
-  pub fn next(&mut self, diagnostics: &mut Vec<Diagnostic>) -> Option<Token> {
+  pub(crate) fn next(&mut self, diagnostics: &mut Vec<Diagnostic>) -> Option<Token> {
     loop {
       match self.current_char() {
         // EOF

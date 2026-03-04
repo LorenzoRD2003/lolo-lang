@@ -6,7 +6,7 @@ use std::collections::HashMap;
 // Como es estatico y conocido en tiempo de compilacion, podemos usar `once_cell::sync::Lazy`.
 
 /// Tabla de keywords estatica
-pub static KEYWORDS: Lazy<HashMap<&'static str, TokenKind>> = Lazy::new(|| {
+pub(crate) static KEYWORDS: Lazy<HashMap<&'static str, TokenKind>> = Lazy::new(|| {
   let mut m = HashMap::new();
 
   // Boolean literals

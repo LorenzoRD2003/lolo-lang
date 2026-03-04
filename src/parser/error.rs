@@ -1,7 +1,7 @@
 use crate::{
   common::Span,
   diagnostics::{Diagnosable, Diagnostic},
-  lexer::token::Token,
+  lexer::Token,
 };
 
 #[derive(Debug, Clone)]

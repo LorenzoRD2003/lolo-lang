@@ -4,7 +4,7 @@ use crate::{
     pipeline_context::PipelineContext,
     stage::{Stage, StageResult},
   },
-  lexer::lexer::Lexer,
+  lexer::Lexer,
   parser::{parser::Parser, token_stream::TokenStream},
 };
 

@@ -1,7 +1,7 @@
 use crate::{
   ast::{BinaryExpr, BinaryOp, ConstValue, Expr, Stmt, UnaryExpr, UnaryOp},
   diagnostics::Diagnostic,
-  lexer::lexer::Lexer,
+  lexer::Lexer,
   parser::{
     parser::Parser,
     program_parsing::{parse_block, parse_expr, parse_program, parse_stmt},

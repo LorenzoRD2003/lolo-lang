@@ -3,7 +3,7 @@
 use crate::common::Span;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum TokenKind {
+pub(crate) enum TokenKind {
   // Constants
   NumberLiteral,  // i32
   BooleanLiteral, // true/false
@@ -45,15 +45,15 @@ pub enum TokenKind {
 }
 
 impl TokenKind {
-  pub fn is_literal(&self) -> bool {
-    matches!(self, TokenKind::NumberLiteral | TokenKind::BooleanLiteral)
-  }
+  // pub(crate) fn is_literal(&self) -> bool {
+  //   matches!(self, TokenKind::NumberLiteral | TokenKind::BooleanLiteral)
+  // }
 
-  pub fn is_unary(&self) -> bool {
+  pub(crate) fn is_unary(&self) -> bool {
     matches!(self, TokenKind::Bang | TokenKind::Minus)
   }
 
-  pub fn is_binary(&self) -> bool {
+  pub(crate) fn is_binary(&self) -> bool {
     matches!(
       self,
       TokenKind::Plus
@@ -72,7 +72,7 @@ impl TokenKind {
     )
   }
 
-  pub fn is_comparison(&self) -> bool {
+  pub(crate) fn is_comparison(&self) -> bool {
     matches!(
       self,
       TokenKind::EqualEqual
@@ -88,7 +88,7 @@ impl TokenKind {
 // Token: Representa una ocurrencia concreta en el codigo fuente (contiene tipo + texto + span)
 // Son la interfaz que va a ser generada por el lexer
 #[derive(Debug, Clone, PartialEq)]
-pub struct Token {
+pub(crate) struct Token {
   kind: TokenKind,
   // El lexema es exactamente el texto que se ve
   lexeme: String,
@@ -96,23 +96,23 @@ pub struct Token {
 }
 
 impl Token {
-  pub fn new(kind: TokenKind, lexeme: String, span: Span) -> Self {
+  pub(crate) fn new(kind: TokenKind, lexeme: String, span: Span) -> Self {
     Self { kind, lexeme, span }
   }
 
-  pub fn kind(&self) -> TokenKind {
+  pub(crate) fn kind(&self) -> TokenKind {
     self.kind
   }
 
-  pub fn lexeme(&self) -> &str {
+  pub(crate) fn lexeme(&self) -> &str {
     &self.lexeme
   }
 
-  pub fn span(&self) -> &Span {
+  pub(crate) fn span(&self) -> &Span {
     &self.span
   }
 
-  pub fn is_eof(&self) -> bool {
+  pub(crate) fn is_eof(&self) -> bool {
     self.kind() == TokenKind::EOF
   }
 }

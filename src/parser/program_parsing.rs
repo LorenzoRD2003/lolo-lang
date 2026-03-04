@@ -2,7 +2,7 @@ use crate::{
   ast::{
     Program, {Ast, BlockId, ExprId, StmtId},
   },
-  lexer::lexer::Lexer,
+  lexer::Lexer,
   parser::{parser::Parser, token_stream::TokenStream},
 };
 
