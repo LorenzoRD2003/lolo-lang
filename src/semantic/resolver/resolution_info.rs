@@ -92,7 +92,7 @@ impl ResolutionInfo {
     self.symbol_data.get(&symbol).copied()
   }
 
-  // pub fn var_symbol_by_id(&self) -> &FxHashMap<ExprId, SymbolId> {
+  // pub(crate) fn var_symbol_by_id(&self) -> &FxHashMap<ExprId, SymbolId> {
   //   &self.expr_symbol_by_id
   // }
 }

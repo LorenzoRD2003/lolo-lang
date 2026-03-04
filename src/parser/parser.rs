@@ -395,7 +395,7 @@ impl<'a> Parser<'a> {
     Some(self.ast.add_block(block, span_start..span_end))
   }
 
-  pub fn parse_program(&mut self) -> Option<Program> {
+  pub(crate) fn parse_program(&mut self) -> Option<Program> {
     // program ::= main <block_expr>
     let span_start = self.tokens.peek_first(self.diagnostics)?.span().start;
     self.expect_token(TokenKind::Main);

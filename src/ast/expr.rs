@@ -106,9 +106,9 @@ impl Display for UnaryOp {
 
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) struct BinaryExpr {
-  pub op: BinaryOp,
-  pub lhs: ExprId,
-  pub rhs: ExprId,
+  pub(crate) op: BinaryOp,
+  pub(crate) lhs: ExprId,
+  pub(crate) rhs: ExprId,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]

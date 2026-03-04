@@ -16,7 +16,7 @@ pub(crate) struct IncrementalIdGenerator<T> {
 }
 
 impl<T> IncrementalIdGenerator<T> {
-  pub fn new() -> Self {
+  pub(crate) fn new() -> Self {
     Self {
       current: 0,
       _marker: PhantomData,

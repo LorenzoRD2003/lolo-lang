@@ -15,7 +15,7 @@ use crate::{
 };
 
 #[derive(Debug, Clone)]
-pub enum PhaseOutputInfo {
+pub(crate) enum PhaseOutputInfo {
   Resolution {
     resolution_info: ResolutionInfo,
     symbol_table: SymbolTable,
@@ -59,22 +59,22 @@ impl From<CategoryInfo> for PhaseOutputInfo {
   }
 }
 
-pub struct PhaseOutput {
+pub(crate) struct PhaseOutput {
   info: PhaseOutputInfo,
   diagnostics: Vec<Diagnostic>,
 }
 
 impl PhaseOutput {
-  pub fn from(info: PhaseOutputInfo, diagnostics: Vec<Diagnostic>) -> Self {
+  pub(crate) fn from(info: PhaseOutputInfo, diagnostics: Vec<Diagnostic>) -> Self {
     Self { info, diagnostics }
   }
 
-  pub fn consume(self) -> (PhaseOutputInfo, Vec<Diagnostic>) {
+  pub(crate) fn consume(self) -> (PhaseOutputInfo, Vec<Diagnostic>) {
     (self.info, self.diagnostics)
   }
 }
 
-pub trait SemanticPhase<'a>: Send + Sync {
+pub(crate) trait SemanticPhase<'a>: Send + Sync {
   fn name(&self) -> &'static str;
 
   fn dependencies(&self) -> &'static [&'static str];
@@ -82,11 +82,11 @@ pub trait SemanticPhase<'a>: Send + Sync {
   fn run(&self, ast: &'a Ast, program: &Program, ctx: &SemanticContext) -> PhaseOutput;
 }
 
-pub struct NameResolverPhase;
-pub struct TypeCheckerPhase;
-pub struct MutabilityCheckerPhase;
-pub struct CompileTimeConstantCheckerPhase;
-pub struct CategoryCheckerPhase;
+pub(crate) struct NameResolverPhase;
+pub(crate) struct TypeCheckerPhase;
+pub(crate) struct MutabilityCheckerPhase;
+pub(crate) struct CompileTimeConstantCheckerPhase;
+pub(crate) struct CategoryCheckerPhase;
 
 impl<'a> SemanticPhase<'a> for NameResolverPhase {
   fn name(&self) -> &'static str {

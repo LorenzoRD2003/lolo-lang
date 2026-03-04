@@ -1,9 +1,9 @@
-pub mod ast;
-pub mod common;
-pub mod diagnostics;
-pub mod frontend;
-pub mod ir;
-pub mod lexer;
-pub mod parser;
-pub mod passes;
-pub mod semantic;
+mod ast;
+mod common;
+mod diagnostics;
+mod frontend;
+mod ir;
+mod lexer;
+mod parser;
+mod passes;
+mod semantic;

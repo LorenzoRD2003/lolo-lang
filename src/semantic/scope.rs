@@ -12,7 +12,7 @@ use crate::{
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub(crate) struct ScopeId(pub usize);
+pub(crate) struct ScopeId(pub(crate) usize);
 
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) struct Scope {

@@ -9,7 +9,7 @@ use crate::{
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub(crate) struct ExprId(pub usize);
+pub(crate) struct ExprId(pub(crate) usize);
 
 impl IncrementalId for ExprId {
   fn from_usize(value: usize) -> Self {
@@ -18,7 +18,7 @@ impl IncrementalId for ExprId {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub(crate) struct StmtId(pub usize);
+pub(crate) struct StmtId(pub(crate) usize);
 
 impl IncrementalId for StmtId {
   fn from_usize(value: usize) -> Self {
@@ -27,7 +27,7 @@ impl IncrementalId for StmtId {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub(crate) struct BlockId(pub usize);
+pub(crate) struct BlockId(pub(crate) usize);
 
 impl IncrementalId for BlockId {
   fn from_usize(value: usize) -> Self {

@@ -196,4 +196,4 @@ impl AstVisitor for CompileTimeConstantChecker<'_> {
 }
 
 #[cfg(test)]
-pub mod tests;
+pub(crate) mod tests;

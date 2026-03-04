@@ -41,7 +41,7 @@ impl Symbol {
   }
 
   // Devuelve el `SymbolId` unico del simbolo.
-  // pub fn id(&self) -> SymbolId {
+  // pub(crate) fn id(&self) -> SymbolId {
   //   self.id
   // }
 
@@ -51,7 +51,7 @@ impl Symbol {
   }
 
   // Devuelve el `ScopeId` asociado al bloque donde fue declarado el simbolo.
-  // pub fn scope(&self) -> ScopeId {
+  // pub(crate) fn scope(&self) -> ScopeId {
   //   self.scope
   // }
 }

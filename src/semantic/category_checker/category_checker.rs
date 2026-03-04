@@ -12,7 +12,7 @@ use crate::{
 pub(crate) type CategoryInfo = FxHashMap<ExprId, ExprCategory>;
 
 #[derive(Debug)]
-pub struct CategoryChecker<'a> {
+pub(crate) struct CategoryChecker<'a> {
   /// El AST. Forma parte del mundo sintactico, asi que si debe ser una referencia y no tomamos ownership.
   /// Vamos a generar mucha metadata para el AST sin tocarlo.
   ast: &'a Ast,
@@ -140,4 +140,4 @@ impl AstVisitor for CategoryChecker<'_> {
 }
 
 #[cfg(test)]
-pub mod tests;
+pub(crate) mod tests;

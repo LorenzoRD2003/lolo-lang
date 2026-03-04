@@ -172,4 +172,4 @@ impl AstVisitor for TypeChecker<'_> {
 }
 
 #[cfg(test)]
-pub mod tests;
+pub(crate) mod tests;

@@ -12,11 +12,11 @@ use crate::semantic::phase::{
 };
 
 pub(crate) struct PhaseNode<'a> {
-  pub phase: Box<dyn SemanticPhase<'a>>,
+  pub(crate) phase: Box<dyn SemanticPhase<'a>>,
 }
 
 impl<'a> PhaseNode<'a> {
-  pub fn new(phase: Box<dyn SemanticPhase<'a>>) -> Self {
+  pub(crate) fn new(phase: Box<dyn SemanticPhase<'a>>) -> Self {
     Self { phase }
   }
 }

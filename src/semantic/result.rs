@@ -5,7 +5,7 @@ use crate::semantic::{
 };
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct SemanticResult {
+pub(crate) struct SemanticResult {
   pub(crate) resolution_info: ResolutionInfo,
   pub(crate) type_info: TypeInfo,
   pub(crate) mutability_info: MutabilityInfo,
