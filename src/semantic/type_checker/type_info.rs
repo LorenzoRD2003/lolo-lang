@@ -1,6 +1,9 @@
 use rustc_hash::FxHashMap;
 
-use crate::{ast::ast::ExprId, semantic::{symbol::SymbolId, types::Type}};
+use crate::{
+  ast::ast::ExprId,
+  semantic::{symbol::SymbolId, types::Type},
+};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct TypeInfo {
@@ -26,8 +29,8 @@ impl TypeInfo {
     self.expr_types.insert(expr_id, ty);
   }
 
-  pub fn type_of_expr(&self, expr_id: ExprId) -> Option<Type> {
-    self.expr_types.get(&expr_id).copied()
+  pub fn type_of_expr(&self, expr_id: ExprId) -> Type {
+    *self.expr_types.get(&expr_id).expect("ya debe tener tipo")
   }
 
   pub fn set_symbol_type(&mut self, symbol: SymbolId, ty: Type) {

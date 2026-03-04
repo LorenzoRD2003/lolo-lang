@@ -4,6 +4,7 @@ use crate::{
     expr::{BinaryOp, UnaryOp},
     program::Program,
     stmt::Stmt,
+    visitor::AstVisitor,
   },
   diagnostics::diagnostic::Diagnostic,
   semantic::{
@@ -16,7 +17,7 @@ use crate::{
 fn typecheck(source: &str) -> (ResolutionInfo, TypeInfo, Vec<Diagnostic>, Ast, Program) {
   let (resolution_info, _, _, ast, program) = resolve(source);
   let mut checker = TypeChecker::new(&ast, &resolution_info);
-  checker.check_program(&program);
+  checker.visit_program(&program);
   let diagnostics = checker.diagnostics().to_vec();
   let type_info = checker.into_type_info();
   (resolution_info, type_info, diagnostics, ast, program)
@@ -33,7 +34,7 @@ fn const_int_has_type_int() {
   assert!(diagnostics.is_empty());
   let stmt = ast.block(program.main_block(&ast)).stmts()[0];
   if let Stmt::LetBinding { initializer, .. } = ast.stmt(stmt) {
-    assert_eq!(type_info.type_of_expr(initializer), Some(Type::Int32));
+    assert_eq!(type_info.type_of_expr(initializer), Type::Int32);
   }
 }
 
@@ -51,7 +52,7 @@ fn variable_usage_has_correct_type() {
   let stmts = block.stmts();
   let stmt_y = ast.stmt(stmts[1]);
   if let Stmt::LetBinding { initializer, .. } = stmt_y {
-    assert_eq!(type_info.type_of_expr(initializer), Some(Type::Int32));
+    assert_eq!(type_info.type_of_expr(initializer), Type::Int32);
   }
 }
 
@@ -85,7 +86,7 @@ fn binary_int_plus_int_is_int() {
   assert!(diagnostics.is_empty());
   let stmt = ast.block(program.main_block(&ast)).stmts()[0];
   if let Stmt::LetBinding { initializer, .. } = ast.stmt(stmt) {
-    assert_eq!(type_info.type_of_expr(initializer), Some(Type::Int32));
+    assert_eq!(type_info.type_of_expr(initializer), Type::Int32);
   }
 }
 
@@ -135,7 +136,7 @@ fn unary_negation_on_int_is_int() {
   assert!(diagnostics.is_empty());
   let stmt = ast.block(program.main_block(&ast)).stmts()[0];
   if let Stmt::LetBinding { initializer, .. } = ast.stmt(stmt) {
-    assert_eq!(type_info.type_of_expr(initializer), Some(Type::Int32));
+    assert_eq!(type_info.type_of_expr(initializer), Type::Int32);
   }
 }
 
@@ -174,12 +175,12 @@ fn shadowing_preserves_inner_type() {
   if let Stmt::If { if_block, .. } = if_stmt {
     let inner_stmt = ast.block(if_block).stmts()[1];
     if let Stmt::Expr(expr_id) = ast.stmt(inner_stmt) {
-      assert_eq!(type_info.type_of_expr(expr_id), Some(Type::Bool));
+      assert_eq!(type_info.type_of_expr(expr_id), Type::Bool);
     }
   }
   let outer_stmt = main_block.stmts()[0];
   if let Stmt::Expr(expr_id) = ast.stmt(outer_stmt) {
-    assert_eq!(type_info.type_of_expr(expr_id), Some(Type::Int32));
+    assert_eq!(type_info.type_of_expr(expr_id), Type::Int32);
   }
 }
 
@@ -223,7 +224,7 @@ fn block_without_return_has_unit_type() {
   let (_, type_info, diagnostics, _, program) = typecheck(source);
   assert!(diagnostics.is_empty());
   let expr_id = program.main_block_expr();
-  assert_eq!(type_info.type_of_expr(expr_id), Some(Type::Unit));
+  assert_eq!(type_info.type_of_expr(expr_id), Type::Unit);
 }
 
 #[test]
@@ -236,7 +237,7 @@ fn block_with_return_expr_has_expr_type() {
   let (_, type_info, diagnostics, _, program) = typecheck(source);
   assert!(diagnostics.is_empty());
   let expr_id = program.main_block_expr();
-  assert_eq!(type_info.type_of_expr(expr_id), Some(Type::Int32));
+  assert_eq!(type_info.type_of_expr(expr_id), Type::Int32);
 }
 
 #[test]
@@ -249,7 +250,7 @@ fn return_without_expr_has_unit_type() {
   let (_, type_info, diagnostics, _, program) = typecheck(source);
   assert!(diagnostics.is_empty());
   let expr_id = program.main_block_expr();
-  assert_eq!(type_info.type_of_expr(expr_id), Some(Type::Unit));
+  assert_eq!(type_info.type_of_expr(expr_id), Type::Unit);
 }
 
 #[test]

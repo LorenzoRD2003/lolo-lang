@@ -12,8 +12,8 @@ use crate::{
   ast::{
     ast::{Ast, BlockId, ExprId, StmtId},
     expr::{BinaryExpr, Expr, UnaryExpr},
-    program::Program,
     stmt::Stmt,
+    visitor::{AstVisitor, walk_block, walk_expr, walk_stmt},
   },
   diagnostics::diagnostic::{Diagnosable, Diagnostic},
   semantic::{
@@ -51,11 +51,6 @@ impl<'a> TypeChecker<'a> {
     }
   }
 
-  /// Resuelve los tipos para el programa, guardando la informacion en type_info.
-  pub fn check_program(&mut self, program: &Program) {
-    self.check_expr(program.main_block_expr());
-  }
-
   pub fn diagnostics(&self) -> &[Diagnostic] {
     &self.diagnostics
   }
@@ -65,42 +60,40 @@ impl<'a> TypeChecker<'a> {
     self.type_info
   }
 
-  // ===================
-  // Metodos internos
-  // ===================
-
-  /// Resuelve los tipos para el bloque indicado. Como los bloques son expresiones, tienen tipo.
-  fn check_block(&mut self, block_id: BlockId) -> Type {
-    let block = self.ast.block(block_id);
-    // 1. Recorrer statements normalmente
-    for stmt_id in block.stmts() {
-      self.check_stmt(*stmt_id);
+  /// Chequea el tipo de una condicion.
+  fn check_condition(&mut self, condition: ExprId) {
+    let condition_type = self.type_info.type_of_expr(condition);
+    if !condition_type.is_boolean() {
+      self.emit_error(&TypeError::NonBooleanCondition {
+        found: condition_type,
+        span: self.ast.expr_span(condition),
+      });
     }
-    let ty = match block.terminator() {
-      // 2. Si hay terminator, debe ser Stmt::Return(...)
-      // Tipo del bloque = tipo del return
-      Some(stmt_id) => match self.ast.stmt(stmt_id) {
-        Stmt::Return(Some(expr_id)) => self.check_expr(expr_id),
-        Stmt::Return(None) => Type::Unit,
-        _ => unreachable!("el terminador de bloque debe ser un Return"),
-      },
-      // 3. Si no hay terminator, tipo del bloque = Unit
-      None => Type::Unit,
-    };
-    ty
+  }
+
+  fn emit_error(&mut self, err: &TypeError) {
+    self.diagnostics.push(err.to_diagnostic());
+  }
+}
+
+impl AstVisitor for TypeChecker<'_> {
+  /// Resuelve los tipos para el bloque indicado.
+  fn visit_block(&mut self, block_id: BlockId) {
+    walk_block(self, self.ast, block_id);
   }
 
   /// Resuelve los tipos para el statement indicado.
-  fn check_stmt(&mut self, stmt_id: StmtId) {
+  fn visit_stmt(&mut self, stmt_id: StmtId) {
+    walk_stmt(self, self.ast, stmt_id);
     match self.ast.stmt(stmt_id) {
       Stmt::LetBinding { var, initializer } | Stmt::ConstBinding { var, initializer } => {
-        let initializer_type = self.check_expr(initializer);
+        let initializer_type = self.type_info.type_of_expr(initializer);
         if let Some(symbol) = self.resolution_info.symbol_of(var) {
           self.type_info.set_symbol_type(symbol, initializer_type);
         }
       }
       Stmt::Assign { var, value_expr } => {
-        let value_expr_type = self.check_expr(value_expr);
+        let value_expr_type = self.type_info.type_of_expr(value_expr);
         if let Some(symbol) = self.resolution_info.symbol_of(var)
           && let Some(symbol_type) = self.type_info.type_of_symbol(symbol)
         {
@@ -113,49 +106,20 @@ impl<'a> TypeChecker<'a> {
           }
         }
       }
-      Stmt::Expr(expr_id) | Stmt::Return(Some(expr_id)) | Stmt::Print(expr_id) => {
-        self.check_expr(expr_id);
+      Stmt::If { condition, .. } | Stmt::IfElse { condition, .. } => {
+        self.check_condition(condition)
       }
-      Stmt::Return(None) => {}
-      Stmt::If {
-        condition,
-        if_block,
-      } => {
-        self.check_condition(condition);
-        self.check_block(if_block);
-      }
-      Stmt::IfElse {
-        condition,
-        if_block,
-        else_block,
-      } => {
-        self.check_condition(condition);
-        self.check_block(if_block);
-        self.check_block(else_block);
-      }
-    }
-  }
-
-  /// Chequea el tipo de una condicion.
-  fn check_condition(&mut self, condition: ExprId) {
-    let condition_type = self.check_expr(condition);
-    if !condition_type.is_boolean() {
-      self.emit_error(&TypeError::NonBooleanCondition {
-        found: condition_type,
-        span: self.ast.expr_span(condition),
-      });
+      _ => {}
     }
   }
 
   /// Resuelve el tipo de la expresion indicada. Devuelve el tipo inferido.
   /// Invariante: Si check_expr fue llamado, esa expresion tiene el tipo guardado.
-  fn check_expr(&mut self, expr_id: ExprId) -> Type {
-    if let Some(ty) = self.type_info.type_of_expr(expr_id) {
-      return ty;
-    }
+  fn visit_expr(&mut self, expr_id: ExprId) {
+    walk_expr(self, self.ast, expr_id);
 
-    let expr = self.ast.expr(expr_id);
-    let ty = match expr {
+    let ty = match self.ast.expr(expr_id) {
+      Expr::Const(const_value) => const_value.into(),
       Expr::Var(_) => {
         if let Some(symbol) = self.resolution_info.symbol_of(expr_id) {
           match self.type_info.type_of_symbol(symbol) {
@@ -166,9 +130,8 @@ impl<'a> TypeChecker<'a> {
           Type::DefaultErrorType
         }
       }
-      Expr::Const(const_value) => const_value.into(),
       Expr::Unary(UnaryExpr { op, operand }) => {
-        let operand_type = self.check_expr(operand);
+        let operand_type = self.type_info.type_of_expr(operand);
         if !op.is_valid_for_operand_type(operand_type) {
           self.emit_error(&TypeError::InvalidUnaryOperation {
             op,
@@ -179,8 +142,8 @@ impl<'a> TypeChecker<'a> {
         op.result_type()
       }
       Expr::Binary(BinaryExpr { op, lhs, rhs }) => {
-        let lhs_type = self.check_expr(lhs);
-        let rhs_type = self.check_expr(rhs);
+        let lhs_type = self.type_info.type_of_expr(lhs);
+        let rhs_type = self.type_info.type_of_expr(rhs);
         if !op.is_valid_for_operand_types(lhs_type, rhs_type) {
           self.emit_error(&TypeError::InvalidBinaryOperation {
             op,
@@ -191,14 +154,22 @@ impl<'a> TypeChecker<'a> {
         }
         op.result_type()
       }
-      Expr::Block(block_id) => self.check_block(block_id),
+      Expr::Block(block_id) => {
+        let block = self.ast.block(block_id);
+        match block.terminator() {
+          // 2. Si hay terminator, debe ser Stmt::Return(...)
+          // Tipo del bloque = tipo del return
+          Some(stmt_id) => match self.ast.stmt(stmt_id) {
+            Stmt::Return(Some(expr_id)) => self.type_info.type_of_expr(expr_id),
+            Stmt::Return(None) => Type::Unit,
+            _ => unreachable!("el terminador de bloque debe ser un Return"),
+          },
+          // 3. Si no hay terminator, tipo del bloque = Unit
+          None => Type::Unit,
+        }
+      }
     };
     self.type_info.insert_expr_type(expr_id, ty);
-    ty
-  }
-
-  fn emit_error(&mut self, err: &TypeError) {
-    self.diagnostics.push(err.to_diagnostic());
   }
 }
 

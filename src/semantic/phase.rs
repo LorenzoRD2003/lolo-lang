@@ -120,7 +120,7 @@ impl<'a> SemanticPhase<'a> for TypeCheckerPhase {
   fn run(&self, ast: &'a Ast, program: &Program, ctx: &SemanticContext) -> PhaseOutput {
     let resolution_info = ctx.resolution_info.as_ref().unwrap();
     let mut checker = TypeChecker::new(ast, resolution_info);
-    checker.check_program(program);
+    checker.visit_program(program);
     let diagnostics = checker.diagnostics().to_vec();
     let info = checker.into_type_info();
     PhaseOutput::from(info.into(), diagnostics)
