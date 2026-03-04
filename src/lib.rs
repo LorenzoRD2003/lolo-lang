@@ -7,3 +7,6 @@ mod lexer;
 mod parser;
 mod passes;
 mod semantic;
+
+pub use diagnostics::Diagnostic;
+pub use frontend::{Frontend, FrontendConfig, FrontendResult};

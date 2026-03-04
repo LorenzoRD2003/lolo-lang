@@ -8,17 +8,17 @@
 use crate::frontend::{config::FrontendConfig, frontend_result::FrontendResult, pipeline::FrontendPipeline};
 
 #[derive(Debug, Clone)]
-pub(crate) struct Frontend {
+pub struct Frontend {
   config: FrontendConfig,
 }
 
 impl Frontend {
-  pub(crate) fn new(config: FrontendConfig) -> Self {
+  pub fn new(config: FrontendConfig) -> Self {
     Self { config }
   }
 
   /// Compila el codigo fuente
-  pub(crate) fn compile(&self, source: &str) -> FrontendResult {
+  pub fn compile(&self, source: &str) -> FrontendResult {
     let pipeline = FrontendPipeline::default();
     pipeline.run(source, &self.config)
   }

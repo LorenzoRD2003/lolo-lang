@@ -24,7 +24,7 @@ use crate::{
 type Note = String;
 
 #[derive(Debug, Clone, PartialEq)]
-pub(crate) struct Diagnostic {
+pub struct Diagnostic {
   /// Severidad del error.
   severity: Severity,
   /// Que salio mal.
@@ -104,7 +104,7 @@ impl Diagnostic {
     self.severity
   }
 
-  pub(crate) fn msg(&self) -> &str {
+  pub fn msg(&self) -> &str {
     &self.msg
   }
 

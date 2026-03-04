@@ -1,7 +1,7 @@
 // Responsabilidad: controlar la politica del frontend
 
 #[derive(Debug, Clone)]
-pub(crate) struct FrontendConfig {
+pub struct FrontendConfig {
   /// Seria el --dump-ast.
   pub(crate) show_ast: bool,
   /// Seria el --dump-semantic.
@@ -14,7 +14,7 @@ pub(crate) struct FrontendConfig {
 
 impl FrontendConfig {
   /// Modo CLI -> reporta todos los errores
-  pub(crate) fn cli_mode() -> Self {
+  pub fn cli_mode() -> Self {
     Self {
       show_ast: false,
       show_semantic_result: false,
@@ -24,7 +24,7 @@ impl FrontendConfig {
   }
 
   /// Modo strict/test -> fallar inmediatamente si algo esta mal
-  pub(crate) fn strict_mode() -> Self {
+  pub fn strict_mode() -> Self {
     Self {
       show_ast: false,
       show_semantic_result: false,
@@ -34,7 +34,7 @@ impl FrontendConfig {
   }
 
   /// Modo IDE -> usar AST aunque haya errores, mejorar experiencia del usuario
-  pub(crate) fn ide_mode() -> Self {
+  pub fn ide_mode() -> Self {
     Self {
       show_ast: true,
       show_semantic_result: true,

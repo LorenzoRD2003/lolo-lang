@@ -6,3 +6,7 @@ mod pipeline;
 mod pipeline_context;
 mod semantic_stage;
 mod stage;
+
+pub use config::FrontendConfig;
+pub use frontend::Frontend;
+pub use frontend_result::FrontendResult;
