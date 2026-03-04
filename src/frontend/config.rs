@@ -3,8 +3,10 @@
 #[derive(Debug, Clone)]
 pub struct FrontendConfig {
   /// Seria el --dump-ast.
+  #[allow(dead_code)]
   pub(crate) show_ast: bool,
   /// Seria el --dump-semantic.
+  #[allow(dead_code)]
   pub(crate) show_semantic_result: bool,
   /// Deja de compilar si encuentra errores en la fase de Parsing.
   pub(crate) stop_after_parse_errors: bool,

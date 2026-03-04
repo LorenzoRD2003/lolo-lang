@@ -7,11 +7,8 @@
 // - Hay variables no definidas?
 
 use crate::{
-  ast::{
-    Ast, AstVisitor, BlockId, Expr, ExprId, Program, Stmt, StmtId, walk_block, walk_expr, walk_stmt,
-  },
+  ast::{Ast, AstVisitor, BlockId, Expr, ExprId, Stmt, StmtId, walk_block, walk_expr, walk_stmt},
   diagnostics::{Diagnosable, Diagnostic},
-  parser::parse_program,
   semantic::{
     resolver::{ResolutionInfo, error::ResolverError},
     scope::ScopeArena,
@@ -163,6 +160,10 @@ impl AstVisitor for NameResolver<'_> {
   }
 }
 
+#[cfg(test)]
+use crate::{ast::Program, parser::parse_program};
+
+#[cfg(test)]
 pub(crate) fn resolve(
   source: &str,
 ) -> (ResolutionInfo, SymbolTable, Vec<Diagnostic>, Ast, Program) {

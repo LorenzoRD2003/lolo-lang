@@ -31,23 +31,26 @@ use std::fmt;
 /// Renderizador usando spans.
 /// Configuracion visual (colores, ascii/unicode, compact/verbose) -> por ahora no.
 #[derive(Debug)]
-pub(crate) struct Renderer<'a, W: fmt::Write> {
+pub struct Renderer<'a, W: fmt::Write> {
   /// SourceMap, para poder traducir los spans.
-  source_map: &'a SourceMap<'a>,
+  source_map: SourceMap<'a>,
   /// Output target, para indicar a donde van a renderizarse los mensajes.
   writer: W,
 }
 
 impl<'a, W: fmt::Write> Renderer<'a, W> {
-  pub(crate) fn new(source_map: &'a SourceMap, writer: W) -> Self {
+  pub fn new(source_code: &'a str, writer: W) -> Self {
+    // TODO: cambiar el file name
+    let source_map = SourceMap::new(&source_code, "main.lolo");
     Self { source_map, writer }
   }
 
   // Funcion responsable de todo el output
-  pub(crate) fn render(&mut self, diag: &Diagnostic) -> fmt::Result {
+  pub fn render(&mut self, diag: &Diagnostic) -> fmt::Result {
     self.render_header(diag)?;
     self.render_location(diag)?;
     self.render_code_snippet(diag)?;
+    self.render_labels(diag)?;
     self.render_notes(diag)
   }
 

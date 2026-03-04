@@ -30,14 +30,17 @@ impl FrontendResult {
     !self.diagnostics().is_empty()
   }
 
+  #[cfg(test)]
   pub(crate) fn ast(&self) -> Option<&Ast> {
     self.ast.as_ref()
   }
 
+  #[cfg(test)]
   pub(crate) fn semantic(&self) -> Option<&SemanticResult> {
     self.semantic.as_ref()
   }
 
+  #[cfg(test)]
   pub(crate) fn into_diagnostics(self) -> Vec<Diagnostic> {
     self.diagnostics
   }

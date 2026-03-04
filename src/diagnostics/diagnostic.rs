@@ -49,6 +49,7 @@ impl Diagnostic {
     }
   }
 
+  #[cfg(test)]
   pub(crate) fn warning(warning_msg: String) -> Self {
     Self {
       severity: Severity::Warning,
@@ -59,6 +60,7 @@ impl Diagnostic {
     }
   }
 
+  #[cfg(test)]
   pub(crate) fn note(note_msg: String) -> Self {
     Self {
       severity: Severity::Note,
@@ -69,6 +71,7 @@ impl Diagnostic {
     }
   }
 
+  #[cfg(test)]
   pub(crate) fn help(help_msg: String) -> Self {
     Self {
       severity: Severity::Help,
@@ -90,6 +93,7 @@ impl Diagnostic {
     self
   }
 
+  #[allow(dead_code)]
   pub(crate) fn with_note(mut self, note: Note) -> Self {
     self.notes.push(note);
     self
@@ -99,7 +103,7 @@ impl Diagnostic {
   pub(crate) fn primary_span(&self) -> Option<&Span> {
     self.primary_span.as_ref()
   }
-
+  
   pub(crate) fn severity(&self) -> Severity {
     self.severity
   }
@@ -108,6 +112,7 @@ impl Diagnostic {
     &self.msg
   }
 
+  
   pub(crate) fn labels(&self) -> &[Label] {
     &self.labels
   }

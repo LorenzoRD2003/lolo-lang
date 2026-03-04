@@ -410,6 +410,7 @@ impl<'a> Parser<'a> {
     Some(Program::new(main_block_expr, span_start..span_end))
   }
 
+  #[cfg(test)]
   pub(crate) fn diagnostics(&self) -> &[Diagnostic] {
     &self.diagnostics
   }

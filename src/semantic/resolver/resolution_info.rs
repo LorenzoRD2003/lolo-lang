@@ -2,7 +2,10 @@ use rustc_hash::FxHashMap;
 
 use crate::{
   ast::{BlockId, ExprId, StmtId},
-  semantic::{scope::ScopeId, symbol::{SymbolData, SymbolId}},
+  semantic::{
+    scope::ScopeId,
+    symbol::{SymbolData, SymbolId},
+  },
 };
 
 #[derive(Debug, Clone, PartialEq)]
@@ -62,14 +65,17 @@ impl ResolutionInfo {
     self.expr_symbol_by_id.get(&expr).copied()
   }
 
+  #[allow(dead_code)]
   pub(crate) fn has_symbol(&self, expr: ExprId) -> bool {
     self.expr_symbol_by_id.contains_key(&expr)
   }
 
+  #[allow(dead_code)]
   pub(crate) fn scope_of_expr(&self, expr: ExprId) -> Option<ScopeId> {
     self.expr_scope_by_id.get(&expr).copied()
   }
 
+  #[cfg(test)]
   pub(crate) fn scope_of_stmt(&self, stmt: StmtId) -> ScopeId {
     *self
       .stmt_scope_by_id
@@ -77,6 +83,7 @@ impl ResolutionInfo {
       .expect("todo statement debe tener scope")
   }
 
+  #[cfg(test)]
   pub(crate) fn scope_of_block(&self, block: BlockId) -> ScopeId {
     *self
       .block_scope_by_id
@@ -84,6 +91,7 @@ impl ResolutionInfo {
       .expect("todo bloque debe tener scope")
   }
 
+  #[cfg(test)]
   pub(crate) fn declared_symbol_of_stmt(&self, stmt: StmtId) -> Option<SymbolId> {
     self.stmt_declared_symbol.get(&stmt).copied()
   }

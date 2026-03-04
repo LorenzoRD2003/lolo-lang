@@ -34,6 +34,7 @@ impl Scope {
     self.symbols.insert(name.to_string(), id);
   }
 
+  #[allow(dead_code)]
   pub(crate) fn id(&self) -> ScopeId {
     self.id
   }

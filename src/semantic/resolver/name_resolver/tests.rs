@@ -1,11 +1,6 @@
 use crate::{
-  ast::{Ast, AstVisitor, Expr, Program, Stmt},
-  diagnostics::Diagnostic,
-  parser::parse_program,
-  semantic::{
-    resolver::{NameResolver, ResolutionInfo, name_resolver::resolve},
-    symbol_table::SymbolTable,
-  },
+  ast::{Expr, Stmt},
+  semantic::resolver::resolve,
 };
 
 #[test]

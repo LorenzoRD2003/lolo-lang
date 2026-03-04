@@ -1,11 +1,8 @@
-use crate::{
-  ast::{
-    Program, {Ast, BlockId, ExprId, StmtId},
-  },
-  lexer::Lexer,
-  parser::{parser::Parser, token_stream::TokenStream},
-};
+#[cfg(test)]
+use crate::{ast::{Ast, BlockId, ExprId, Program, StmtId}, lexer::Lexer, parser::{Parser, TokenStream}};
 
+
+#[cfg(test)]
 pub(crate) fn parse_expr(input: &str) -> (Ast, Option<ExprId>) {
   let mut diagnostics = Vec::new();
   let lexer = Lexer::new(input);
@@ -15,6 +12,7 @@ pub(crate) fn parse_expr(input: &str) -> (Ast, Option<ExprId>) {
   (parser.into_ast(), expr)
 }
 
+#[cfg(test)]
 pub(crate) fn parse_stmt(input: &str) -> (Ast, Option<StmtId>) {
   let mut diagnostics = Vec::new();
   let lexer = Lexer::new(input);
@@ -24,6 +22,7 @@ pub(crate) fn parse_stmt(input: &str) -> (Ast, Option<StmtId>) {
   (parser.into_ast(), stmt)
 }
 
+#[cfg(test)]
 pub(crate) fn parse_block(input: &str) -> (Ast, Option<BlockId>) {
   let mut diagnostics = Vec::new();
   let lexer = Lexer::new(input);
@@ -33,6 +32,7 @@ pub(crate) fn parse_block(input: &str) -> (Ast, Option<BlockId>) {
   (parser.into_ast(), block)
 }
 
+#[cfg(test)]
 pub(crate) fn parse_program(source: &str) -> (Ast, Program) {
   let mut diagnostics = Vec::new();
   let mut ts = TokenStream::new(Lexer::new(source));

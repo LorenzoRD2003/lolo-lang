@@ -3,8 +3,11 @@ use std::fmt;
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub(crate) enum Severity {
   Error,
+  #[allow(dead_code)]
   Warning,
+  #[allow(dead_code)]
   Note,
+  #[allow(dead_code)]
   Help,
 }
 

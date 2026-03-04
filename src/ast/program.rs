@@ -1,12 +1,9 @@
 // program = main block
 
-use crate::{
-  ast::{
-    ast::{Ast, BlockId, ExprId},
-    expr::Expr,
-  },
-  common::Span,
-};
+use crate::{ast::ExprId, common::Span};
+
+#[cfg(test)]
+use crate::ast::{Ast, BlockId, Expr};
 
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) struct Program {
@@ -26,6 +23,7 @@ impl Program {
     self.main_block_expr
   }
 
+  #[cfg(test)]
   pub(crate) fn main_block(&self, ast: &Ast) -> BlockId {
     let main_block_expr = ast.expr(self.main_block_expr());
     match main_block_expr {
@@ -34,6 +32,7 @@ impl Program {
     }
   }
 
+  #[cfg(test)]
   pub(crate) fn span(&self) -> Span {
     self.span.clone()
   }

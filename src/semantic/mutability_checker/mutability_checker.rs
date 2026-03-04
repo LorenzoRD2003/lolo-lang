@@ -96,16 +96,16 @@ impl AstVisitor for MutabilityChecker<'_> {
         }
       }
       Stmt::Assign { var, value_expr: _ } => {
-        if let Some(symbol) = self.resolution_info.symbol_of(var) {
-          if matches!(
-            self.mutability_info.get(&symbol),
-            Some(Mutability::Immutable)
-          ) {
-            self.emit_error(&MutabilityError::ImmutableVariable {
-              name: self.symbol_table.symbol(symbol).name().to_string(),
-              span: self.ast.expr_span(var),
-            });
-          }
+        if let Some(symbol) = self.resolution_info.symbol_of(var)
+          && self
+            .mutability_info
+            .get(&symbol)
+            .is_some_and(|m| !m.is_mutable())
+        {
+          self.emit_error(&MutabilityError::ImmutableVariable {
+            name: self.symbol_table.symbol(symbol).name().to_string(),
+            span: self.ast.expr_span(var),
+          });
         }
       }
       _ => {}

@@ -12,14 +12,14 @@
 use crate::common::span::Span;
 
 #[derive(Debug, Clone)]
-pub(crate) struct SourceMap<'a> {
+pub struct SourceMap<'a> {
   source: &'a str,
   file_name: &'a str,
   newlines: Vec<usize>,
 }
 
 impl<'a> SourceMap<'a> {
-  pub(crate) fn new(source: &'a str, file_name: &'a str) -> Self {
+  pub fn new(source: &'a str, file_name: &'a str) -> Self {
     let newlines = source
       .bytes()
       .enumerate()

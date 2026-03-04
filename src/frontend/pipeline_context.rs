@@ -12,6 +12,7 @@ pub(crate) struct PipelineContext {
   pub(crate) ast: Option<Ast>,
   pub(crate) program: Option<Program>,
   pub(crate) semantic: Option<SemanticResult>,
+  #[allow(dead_code)]
   pub(crate) ir: Option<IrModule>, // futuro
   pub(crate) diagnostics: Vec<Diagnostic>,
 }

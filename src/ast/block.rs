@@ -1,7 +1,7 @@
-use crate::ast::{
-  ast::{Ast, StmtId},
-  stmt::Stmt,
-};
+use crate::ast::ast::StmtId;
+
+#[cfg(test)]
+use crate::ast::{Ast, Stmt};
 
 /// Block tambien va a ser arena-based
 #[derive(Debug, Clone, PartialEq)]
@@ -18,6 +18,7 @@ impl Block {
     }
   }
 
+  #[cfg(test)]
   pub(crate) fn with_stmts(ast: &Ast, stmts: Vec<StmtId>) -> Self {
     let terminator = stmts
       .last()

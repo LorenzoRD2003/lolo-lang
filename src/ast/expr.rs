@@ -18,6 +18,7 @@ pub(crate) enum Expr {
 }
 
 impl Expr {
+  #[cfg(test)]
   pub(crate) fn is_var(&self) -> bool {
     matches!(self, Expr::Var(_))
   }

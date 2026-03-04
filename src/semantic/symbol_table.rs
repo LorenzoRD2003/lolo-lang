@@ -82,6 +82,7 @@ impl SymbolTable {
     self.current_scope
   }
 
+  #[cfg(test)]
   /// Devuelve todos los `SymbolId` para el scope con `ScopeId` dado. La complejidad es lineal.
   /// Por lo tanto, esta funcion no debe usarse en las partes criticas, sino solamente para debug y diagnostics.
   pub(crate) fn all_symbols_in_scope(&self, scope_id: ScopeId) -> Vec<SymbolId> {

@@ -8,5 +8,5 @@ mod parser;
 mod passes;
 mod semantic;
 
-pub use diagnostics::Diagnostic;
+pub use diagnostics::{Diagnostic, Renderer};
 pub use frontend::{Frontend, FrontendConfig, FrontendResult};
