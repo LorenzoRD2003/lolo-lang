@@ -10,8 +10,8 @@ use crate::{
   ast::{
     ast::{Ast, BlockId, ExprId, StmtId},
     expr::Expr,
-    program::Program,
     stmt::Stmt,
+    visitor::{AstVisitor, walk_block, walk_expr, walk_stmt},
   },
   diagnostics::diagnostic::{Diagnosable, Diagnostic},
   semantic::{
@@ -49,10 +49,6 @@ impl<'a> NameResolver<'a> {
     resolver
   }
 
-  pub fn resolve_program(&mut self, program: &Program) {
-    self.resolve_expr(program.main_block_expr());
-  }
-
   pub fn diagnostics(&self) -> &[Diagnostic] {
     &self.diagnostics
   }
@@ -60,127 +56,6 @@ impl<'a> NameResolver<'a> {
   /// Devuelve la informacion de resolucion de nombres, consumiendo `self`.
   pub fn into_semantic_info(self) -> (ResolutionInfo, SymbolTable) {
     (self.resolution_info, self.symbol_table)
-  }
-
-  // ===================
-  // Metodos internos
-  // ===================
-
-  /// Resuelve los nombres de variables para un bloque.
-  fn resolve_block(&mut self, block_id: BlockId) {
-    // La idea es que mientras dure esta funcion, todo se va a analizar para el scope de este bloque
-    let block_scope = self.symbol_table.enter_scope();
-    self
-      .resolution_info
-      .insert_block_scope(block_id, block_scope);
-    let block = self.ast.block(block_id);
-    for stmt_id in block.stmts() {
-      self.resolve_stmt(*stmt_id);
-    }
-    self.symbol_table.exit_scope();
-  }
-
-  /// Resuelve los nombres de variables para un statement.
-  fn resolve_stmt(&mut self, stmt_id: StmtId) {
-    let scope = self
-      .symbol_table
-      .current_scope()
-      .expect("todo statement debe tener scope");
-    self.resolution_info.insert_stmt_scope(stmt_id, scope);
-    let stmt = self.ast.stmt(stmt_id);
-    match stmt {
-      Stmt::LetBinding { var, initializer } | Stmt::ConstBinding { var, initializer } => {
-        // Confirmar que var sea Expr::Var
-        let name = match self.ast.expr(var) {
-          Expr::Var(name) => name,
-          _ => return,
-        };
-        // Chequear redeclaracion en el scope actual
-        let symbol = match self.symbol_table.was_declared_in_current_scope(&name) {
-          Some(previous_symbol) => {
-            let SymbolData {
-              declaration_stmt, ..
-            } = self
-              .resolution_info
-              .symbol_data_of(previous_symbol)
-              .expect("debe existir una declaracion anterior");
-            self.emit_error(&ResolverError::RedeclaredVariable {
-              name,
-              span: self.ast.stmt_span(stmt_id),
-              previous_span: self.ast.stmt_span(declaration_stmt),
-            });
-            return;
-          }
-          // Insertar el simbolo en la tabla
-          None => self.symbol_table.add_symbol(&name, self.ast.expr_span(var)),
-        };
-        self.resolution_info.insert_expr_symbol(var, symbol);
-        self.resolution_info.insert_declared_symbol(stmt_id, symbol);
-        let symbol_data = SymbolData {
-          declaration_stmt: stmt_id,
-        };
-        self.resolution_info.insert_symbol_data(symbol, symbol_data);
-        // Resolver initializer por nombres
-        self.resolve_expr(initializer);
-      }
-      Stmt::Assign { var, value_expr } => {
-        let name = match self.ast.expr(var) {
-          Expr::Var(name) => name,
-          _ => return,
-        };
-        // Debemos verificar que la variable exista en algun scope
-        let symbol = match self.symbol_table.resolve(&name) {
-          Some(symbol_id) => symbol_id,
-          None => {
-            self.emit_error(&ResolverError::UndefinedVariable {
-              name,
-              span: self.ast.expr_span(var),
-            });
-            return;
-          }
-        };
-        self.resolution_info.insert_expr_symbol(var, symbol);
-        self.resolve_expr(value_expr);
-      }
-      Stmt::If {
-        condition: _,
-        if_block,
-      } => {
-        self.resolve_block(if_block);
-      }
-      Stmt::IfElse {
-        condition: _,
-        if_block,
-        else_block,
-      } => {
-        self.resolve_block(if_block);
-        self.resolve_block(else_block);
-      }
-      Stmt::Expr(expr) | Stmt::Print(expr) | Stmt::Return(Some(expr)) => {
-        self.resolve_expr(expr);
-      }
-      Stmt::Return(None) => {}
-    }
-  }
-
-  /// Resuelve los nombres de variables para una expresion.
-  fn resolve_expr(&mut self, expr_id: ExprId) {
-    let scope = self
-      .symbol_table
-      .current_scope()
-      .expect("toda expresion debe tener scope");
-    self.resolution_info.insert_expr_scope(expr_id, scope);
-
-    match self.ast.expr(expr_id) {
-      Expr::Var(name) => self.resolve_var_expr(expr_id, name),
-      Expr::Unary(unary) => self.resolve_expr(unary.operand),
-      Expr::Binary(binary) => {
-        self.resolve_expr(binary.lhs);
-        self.resolve_expr(binary.rhs);
-      }
-      Expr::Block(block_id) => self.resolve_block(block_id),
-      Expr::Const(_) => {}
-    };
   }
 
   /// Resuelve el nombre de una expresion de identificador.
@@ -194,8 +69,99 @@ impl<'a> NameResolver<'a> {
     }
   }
 
+  fn resolve_binding(&mut self, var: ExprId, stmt_id: StmtId) {
+    // Confirmar que var sea Expr::Var
+    let name = match self.ast.expr(var) {
+      Expr::Var(name) => name,
+      _ => return,
+    };
+    // Chequear redeclaracion en el scope actual
+    let symbol = match self.symbol_table.declared_in_scope(&name) {
+      Some(previous_symbol) => {
+        let SymbolData {
+          declaration_stmt, ..
+        } = self
+          .resolution_info
+          .symbol_data_of(previous_symbol)
+          .expect("debe existir una declaracion anterior");
+        self.emit_error(&ResolverError::RedeclaredVariable {
+          name,
+          span: self.ast.stmt_span(stmt_id),
+          previous_span: self.ast.stmt_span(declaration_stmt),
+        });
+        return;
+      }
+      // Insertar el simbolo en la tabla
+      None => self.symbol_table.add_symbol(&name, self.ast.expr_span(var)),
+    };
+    self.resolution_info.insert_expr_symbol(var, symbol);
+    self.resolution_info.insert_declared_symbol(stmt_id, symbol);
+    let symbol_data = SymbolData {
+      declaration_stmt: stmt_id,
+    };
+    self.resolution_info.insert_symbol_data(symbol, symbol_data);
+  }
+
+  fn resolve_assign(&mut self, var: ExprId) {
+    let name = match self.ast.expr(var) {
+      Expr::Var(name) => name,
+      _ => return,
+    };
+    if let Some(symbol) = self.symbol_table.resolve(&name) {
+      self.resolution_info.insert_expr_symbol(var, symbol)
+    }
+  }
+
   fn emit_error(&mut self, err: &ResolverError) {
     self.diagnostics.push(err.to_diagnostic());
+  }
+}
+
+impl AstVisitor for NameResolver<'_> {
+  /// Resuelve los nombres de variables para un bloque.
+  fn visit_block(&mut self, block_id: BlockId) {
+    // La idea es que mientras dure esta funcion, todo se va a analizar para el scope de este bloque
+    let block_scope = self.symbol_table.enter_scope();
+    self
+      .resolution_info
+      .insert_block_scope(block_id, block_scope);
+    walk_block(self, self.ast, block_id);
+    self.symbol_table.exit_scope();
+  }
+
+  /// Resuelve los nombres de variables para un statement.
+  fn visit_stmt(&mut self, stmt_id: StmtId) {
+    let scope = self
+      .symbol_table
+      .current_scope()
+      .expect("todo statement debe tener scope");
+
+    self.resolution_info.insert_stmt_scope(stmt_id, scope);
+
+    match self.ast.stmt(stmt_id) {
+      Stmt::LetBinding { var, .. } | Stmt::ConstBinding { var, .. } => {
+        self.resolve_binding(var, stmt_id)
+      }
+      Stmt::Assign { var, .. } => self.resolve_assign(var),
+      _ => {}
+    }
+    walk_stmt(self, self.ast, stmt_id);
+  }
+
+  /// Resuelve los nombres de variables para una expresion.
+  fn visit_expr(&mut self, expr_id: ExprId) {
+    let scope = self
+      .symbol_table
+      .current_scope()
+      .expect("toda expresion debe tener scope");
+    self.resolution_info.insert_expr_scope(expr_id, scope);
+
+    match self.ast.expr(expr_id) {
+      Expr::Var(name) => self.resolve_var_expr(expr_id, name),
+      _ => {}
+    };
+
+    walk_expr(self, self.ast, expr_id);
   }
 }
 

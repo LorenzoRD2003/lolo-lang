@@ -99,11 +99,11 @@ fn variable_was_declared_in_current_scope() {
   let name = "x";
   let symbol = table.add_symbol(&name, 0..1);
 
-  assert_eq!(table.was_declared_in_current_scope(&name), Some(symbol));
+  assert_eq!(table.declared_in_scope(&name), Some(symbol));
   table.exit_scope();
-  assert!(table.was_declared_in_current_scope(&name).is_none());
+  assert!(table.declared_in_scope(&name).is_none());
   table.enter_scope();
-  assert!(table.was_declared_in_current_scope(&name).is_none());
+  assert!(table.declared_in_scope(&name).is_none());
 }
 
 proptest! {

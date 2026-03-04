@@ -1,5 +1,5 @@
 use crate::{
-  ast::{ast::Ast, expr::Expr, program::Program, stmt::Stmt},
+  ast::{ast::Ast, expr::Expr, program::Program, stmt::Stmt, visitor::AstVisitor},
   diagnostics::diagnostic::Diagnostic,
   parser::program_parsing::parse_program,
   semantic::{
@@ -13,7 +13,7 @@ pub(crate) fn resolve(
 ) -> (ResolutionInfo, SymbolTable, Vec<Diagnostic>, Ast, Program) {
   let (ast, program) = parse_program(source);
   let mut resolver = NameResolver::new(&ast);
-  resolver.resolve_program(&program);
+  resolver.visit_program(&program);
   let diagnostics = resolver.diagnostics().to_vec();
   let (resolution_info, symbol_table) = resolver.into_semantic_info();
   (resolution_info, symbol_table, diagnostics, ast, program)
@@ -82,6 +82,7 @@ fn detects_redeclaration_in_same_scope() {
   "#;
 
   let (_, _, diagnostics, _, _) = resolve(source);
+  dbg!(&diagnostics);
   assert_eq!(diagnostics.len(), 1);
   assert!(
     diagnostics[0]
@@ -114,6 +115,7 @@ fn detects_undefined_variable_in_assign() {
     "#;
 
   let (_, _, diagnostics, _, _) = resolve(source);
+  dbg!(&diagnostics);
   assert_eq!(diagnostics.len(), 1);
   assert!(diagnostics[0].msg().contains("variable 'x' indefinida"))
 }

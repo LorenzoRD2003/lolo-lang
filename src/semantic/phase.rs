@@ -101,7 +101,7 @@ impl<'a> SemanticPhase<'a> for NameResolverPhase {
 
   fn run(&self, ast: &'a Ast, program: &Program, _ctx: &SemanticContext) -> PhaseOutput {
     let mut resolver = NameResolver::new(ast);
-    resolver.resolve_program(program);
+    resolver.visit_program(program);
     let diagnostics = resolver.diagnostics().to_vec();
     let info = resolver.into_semantic_info();
     PhaseOutput::from(info.into(), diagnostics)

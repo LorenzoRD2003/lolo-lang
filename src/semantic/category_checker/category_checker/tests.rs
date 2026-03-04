@@ -5,6 +5,7 @@ use crate::{
     expr::{ConstValue, Expr},
     program::Program,
     stmt::Stmt,
+    visitor::AstVisitor,
   },
   diagnostics::diagnostic::Diagnostic,
   parser::program_parsing::parse_program,
@@ -18,7 +19,7 @@ use crate::{
 fn category_check(source: &str) -> (CategoryInfo, Vec<Diagnostic>, Ast, Program) {
   let (ast, program) = parse_program(source);
   let mut resolver = NameResolver::new(&ast);
-  resolver.resolve_program(&program);
+  resolver.visit_program(&program);
   let (resolution_info, _) = resolver.into_semantic_info();
   let mut compile_time_constant_checker = CompileTimeConstantChecker::new(&ast, &resolution_info);
   compile_time_constant_checker.check_program(&program);
@@ -137,7 +138,7 @@ fn assignment_to_non_place_is_error() {
   let program = Program::new(block_expr, 0..4);
 
   let mut resolver = NameResolver::new(&ast);
-  resolver.resolve_program(&program);
+  resolver.visit_program(&program);
   let (resolution_info, _) = resolver.into_semantic_info();
 
   let mut compile_time_constant_checker = CompileTimeConstantChecker::new(&ast, &resolution_info);
@@ -291,7 +292,7 @@ fn const_binding_lhs_must_be_place() {
   let program = Program::new(block_expr, 0..4);
 
   let mut resolver = NameResolver::new(&ast);
-  resolver.resolve_program(&program);
+  resolver.visit_program(&program);
   let (resolution_info, _) = resolver.into_semantic_info();
 
   let mut compile_time_constant_checker = CompileTimeConstantChecker::new(&ast, &resolution_info);

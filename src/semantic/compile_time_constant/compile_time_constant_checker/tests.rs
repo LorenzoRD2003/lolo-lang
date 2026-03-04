@@ -4,6 +4,7 @@ use crate::{
     expr::{BinaryExpr, BinaryOp, ConstValue, Expr},
     program::Program,
     stmt::Stmt,
+    visitor::AstVisitor,
   },
   diagnostics::diagnostic::Diagnostic,
   parser::program_parsing::parse_program,
@@ -20,7 +21,7 @@ pub(crate) fn compile_time_check(
 ) -> (CompileTimeConstantInfo, Vec<Diagnostic>, Ast, Program) {
   let (ast, program) = parse_program(source);
   let mut resolver = NameResolver::new(&ast);
-  resolver.resolve_program(&program);
+  resolver.visit_program(&program);
   let (resolution_info, _) = resolver.into_semantic_info();
   let mut compile_time_constant_checker = CompileTimeConstantChecker::new(&ast, &resolution_info);
   compile_time_constant_checker.check_program(&program);
