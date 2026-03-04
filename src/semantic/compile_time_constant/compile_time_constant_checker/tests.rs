@@ -3,9 +3,7 @@ use crate::{
   diagnostics::Diagnostic,
   parser::parse_program,
   semantic::{
-    compile_time_constant::{
-      CompileTimeConstantChecker, CompileTimeConstantInfo,
-    },
+    compile_time_constant::{CompileTimeConstantChecker, CompileTimeConstantInfo},
     resolver::NameResolver,
   },
 };

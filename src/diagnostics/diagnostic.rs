@@ -103,7 +103,7 @@ impl Diagnostic {
   pub(crate) fn primary_span(&self) -> Option<&Span> {
     self.primary_span.as_ref()
   }
-  
+
   pub(crate) fn severity(&self) -> Severity {
     self.severity
   }
@@ -112,7 +112,6 @@ impl Diagnostic {
     &self.msg
   }
 
-  
   pub(crate) fn labels(&self) -> &[Label] {
     &self.labels
   }

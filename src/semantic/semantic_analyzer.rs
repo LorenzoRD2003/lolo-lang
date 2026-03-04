@@ -14,7 +14,11 @@ pub(crate) struct SemanticAnalyzer<'a> {
 }
 
 impl<'a> SemanticAnalyzer<'a> {
-  pub(crate) fn new(ast: &'a Ast, graph: PhaseGraph<'a>, diagnostics: &'a mut Vec<Diagnostic>) -> Self {
+  pub(crate) fn new(
+    ast: &'a Ast,
+    graph: PhaseGraph<'a>,
+    diagnostics: &'a mut Vec<Diagnostic>,
+  ) -> Self {
     Self {
       ast,
       graph,

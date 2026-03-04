@@ -211,10 +211,10 @@ Measured using `cargo llvm-cov`.
 
 Final coverage:
 
-- **Functions:** 95.65%
-- **Lines:** 95.85%
-- **Regions:** 94.90%
-- **Branches:** 91.23%
+- **Functions:** 97.60%
+- **Lines:** 96.11%
+- **Regions:** 95.06%
+- **Branches:** 90.70%
 
 Uncovered code has been manually reviewed and confirmed to be either:
 

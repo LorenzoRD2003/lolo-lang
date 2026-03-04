@@ -1,15 +1,13 @@
 // Responsabilidad: ejecuta fases y aplica
 
-use crate::
-  frontend::{
-    config::FrontendConfig,
-    frontend_result::FrontendResult,
-    parsing_stage::ParsingStage,
-    pipeline_context::PipelineContext,
-    semantic_stage::SemanticStage,
-    stage::{Stage, StageResult},
-  }
-;
+use crate::frontend::{
+  config::FrontendConfig,
+  frontend_result::FrontendResult,
+  parsing_stage::ParsingStage,
+  pipeline_context::PipelineContext,
+  semantic_stage::SemanticStage,
+  stage::{Stage, StageResult},
+};
 
 pub(crate) struct FrontendPipeline {
   /// Un vector de punteros en heap a objetos que implementan el trait Stage, con dynamic dispatch

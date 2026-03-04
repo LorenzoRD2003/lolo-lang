@@ -5,7 +5,9 @@
 // Debe ser la unica puerta de entrada publica del compilador.
 // Orquesta lexer, parser, semantic analyzer
 
-use crate::frontend::{config::FrontendConfig, frontend_result::FrontendResult, pipeline::FrontendPipeline};
+use crate::frontend::{
+  config::FrontendConfig, frontend_result::FrontendResult, pipeline::FrontendPipeline,
+};
 
 #[derive(Debug, Clone)]
 pub struct Frontend {

@@ -7,8 +7,8 @@ use crate::{
   },
   diagnostics::{Diagnosable, Diagnostic},
   semantic::{
-    compile_time_constant::error::CompileTimeConstantError,
-    resolver::ResolutionInfo, symbol::SymbolId,
+    compile_time_constant::error::CompileTimeConstantError, resolver::ResolutionInfo,
+    symbol::SymbolId,
   },
 };
 

@@ -1,6 +1,9 @@
 #[cfg(test)]
-use crate::{ast::{Ast, BlockId, ExprId, Program, StmtId}, lexer::Lexer, parser::{Parser, TokenStream}};
-
+use crate::{
+  ast::{Ast, BlockId, ExprId, Program, StmtId},
+  lexer::Lexer,
+  parser::{Parser, TokenStream},
+};
 
 #[cfg(test)]
 pub(crate) fn parse_expr(input: &str) -> (Ast, Option<ExprId>) {
