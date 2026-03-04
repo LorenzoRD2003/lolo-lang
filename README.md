@@ -61,6 +61,7 @@ The next planned phase is **lowering to an intermediate representation (IR)**.
   - Arithmetic: `+`, `-`, `*`, `/`
   - Comparisons: `<`, `<=`, `>`, `>=`, `==`, `!=`
   - Logical: `&&`, `||`
+- Block expressions
 
 ### Statements
 
@@ -73,29 +74,38 @@ The next planned phase is **lowering to an intermediate representation (IR)**.
 
 ### Semantic Analysis Phases
 
-- Name Resolution
-  - Scoped symbol resolution
-  - Shadowing rules
-  - Redeclaration diagnostics
+The semantic pipeline is structured as independent passes:
 
-- Type Checking
-  - Strict static typing
-  - Unary and Binary operators type validation
-  - Boolean conditions check
-  - Type mismatch diagnostics
+1. Name Resolution
 
-- Mutability Analysis
-  - Mutable by default bindings
-  - Assignment validation
+- Scoped symbol resolution
+- Shadowing rules
+- Redeclaration diagnostics
 
-- Compile-Time Constant Analysis
-  - Constant propagation
-  - Arithmetic overflow detection
-  - Division by zero detection
+2. Type Checking
 
-- Category Analysis
-  - L-value / R-value classification
-  - Assignment target validation
+- Strict static typing
+- Unary and Binary operators type validation
+- Boolean conditions check
+- Type mismatch diagnostics
+
+3. Mutability Analysis
+
+- Mutable by default bindings
+- Assignment validation
+
+4. Compile-Time Constant Analysis
+
+- Constant propagation
+- Arithmetic overflow detection
+- Division by zero detection
+
+5. Category Analysis
+
+- L-value / R-value classification
+- Assignment target validation
+
+Each pass operates over the AST using a visitor-based traversal model.
 
 ### Compilation Modes
 
@@ -134,8 +144,17 @@ Each stage is clearly separated and tested independently.
 
 ## Frontend Architecture
 
-The frontend is implemented as a staged pipeline.  
-Each compilation phase is modeled as an independent `Stage` implementing a common trait.
+The frontend is implemented as a staged pipeline.
+
+- The compilation pipeline uses trait-based dynamic dispatch for extensibility.
+
+- Individual semantic passes use a statically-dispatched visitor pattern for AST traversal.
+
+This separation ensures:
+
+- Extensibility at the pipeline level
+
+- Performance and clarity at the AST traversal level
 
 Current frontend stages:
 
@@ -154,6 +173,22 @@ The frontend pipeline is designed to be open for extension. Compilation phases a
 - Each stage implements a common interface.
 - Stages are dynamically dispatched.
 - Adding a new phase (e.g., IR lowering, optimizations) requires no modification to existing stages.
+
+---
+
+# 📦 Public API
+
+The crate intentionally exposes a minimal public API:
+
+- `Frontend`
+
+- `FrontendConfig`
+
+- `FrontendResult`
+
+- `Renderer`
+
+The AST, semantic internals, and compiler passes remain encapsulated.
 
 ---
 
@@ -210,30 +245,38 @@ cargo +nightly llvm-cov --html --branch
 
 ---
 
-# 🔍 Project Structure
+# 🖥 Running the Compiler (CLI)
 
-```
-src/
- ├── diagnostics/
- ├── lexer/
- ├── parser/
- ├── ast/
- ├── semantic/
- ├   ├── resolver/
- ├   ├── type_checker/
- ├   ├── category_checker/
- ├   ├── compile_time_constant_checker/
- ├   ├── mutability_checker/
- ├   └── semantic_analyzer.rs
- └── frontend/
- ├   ├── config.rs
- ├   ├── frontend.rs
- ├   ├── frontend_result.rs
- ├   └── pipeline.rs
- └── lib.rs
+lolo-lang includes a simple CLI driver for compiling source files.
+
+Example:
+
+```bash
+cargo run -- archivo.lolo
 ```
 
-Tests are organized within modules and structured by concern.
+Source files are expected to be placed inside:
+
+```
+files-lang/
+```
+
+If the program contains no diagnostics:
+
+```
+No se encontraron diagnosticos sobre el programa. O sea, todo piola!
+```
+
+Otherwise, formatted diagnostics are rendered using the internal `Renderer`.
+This is a code snippet example from `lolo-lang` that produces a semantic error:
+
+```lolo
+main {
+  const x = 10;
+  x = 20;
+  return x + 1;
+}
+```
 
 ---
 
