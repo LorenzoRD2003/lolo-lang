@@ -1,5 +1,5 @@
 use crate::{
-  ast::{ast::Ast, expr::Expr, program::Program, stmt::Stmt, visitor::AstVisitor},
+  ast::{Ast, AstVisitor, Expr, Program, Stmt},
   diagnostics::diagnostic::Diagnostic,
   parser::program_parsing::parse_program,
   semantic::{

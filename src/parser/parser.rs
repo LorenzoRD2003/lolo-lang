@@ -7,11 +7,8 @@
 
 use crate::{
   ast::{
-    ast::{Ast, BlockId, ExprId, StmtId},
-    block::Block,
-    expr::{BinaryExpr, BinaryOp, ConstValue, Expr, UnaryExpr, UnaryOp},
-    program::Program,
-    stmt::Stmt,
+    Ast, BinaryExpr, BinaryOp, Block, BlockId, ConstValue, Expr, ExprId, Program, Stmt, StmtId,
+    UnaryExpr, UnaryOp,
   },
   common::span::Span,
   diagnostics::diagnostic::{Diagnosable, Diagnostic},
@@ -269,10 +266,9 @@ impl<'a> Parser<'a> {
   fn parse_identifier_expr(&mut self) -> Option<ExprId> {
     match self.tokens.expect(TokenKind::Identifier, self.diagnostics) {
       Ok(token) => {
-        let expr_id = self.ast.add_expr(
-          Expr::Var(token.lexeme().into()),
-          token.span().clone(),
-        );
+        let expr_id = self
+          .ast
+          .add_expr(Expr::Var(token.lexeme().into()), token.span().clone());
         Some(expr_id)
       }
       Err(err) => {

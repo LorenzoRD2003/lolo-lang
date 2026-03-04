@@ -1,8 +1,5 @@
 use crate::{
-  ast::{
-    expr::{BinaryExpr, BinaryOp, ConstValue, Expr, UnaryExpr, UnaryOp},
-    stmt::Stmt,
-  },
+  ast::{BinaryExpr, BinaryOp, ConstValue, Expr, Stmt, UnaryExpr, UnaryOp},
   diagnostics::diagnostic::Diagnostic,
   lexer::lexer::Lexer,
   parser::{

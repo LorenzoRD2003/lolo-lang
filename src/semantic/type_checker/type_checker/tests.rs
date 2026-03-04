@@ -1,11 +1,5 @@
 use crate::{
-  ast::{
-    ast::Ast,
-    expr::{BinaryOp, UnaryOp},
-    program::Program,
-    stmt::Stmt,
-    visitor::AstVisitor,
-  },
+  ast::{Ast, AstVisitor, BinaryOp, Program, Stmt, UnaryOp},
   diagnostics::diagnostic::Diagnostic,
   semantic::{
     resolver::{name_resolver::tests::resolve, resolution_info::ResolutionInfo},

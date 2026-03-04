@@ -3,7 +3,7 @@
 
 use std::fmt::Display;
 
-use crate::ast::expr::ConstValue;
+use crate::ast::ConstValue;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Type {

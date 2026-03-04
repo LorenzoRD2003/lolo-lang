@@ -5,20 +5,20 @@ use crate::ast::{
 
 /// Block tambien va a ser arena-based
 #[derive(Debug, Clone, PartialEq)]
-pub struct Block {
+pub(crate) struct Block {
   stmts: Vec<StmtId>,
   terminator: Option<StmtId>,
 }
 
 impl Block {
-  pub fn new() -> Self {
+  pub(crate) fn new() -> Self {
     Self {
       stmts: vec![],
       terminator: None,
     }
   }
 
-  pub fn with_stmts(ast: &Ast, stmts: Vec<StmtId>) -> Self {
+  pub(crate) fn with_stmts(ast: &Ast, stmts: Vec<StmtId>) -> Self {
     let terminator = stmts
       .last()
       .copied()
@@ -26,19 +26,19 @@ impl Block {
     Self { stmts, terminator }
   }
 
-  pub fn stmts(&self) -> &[StmtId] {
+  pub(crate) fn stmts(&self) -> &[StmtId] {
     &self.stmts
   }
 
-  pub fn add_stmt(&mut self, stmt: StmtId) {
+  pub(crate) fn add_stmt(&mut self, stmt: StmtId) {
     self.stmts.push(stmt)
   }
 
-  pub fn terminator(&self) -> Option<StmtId> {
+  pub(crate) fn terminator(&self) -> Option<StmtId> {
     self.terminator
   }
 
-  pub fn set_terminator(&mut self, terminator: Option<StmtId>) {
+  pub(crate) fn set_terminator(&mut self, terminator: Option<StmtId>) {
     self.terminator = terminator;
   }
 }

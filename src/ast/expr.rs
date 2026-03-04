@@ -9,7 +9,7 @@ use crate::{
 };
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum Expr {
+pub(crate) enum Expr {
   Var(String),
   Const(ConstValue),
   Unary(UnaryExpr),
@@ -18,11 +18,11 @@ pub enum Expr {
 }
 
 impl Expr {
-  pub fn is_var(&self) -> bool {
+  pub(crate) fn is_var(&self) -> bool {
     matches!(self, Expr::Var(_))
   }
 
-  pub fn is_comparison(&self) -> bool {
+  pub(crate) fn is_comparison(&self) -> bool {
     matches!(
       self,
       Expr::Binary(BinaryExpr {
@@ -39,7 +39,7 @@ impl Expr {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum ConstValue {
+pub(crate) enum ConstValue {
   Int32(i32),
   Bool(bool),
 }
@@ -54,19 +54,19 @@ impl Display for ConstValue {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct UnaryExpr {
-  pub op: UnaryOp,
-  pub operand: ExprId,
+pub(crate) struct UnaryExpr {
+  pub(crate) op: UnaryOp,
+  pub(crate) operand: ExprId,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub enum UnaryOp {
+pub(crate) enum UnaryOp {
   Neg,
   Not,
 }
 
 impl UnaryOp {
-  pub fn from_token(token: &Token) -> Option<Self> {
+  pub(crate) fn from_token(token: &Token) -> Option<Self> {
     match token.kind() {
       TokenKind::Bang => Some(Self::Not),
       TokenKind::Minus => Some(Self::Neg),
@@ -74,7 +74,7 @@ impl UnaryOp {
     }
   }
 
-  pub fn is_valid_for_operand_type(&self, operand_type: Type) -> bool {
+  pub(crate) fn is_valid_for_operand_type(&self, operand_type: Type) -> bool {
     match self {
       Self::Neg => operand_type.is_number(),
       Self::Not => operand_type.is_boolean(),
@@ -83,7 +83,7 @@ impl UnaryOp {
 
   /// Por ahora esta funcion no depende de los operandos.
   /// En un futuro eso podria cambiar, e ir directamente en UnaryExpr
-  pub fn result_type(&self) -> Type {
+  pub(crate) fn result_type(&self) -> Type {
     match self {
       Self::Neg => Type::Int32,
       Self::Not => Type::Bool,
@@ -105,14 +105,14 @@ impl Display for UnaryOp {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct BinaryExpr {
+pub(crate) struct BinaryExpr {
   pub op: BinaryOp,
   pub lhs: ExprId,
   pub rhs: ExprId,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub enum BinaryOp {
+pub(crate) enum BinaryOp {
   // Arithmetic Binary Operations
   Add,
   Sub,
@@ -132,7 +132,7 @@ pub enum BinaryOp {
 }
 
 impl BinaryOp {
-  pub fn from_token(token: &Token) -> Option<Self> {
+  pub(crate) fn from_token(token: &Token) -> Option<Self> {
     match token.kind() {
       TokenKind::Plus => Some(Self::Add),
       TokenKind::Minus => Some(Self::Sub),
@@ -151,7 +151,7 @@ impl BinaryOp {
     }
   }
 
-  pub fn is_valid_for_operand_types(&self, lhs_type: Type, rhs_type: Type) -> bool {
+  pub(crate) fn is_valid_for_operand_types(&self, lhs_type: Type, rhs_type: Type) -> bool {
     match self {
       Self::Add
       | Self::Sub
@@ -171,7 +171,7 @@ impl BinaryOp {
 
   /// Por ahora esta funcion no depende de los operandos.
   /// En un futuro eso podria cambiar, e ir directamente en BinaryExpr
-  pub fn result_type(&self) -> Type {
+  pub(crate) fn result_type(&self) -> Type {
     match self {
       Self::Add | Self::Sub | Self::Mul | Self::Div => Type::Int32,
       Self::Eq
@@ -186,7 +186,7 @@ impl BinaryOp {
     }
   }
 
-  pub fn to_string(&self) -> &str {
+  fn to_string(&self) -> &str {
     match self {
       Self::Add => "+",
       Self::Sub => "-",

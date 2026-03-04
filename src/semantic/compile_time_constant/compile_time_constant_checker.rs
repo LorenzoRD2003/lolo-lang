@@ -2,10 +2,8 @@ use rustc_hash::FxHashMap;
 
 use crate::{
   ast::{
-    ast::{Ast, BlockId, ExprId, StmtId},
-    expr::{BinaryExpr, BinaryOp, ConstValue, Expr, UnaryExpr, UnaryOp},
-    stmt::Stmt,
-    visitor::{AstVisitor, walk_block, walk_expr, walk_stmt},
+    Ast, AstVisitor, BinaryExpr, BinaryOp, BlockId, ConstValue, Expr, ExprId, Stmt, StmtId,
+    UnaryExpr, UnaryOp, walk_block, walk_expr, walk_stmt,
   },
   diagnostics::diagnostic::{Diagnosable, Diagnostic},
   semantic::{

@@ -1,7 +1,7 @@
 use rustc_hash::FxHashMap;
 
 use crate::{
-  ast::ast::ExprId,
+  ast::ExprId,
   semantic::{symbol::SymbolId, types::Type},
 };
 

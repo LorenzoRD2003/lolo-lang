@@ -12,7 +12,7 @@ use crate::{
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct ExprId(pub usize);
+pub(crate) struct ExprId(pub usize);
 
 impl IncrementalId for ExprId {
   fn from_usize(value: usize) -> Self {
@@ -21,7 +21,7 @@ impl IncrementalId for ExprId {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct StmtId(pub usize);
+pub(crate) struct StmtId(pub usize);
 
 impl IncrementalId for StmtId {
   fn from_usize(value: usize) -> Self {
@@ -30,7 +30,7 @@ impl IncrementalId for StmtId {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct BlockId(pub usize);
+pub(crate) struct BlockId(pub usize);
 
 impl IncrementalId for BlockId {
   fn from_usize(value: usize) -> Self {
@@ -41,7 +41,7 @@ impl IncrementalId for BlockId {
 /// Esto es arena-based allocation
 /// por como escalaria en un futuro, es mejor que un Vec<(Expr, Span)>.
 #[derive(Debug, Clone, PartialEq)]
-pub struct Ast {
+pub(crate) struct Ast {
   /// Se debe cumplir el invariante de que los expr_arena, expr_spans esten asociados por el indice ExprId.
   expr_arena: Vec<Expr>,
   expr_spans: Vec<Span>,
@@ -57,7 +57,7 @@ pub struct Ast {
 }
 
 impl Ast {
-  pub fn empty() -> Self {
+  pub(crate) fn empty() -> Self {
     Self {
       expr_arena: Vec::new(),
       expr_spans: Vec::new(),
@@ -71,68 +71,68 @@ impl Ast {
     }
   }
 
-  pub fn expr(&self, id: ExprId) -> Expr {
+  pub(crate) fn expr(&self, id: ExprId) -> Expr {
     self.expr_arena[id.0].clone()
   }
 
-  pub fn expr_span(&self, id: ExprId) -> Span {
+  pub(crate) fn expr_span(&self, id: ExprId) -> Span {
     self.expr_spans[id.0].clone()
   }
 
-  pub fn add_expr(&mut self, expr: Expr, span: Span) -> ExprId {
+  pub(crate) fn add_expr(&mut self, expr: Expr, span: Span) -> ExprId {
     let expr_id = self.expr_id_gen.next_id();
     self.expr_arena.push(expr);
     self.expr_spans.push(span);
     expr_id
   }
 
-  pub fn update_expr_span(&mut self, id: ExprId, span: Span) -> ExprId {
+  pub(crate) fn update_expr_span(&mut self, id: ExprId, span: Span) -> ExprId {
     self.expr_spans[id.0] = span;
     id
   }
 
-  pub fn stmt(&self, id: StmtId) -> Stmt {
+  pub(crate) fn stmt(&self, id: StmtId) -> Stmt {
     self.stmt_arena[id.0].clone()
   }
 
-  pub fn stmt_span(&self, id: StmtId) -> Span {
+  pub(crate) fn stmt_span(&self, id: StmtId) -> Span {
     self.stmt_spans[id.0].clone()
   }
 
-  pub fn add_stmt(&mut self, stmt: Stmt, span: Span) -> StmtId {
+  pub(crate) fn add_stmt(&mut self, stmt: Stmt, span: Span) -> StmtId {
     let stmt_id = self.stmt_id_gen.next_id();
     self.stmt_arena.push(stmt);
     self.stmt_spans.push(span);
     stmt_id
   }
 
-  pub fn update_stmt_span(&mut self, id: StmtId, span: Span) -> StmtId {
+  pub(crate) fn update_stmt_span(&mut self, id: StmtId, span: Span) -> StmtId {
     self.stmt_spans[id.0] = span;
     id
   }
 
-  pub fn block(&self, id: BlockId) -> Block {
+  pub(crate) fn block(&self, id: BlockId) -> Block {
     self.block_arena[id.0].clone()
   }
 
-  pub fn block_span(&self, id: BlockId) -> Span {
+  pub(crate) fn block_span(&self, id: BlockId) -> Span {
     self.block_spans[id.0].clone()
   }
 
-  pub fn add_block(&mut self, block: Block, span: Span) -> BlockId {
+  pub(crate) fn add_block(&mut self, block: Block, span: Span) -> BlockId {
     let block_id = self.block_id_gen.next_id();
     self.block_arena.push(block);
     self.block_spans.push(span);
     block_id
   }
 
-  pub fn add_block_expr(&mut self, block_id: BlockId) -> ExprId {
+  pub(crate) fn add_block_expr(&mut self, block_id: BlockId) -> ExprId {
     let span = self.block_span(block_id);
     let expr_id = self.add_expr(Expr::Block(block_id), span);
     expr_id
   }
 
-  pub fn update_block_span(&mut self, id: BlockId, span: Span) -> BlockId {
+  pub(crate) fn update_block_span(&mut self, id: BlockId, span: Span) -> BlockId {
     self.block_spans[id.0] = span;
     id
   }

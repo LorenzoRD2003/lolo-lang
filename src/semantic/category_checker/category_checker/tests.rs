@@ -1,12 +1,5 @@
 use crate::{
-  ast::{
-    ast::Ast,
-    block::Block,
-    expr::{ConstValue, Expr},
-    program::Program,
-    stmt::Stmt,
-    visitor::AstVisitor,
-  },
+  ast::{Ast, AstVisitor, Block, ConstValue, Expr, Program, Stmt},
   diagnostics::diagnostic::Diagnostic,
   parser::program_parsing::parse_program,
   semantic::{

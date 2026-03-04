@@ -1,5 +1,5 @@
 use crate::{
-  ast::{ast::Ast, program::Program},
+  ast::{Ast, Program},
   diagnostics::diagnostic::Diagnostic,
   semantic::{
     context::SemanticContext, phase_executor::Executor, phase_graph::PhaseGraph,
@@ -32,7 +32,7 @@ impl<'a> SemanticAnalyzer<'a> {
 #[cfg(test)]
 mod tests {
   use super::*;
-  use crate::{ast::expr::ConstValue, parser::program_parsing::parse_program};
+  use crate::{ast::ConstValue, parser::program_parsing::parse_program};
 
   #[test]
   fn semantic_analyzer_collects_all_metadata() {

@@ -1,8 +1,9 @@
 // Disenio para un parser extensible: basado en etapas/stages independientes
 
 use crate::{
-  ast::{ast::Ast, program::Program},
-  diagnostics::diagnostic::Diagnostic, semantic::result::SemanticResult,
+  ast::{Ast, Program},
+  diagnostics::diagnostic::Diagnostic,
+  semantic::result::SemanticResult,
 };
 pub type IrModule = ();
 

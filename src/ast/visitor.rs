@@ -5,7 +5,7 @@ use crate::ast::{
   stmt::Stmt,
 };
 
-pub trait AstVisitor {
+pub(crate) trait AstVisitor {
   fn visit_block(&mut self, block_id: BlockId);
   fn visit_stmt(&mut self, stmt_id: StmtId);
   fn visit_expr(&mut self, expr_id: ExprId);
@@ -15,7 +15,7 @@ pub trait AstVisitor {
 }
 
 /// Caminata estandar de bloque para un visitor del AST.
-pub fn walk_block<V: AstVisitor>(visitor: &mut V, ast: &Ast, block_id: BlockId) {
+pub(crate) fn walk_block<V: AstVisitor>(visitor: &mut V, ast: &Ast, block_id: BlockId) {
   let block = ast.block(block_id);
   for stmt in block.stmts() {
     visitor.visit_stmt(*stmt);
@@ -23,7 +23,7 @@ pub fn walk_block<V: AstVisitor>(visitor: &mut V, ast: &Ast, block_id: BlockId) 
 }
 
 /// Caminata estandar de statement para un visitor del AST.
-pub fn walk_stmt<V: AstVisitor>(visitor: &mut V, ast: &Ast, stmt_id: StmtId) {
+pub(crate) fn walk_stmt<V: AstVisitor>(visitor: &mut V, ast: &Ast, stmt_id: StmtId) {
   match ast.stmt(stmt_id) {
     Stmt::LetBinding {
       var,
@@ -61,7 +61,7 @@ pub fn walk_stmt<V: AstVisitor>(visitor: &mut V, ast: &Ast, stmt_id: StmtId) {
 }
 
 /// Caminata estandar de expresion para un visitor del AST.
-pub fn walk_expr<V: AstVisitor>(visitor: &mut V, ast: &Ast, expr_id: ExprId) {
+pub(crate) fn walk_expr<V: AstVisitor>(visitor: &mut V, ast: &Ast, expr_id: ExprId) {
   match ast.expr(expr_id) {
     Expr::Var(_) | Expr::Const(_) => {}
     Expr::Unary(unary_expr) => visitor.visit_expr(unary_expr.operand),

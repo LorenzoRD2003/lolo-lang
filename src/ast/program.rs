@@ -9,24 +9,24 @@ use crate::{
 };
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Program {
+pub(crate) struct Program {
   main_block_expr: ExprId,
   span: Span,
 }
 
 impl Program {
-  pub fn new(main_block_expr: ExprId, span: Span) -> Self {
+  pub(crate) fn new(main_block_expr: ExprId, span: Span) -> Self {
     Self {
       main_block_expr,
       span,
     }
   }
 
-  pub fn main_block_expr(&self) -> ExprId {
+  pub(crate) fn main_block_expr(&self) -> ExprId {
     self.main_block_expr
   }
 
-  pub fn main_block(&self, ast: &Ast) -> BlockId {
+  pub(crate) fn main_block(&self, ast: &Ast) -> BlockId {
     let main_block_expr = ast.expr(self.main_block_expr());
     match main_block_expr {
       Expr::Block(bid) => bid,
@@ -34,7 +34,7 @@ impl Program {
     }
   }
 
-  pub fn span(&self) -> Span {
+  pub(crate) fn span(&self) -> Span {
     self.span.clone()
   }
 }

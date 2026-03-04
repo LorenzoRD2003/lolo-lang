@@ -1,7 +1,7 @@
 // Trait base para cada fase semantica. esto es importante para despues hacer el paralelismo
 
 use crate::{
-  ast::{ast::Ast, program::Program, visitor::AstVisitor},
+  ast::{Ast, AstVisitor, Program},
   diagnostics::diagnostic::Diagnostic,
   semantic::{
     category_checker::category_checker::{CategoryChecker, CategoryInfo},

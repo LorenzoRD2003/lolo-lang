@@ -10,10 +10,8 @@
 
 use crate::{
   ast::{
-    ast::{Ast, BlockId, ExprId, StmtId},
-    expr::{BinaryExpr, Expr, UnaryExpr},
-    stmt::Stmt,
-    visitor::{AstVisitor, walk_block, walk_expr, walk_stmt},
+    Ast, AstVisitor, BinaryExpr, BlockId, Expr, ExprId, Stmt, StmtId, UnaryExpr, walk_block,
+    walk_expr, walk_stmt,
   },
   diagnostics::diagnostic::{Diagnosable, Diagnostic},
   semantic::{

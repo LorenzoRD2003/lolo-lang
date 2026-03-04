@@ -1,7 +1,7 @@
 use crate::ast::ast::{BlockId, ExprId};
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum Stmt {
+pub(crate) enum Stmt {
   Expr(ExprId),
   LetBinding {
     var: ExprId, // va a tener que ser una variable o damos un error

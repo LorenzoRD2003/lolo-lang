@@ -1,7 +1,7 @@
 // Responsable de los errores semanticos.
 
 use crate::{
-  ast::expr::{BinaryOp, UnaryOp},
+  ast::{BinaryOp, UnaryOp},
   common::span::Span,
   diagnostics::diagnostic::{Diagnosable, Diagnostic},
   semantic::types::Type,

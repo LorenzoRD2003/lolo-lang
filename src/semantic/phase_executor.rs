@@ -13,7 +13,7 @@
 use rayon::prelude::*;
 
 use crate::{
-  ast::{ast::Ast, program::Program},
+  ast::{Ast, Program},
   semantic::{context::SemanticContext, phase::PhaseOutput, phase_graph::PhaseGraph},
 };
 

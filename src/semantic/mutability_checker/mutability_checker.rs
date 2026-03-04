@@ -1,11 +1,7 @@
 use rustc_hash::FxHashMap;
 
 use crate::{
-  ast::{
-    ast::{Ast, BlockId, ExprId, StmtId},
-    stmt::Stmt,
-    visitor::{AstVisitor, walk_block, walk_expr, walk_stmt},
-  },
+  ast::{Ast, AstVisitor, BlockId, ExprId, Stmt, StmtId, walk_block, walk_expr, walk_stmt},
   diagnostics::diagnostic::{Diagnosable, Diagnostic},
   semantic::{
     mutability_checker::error::MutabilityError, resolver::resolution_info::ResolutionInfo,
