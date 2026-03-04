@@ -5,7 +5,7 @@
 // Mientras mas tonto sea el lexer, mejor. si no, vienen los bugs.
 
 use crate::{
-  diagnostics::diagnostic::{Diagnosable, Diagnostic},
+  diagnostics::{Diagnosable, Diagnostic},
   lexer::{
     error::LexerError,
     keywords::lookup_keyword,

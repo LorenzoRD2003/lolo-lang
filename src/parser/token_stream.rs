@@ -8,7 +8,7 @@
 use std::collections::VecDeque;
 
 use crate::{
-  diagnostics::diagnostic::Diagnostic,
+  diagnostics::Diagnostic,
   lexer::{
     lexer::Lexer,
     token::{Token, TokenKind},

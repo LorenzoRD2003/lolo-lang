@@ -3,7 +3,7 @@
 use crate::{
   ast::{BinaryOp, ConstValue},
   common::Span,
-  diagnostics::diagnostic::{Diagnosable, Diagnostic},
+  diagnostics::{Diagnosable, Diagnostic},
 };
 
 #[derive(Debug, Clone)]

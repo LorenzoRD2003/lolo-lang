@@ -2,7 +2,7 @@ use rustc_hash::FxHashMap;
 
 use crate::{
   ast::{Ast, AstVisitor, BlockId, ExprId, Stmt, StmtId, walk_block, walk_expr, walk_stmt},
-  diagnostics::diagnostic::{Diagnosable, Diagnostic},
+  diagnostics::{Diagnosable, Diagnostic},
   semantic::{
     mutability_checker::error::MutabilityError, resolver::resolution_info::ResolutionInfo,
     symbol::SymbolId, symbol_table::SymbolTable,

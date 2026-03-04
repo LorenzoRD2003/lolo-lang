@@ -1,6 +1,6 @@
 use crate::{
   ast::{Ast, AstVisitor, Expr, Program, Stmt},
-  diagnostics::diagnostic::Diagnostic,
+  diagnostics::Diagnostic,
   parser::program_parsing::parse_program,
   semantic::{
     resolver::{name_resolver::NameResolver, resolution_info::ResolutionInfo},

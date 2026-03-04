@@ -31,7 +31,7 @@ use std::fmt;
 /// Renderizador usando spans.
 /// Configuracion visual (colores, ascii/unicode, compact/verbose) -> por ahora no.
 #[derive(Debug)]
-pub struct Renderer<'a, W: fmt::Write> {
+pub(crate) struct Renderer<'a, W: fmt::Write> {
   /// SourceMap, para poder traducir los spans.
   source_map: &'a SourceMap<'a>,
   /// Output target, para indicar a donde van a renderizarse los mensajes.
@@ -39,12 +39,12 @@ pub struct Renderer<'a, W: fmt::Write> {
 }
 
 impl<'a, W: fmt::Write> Renderer<'a, W> {
-  pub fn new(source_map: &'a SourceMap, writer: W) -> Self {
+  pub(crate) fn new(source_map: &'a SourceMap, writer: W) -> Self {
     Self { source_map, writer }
   }
 
   // Funcion responsable de todo el output
-  pub fn render(&mut self, diag: &Diagnostic) -> fmt::Result {
+  pub(crate) fn render(&mut self, diag: &Diagnostic) -> fmt::Result {
     self.render_header(diag)?;
     self.render_location(diag)?;
     self.render_code_snippet(diag)?;

@@ -12,20 +12,20 @@
 use crate::common::Span;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub enum LabelStyle {
+pub(crate) enum LabelStyle {
   Primary,
   Secondary,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Label {
-  pub span: Span,
-  pub message: Option<String>,
-  pub style: LabelStyle,
+pub(crate) struct Label {
+  pub(crate) span: Span,
+  pub(crate) message: Option<String>,
+  pub(crate) style: LabelStyle,
 }
 
 impl Label {
-  pub fn primary(span: Span, msg: Option<String>) -> Self {
+  pub(crate) fn primary(span: Span, msg: Option<String>) -> Self {
     Self {
       span,
       message: msg,
@@ -33,7 +33,7 @@ impl Label {
     }
   }
 
-  pub fn secondary(span: Span, msg: Option<String>) -> Self {
+  pub(crate) fn secondary(span: Span, msg: Option<String>) -> Self {
     Self {
       span,
       message: msg,

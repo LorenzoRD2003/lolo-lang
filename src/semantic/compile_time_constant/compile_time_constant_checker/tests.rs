@@ -1,6 +1,6 @@
 use crate::{
   ast::{Ast, AstVisitor, BinaryExpr, BinaryOp, ConstValue, Expr, Program, Stmt},
-  diagnostics::diagnostic::Diagnostic,
+  diagnostics::Diagnostic,
   parser::program_parsing::parse_program,
   semantic::{
     compile_time_constant::compile_time_constant_checker::{

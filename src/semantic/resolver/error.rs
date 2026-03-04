@@ -2,10 +2,7 @@
 
 use crate::{
   common::Span,
-  diagnostics::{
-    diagnostic::{Diagnosable, Diagnostic},
-    label::Label,
-  },
+  diagnostics::{Diagnosable, Diagnostic, Label},
 };
 
 #[derive(Debug, Clone)]

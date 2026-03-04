@@ -1,4 +1,7 @@
-pub mod diagnostic;
-pub(crate) mod label;
-pub(crate) mod renderer;
-pub(crate) mod severity;
+mod diagnostic;
+mod label;
+mod renderer;
+mod severity;
+
+pub(crate) use diagnostic::{Diagnosable, Diagnostic};
+pub(crate) use label::Label;

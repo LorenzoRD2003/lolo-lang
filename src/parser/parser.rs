@@ -11,7 +11,7 @@ use crate::{
     UnaryExpr, UnaryOp,
   },
   common::Span,
-  diagnostics::diagnostic::{Diagnosable, Diagnostic},
+  diagnostics::{Diagnosable, Diagnostic},
   lexer::token::{Token, TokenKind},
   parser::{
     error::ParserError,

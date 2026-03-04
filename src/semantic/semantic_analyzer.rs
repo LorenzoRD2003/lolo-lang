@@ -1,6 +1,6 @@
 use crate::{
   ast::{Ast, Program},
-  diagnostics::diagnostic::Diagnostic,
+  diagnostics::Diagnostic,
   semantic::{
     context::SemanticContext, phase_executor::Executor, phase_graph::PhaseGraph,
     result::SemanticResult,

@@ -2,7 +2,7 @@ use rustc_hash::FxHashMap;
 
 use crate::{
   ast::{Ast, AstVisitor, BlockId, Expr, ExprId, Stmt, StmtId, walk_block, walk_expr, walk_stmt},
-  diagnostics::diagnostic::{Diagnosable, Diagnostic},
+  diagnostics::{Diagnosable, Diagnostic},
   semantic::{
     category_checker::{category::ExprCategory, error::CategoryError},
     compile_time_constant::compile_time_constant_checker::CompileTimeConstantInfo,

@@ -1,7 +1,7 @@
 use std::fmt;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub enum Severity {
+pub(crate) enum Severity {
   Error,
   Warning,
   Note,

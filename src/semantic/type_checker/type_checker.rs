@@ -13,7 +13,7 @@ use crate::{
     Ast, AstVisitor, BinaryExpr, BlockId, Expr, ExprId, Stmt, StmtId, UnaryExpr, walk_block,
     walk_expr, walk_stmt,
   },
-  diagnostics::diagnostic::{Diagnosable, Diagnostic},
+  diagnostics::{Diagnosable, Diagnostic},
   semantic::{
     resolver::resolution_info::ResolutionInfo,
     type_checker::{error::TypeError, type_info::TypeInfo},

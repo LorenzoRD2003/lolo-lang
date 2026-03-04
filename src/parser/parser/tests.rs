@@ -1,6 +1,6 @@
 use crate::{
   ast::{BinaryExpr, BinaryOp, ConstValue, Expr, Stmt, UnaryExpr, UnaryOp},
-  diagnostics::diagnostic::Diagnostic,
+  diagnostics::Diagnostic,
   lexer::lexer::Lexer,
   parser::{
     parser::Parser,

@@ -5,7 +5,7 @@ use crate::{
     Ast, AstVisitor, BinaryExpr, BinaryOp, BlockId, ConstValue, Expr, ExprId, Stmt, StmtId,
     UnaryExpr, UnaryOp, walk_block, walk_expr, walk_stmt,
   },
-  diagnostics::diagnostic::{Diagnosable, Diagnostic},
+  diagnostics::{Diagnosable, Diagnostic},
   semantic::{
     compile_time_constant::error::CompileTimeConstantError,
     resolver::resolution_info::ResolutionInfo, symbol::SymbolId,

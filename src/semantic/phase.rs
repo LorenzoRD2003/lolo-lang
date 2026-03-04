@@ -2,7 +2,7 @@
 
 use crate::{
   ast::{Ast, AstVisitor, Program},
-  diagnostics::diagnostic::Diagnostic,
+  diagnostics::Diagnostic,
   semantic::{
     category_checker::category_checker::{CategoryChecker, CategoryInfo},
     compile_time_constant::compile_time_constant_checker::{

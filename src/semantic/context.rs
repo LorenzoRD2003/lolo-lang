@@ -1,7 +1,7 @@
 // Contiene el estado compartido mutable:
 
 use crate::{
-  diagnostics::diagnostic::Diagnostic,
+  diagnostics::Diagnostic,
   semantic::{
     category_checker::category_checker::CategoryInfo,
     compile_time_constant::compile_time_constant_checker::CompileTimeConstantInfo,

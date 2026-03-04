@@ -3,7 +3,7 @@
 use crate::{
   ast::{BinaryOp, UnaryOp},
   common::Span,
-  diagnostics::diagnostic::{Diagnosable, Diagnostic},
+  diagnostics::{Diagnosable, Diagnostic},
   semantic::types::Type,
 };
 

@@ -1,6 +1,6 @@
 use crate::{
   ast::{Ast, AstVisitor, Block, ConstValue, Expr, Program, Stmt},
-  diagnostics::diagnostic::Diagnostic,
+  diagnostics::Diagnostic,
   parser::program_parsing::parse_program,
   semantic::{
     category_checker::category_checker::{CategoryChecker, CategoryInfo},

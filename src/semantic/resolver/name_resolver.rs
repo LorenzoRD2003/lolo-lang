@@ -8,7 +8,7 @@
 
 use crate::{
   ast::{Ast, AstVisitor, BlockId, Expr, ExprId, Stmt, StmtId, walk_block, walk_expr, walk_stmt},
-  diagnostics::diagnostic::{Diagnosable, Diagnostic},
+  diagnostics::{Diagnosable, Diagnostic},
   semantic::{
     resolver::{error::ResolverError, resolution_info::ResolutionInfo},
     scope::ScopeArena,
