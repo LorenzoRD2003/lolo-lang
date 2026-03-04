@@ -1,7 +1,7 @@
 // Responsable de los errores de chequeo de categorias.
 
 use crate::{
-  common::span::Span,
+  common::Span,
   diagnostics::diagnostic::{Diagnosable, Diagnostic},
 };
 

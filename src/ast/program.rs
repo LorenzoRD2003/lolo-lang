@@ -5,7 +5,7 @@ use crate::{
     ast::{Ast, BlockId, ExprId},
     expr::Expr,
   },
-  common::span::Span,
+  common::Span,
 };
 
 #[derive(Debug, Clone, PartialEq)]

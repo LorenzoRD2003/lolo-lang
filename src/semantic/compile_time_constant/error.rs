@@ -2,7 +2,7 @@
 
 use crate::{
   ast::{BinaryOp, ConstValue},
-  common::span::Span,
+  common::Span,
   diagnostics::diagnostic::{Diagnosable, Diagnostic},
 };
 

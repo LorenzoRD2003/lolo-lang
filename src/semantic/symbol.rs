@@ -5,7 +5,7 @@
 
 use crate::{
   ast::StmtId,
-  common::{id_generator::IncrementalId, span::Span},
+  common::{IncrementalId, Span},
   semantic::scope::ScopeId,
 };
 

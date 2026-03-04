@@ -1,5 +1,5 @@
 use crate::{
-  common::source_map::SourceMap,
+  common::SourceMap,
   diagnostics::{diagnostic::Diagnostic, label::Label, renderer::Renderer},
 };
 use proptest::prelude::*;

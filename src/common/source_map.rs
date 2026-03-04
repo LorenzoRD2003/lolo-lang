@@ -12,14 +12,14 @@
 use crate::common::span::Span;
 
 #[derive(Debug, Clone)]
-pub struct SourceMap<'a> {
+pub(crate) struct SourceMap<'a> {
   source: &'a str,
   file_name: &'a str,
   newlines: Vec<usize>,
 }
 
 impl<'a> SourceMap<'a> {
-  pub fn new(source: &'a str, file_name: &'a str) -> Self {
+  pub(crate) fn new(source: &'a str, file_name: &'a str) -> Self {
     let newlines = source
       .bytes()
       .enumerate()
@@ -32,15 +32,15 @@ impl<'a> SourceMap<'a> {
     }
   }
 
-  pub fn source(&self) -> &'a str {
+  pub(crate) fn source(&self) -> &'a str {
     self.source
   }
 
-  pub fn file_name(&self) -> &'a str {
+  pub(crate) fn file_name(&self) -> &'a str {
     self.file_name
   }
 
-  pub fn offset_to_line_column(&self, offset: usize) -> (usize, usize) {
+  pub(crate) fn offset_to_line_column(&self, offset: usize) -> (usize, usize) {
     let line = match self.newlines.binary_search(&offset) {
       Ok(idx) => idx + 1,
       Err(idx) => idx + 1,
@@ -54,13 +54,13 @@ impl<'a> SourceMap<'a> {
     (line, column)
   }
 
-  pub fn span_to_line_column(&self, span: &Span) -> (usize, usize, usize, usize) {
+  pub(crate) fn span_to_line_column(&self, span: &Span) -> (usize, usize, usize, usize) {
     let (line_start, column_start) = self.offset_to_line_column(span.start);
     let (line_end, column_end) = self.offset_to_line_column(span.end);
     (line_start, column_start, line_end, column_end)
   }
 
-  pub fn get_nth_line(&self, line: usize) -> Option<Span> {
+  pub(crate) fn get_nth_line(&self, line: usize) -> Option<Span> {
     if self.source.len() == 0 || line == 0 || line > self.newlines.len() + 1 {
       return None;
     }

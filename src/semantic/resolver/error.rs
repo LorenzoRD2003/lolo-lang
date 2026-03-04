@@ -1,7 +1,7 @@
 // Responsable de los errores del name resolver.
 
 use crate::{
-  common::span::Span,
+  common::Span,
   diagnostics::{
     diagnostic::{Diagnosable, Diagnostic},
     label::Label,

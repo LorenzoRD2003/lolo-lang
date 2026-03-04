@@ -17,7 +17,7 @@
 // Idealmente, un diagnostic debe poder sobrevivir a cualquier renderer
 
 use crate::{
-  common::span::Span,
+  common::Span,
   diagnostics::{label::Label, severity::Severity},
 };
 

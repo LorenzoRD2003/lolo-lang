@@ -1,16 +1,16 @@
 use std::marker::PhantomData;
 
-pub trait IncrementalId: Sized {
+pub(crate) trait IncrementalId: Sized {
   fn from_usize(value: usize) -> Self;
 }
 
-pub trait IdGenerator {
+pub(crate) trait IdGenerator {
   type Id;
   fn next_id(&mut self) -> Self::Id;
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub struct IncrementalIdGenerator<T> {
+pub(crate) struct IncrementalIdGenerator<T> {
   current: usize,
   _marker: PhantomData<T>,
 }

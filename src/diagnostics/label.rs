@@ -9,7 +9,7 @@
 // - mensaje opcional
 // - estilo (primary / secondary) -> esto tambien forma parte de la semantica del label
 
-use crate::common::span::Span;
+use crate::common::Span;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum LabelStyle {

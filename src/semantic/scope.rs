@@ -7,7 +7,7 @@
 use std::collections::HashMap;
 
 use crate::{
-  common::id_generator::{IdGenerator, IncrementalId, IncrementalIdGenerator},
+  common::{IdGenerator, IncrementalId, IncrementalIdGenerator},
   semantic::symbol::SymbolId,
 };
 

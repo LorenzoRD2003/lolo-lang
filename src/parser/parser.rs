@@ -10,7 +10,7 @@ use crate::{
     Ast, BinaryExpr, BinaryOp, Block, BlockId, ConstValue, Expr, ExprId, Program, Stmt, StmtId,
     UnaryExpr, UnaryOp,
   },
-  common::span::Span,
+  common::Span,
   diagnostics::diagnostic::{Diagnosable, Diagnostic},
   lexer::token::{Token, TokenKind},
   parser::{

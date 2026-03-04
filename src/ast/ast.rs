@@ -5,10 +5,7 @@
 
 use crate::{
   ast::{block::Block, expr::Expr, stmt::Stmt},
-  common::{
-    id_generator::{IdGenerator, IncrementalId, IncrementalIdGenerator},
-    span::Span,
-  },
+  common::{IdGenerator, IncrementalId, IncrementalIdGenerator, Span},
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

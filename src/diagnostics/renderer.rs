@@ -23,7 +23,7 @@
 // help: try converting types
 
 use crate::{
-  common::{source_map::SourceMap, span::Span},
+  common::{SourceMap, Span},
   diagnostics::{diagnostic::Diagnostic, label::LabelStyle},
 };
 use std::fmt;
@@ -122,8 +122,7 @@ impl<'a, W: fmt::Write> Renderer<'a, W> {
   /// Renderiza los labels secundarios (y primarios opcionales) de un Diagnostic
   fn render_labels(&mut self, diag: &Diagnostic) -> fmt::Result {
     for label in diag.labels() {
-      let (line_start, _, line_end, _) =
-        self.source_map.span_to_line_column(&label.span);
+      let (line_start, _, line_end, _) = self.source_map.span_to_line_column(&label.span);
 
       // imprimimos cada línea del span
       for cur_line in line_start..=line_end {

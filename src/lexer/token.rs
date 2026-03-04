@@ -1,6 +1,6 @@
 // TokenKind: Describe que tipo de cosa es el token (estructura sintactica abstracta)
 
-use crate::common::span::Span;
+use crate::common::Span;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TokenKind {

@@ -1,5 +1,5 @@
 use crate::{
-  common::span::Span,
+  common::Span,
   diagnostics::diagnostic::{Diagnosable, Diagnostic},
 };
 
