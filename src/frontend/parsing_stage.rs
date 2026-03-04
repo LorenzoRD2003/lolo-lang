@@ -1,6 +1,6 @@
 use crate::{
   frontend::{
-    FrontendConfig,
+    config::FrontendConfig,
     pipeline_context::PipelineContext,
     stage::{Stage, StageResult},
   },
@@ -9,7 +9,7 @@ use crate::{
 };
 
 #[derive(Debug, Clone)]
-pub struct ParsingStage;
+pub(crate) struct ParsingStage;
 
 impl Stage for ParsingStage {
   fn run(&self, ctx: &mut PipelineContext, config: &FrontendConfig) -> StageResult {

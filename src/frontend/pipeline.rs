@@ -11,19 +11,19 @@ use crate::
   }
 ;
 
-pub struct FrontendPipeline {
+pub(crate) struct FrontendPipeline {
   /// Un vector de punteros en heap a objetos que implementan el trait Stage, con dynamic dispatch
   stages: Vec<Box<dyn Stage>>,
 }
 
 impl FrontendPipeline {
-  pub fn default() -> Self {
+  pub(crate) fn default() -> Self {
     Self {
       stages: vec![Box::new(ParsingStage), Box::new(SemanticStage)],
     }
   }
 
-  pub fn run(&self, source: &str, config: &FrontendConfig) -> FrontendResult {
+  pub(crate) fn run(&self, source: &str, config: &FrontendConfig) -> FrontendResult {
     let mut ctx = PipelineContext::start(source.into());
     for stage in &self.stages {
       match stage.run(&mut ctx, config) {

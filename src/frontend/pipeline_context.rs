@@ -5,19 +5,19 @@ use crate::{
   diagnostics::Diagnostic,
   semantic::SemanticResult,
 };
-pub type IrModule = ();
+pub(crate) type IrModule = ();
 
-pub struct PipelineContext {
-  pub source: String,
-  pub ast: Option<Ast>,
-  pub program: Option<Program>,
-  pub semantic: Option<SemanticResult>,
-  pub ir: Option<IrModule>, // futuro
-  pub diagnostics: Vec<Diagnostic>,
+pub(crate) struct PipelineContext {
+  pub(crate) source: String,
+  pub(crate) ast: Option<Ast>,
+  pub(crate) program: Option<Program>,
+  pub(crate) semantic: Option<SemanticResult>,
+  pub(crate) ir: Option<IrModule>, // futuro
+  pub(crate) diagnostics: Vec<Diagnostic>,
 }
 
 impl PipelineContext {
-  pub fn start(source: String) -> Self {
+  pub(crate) fn start(source: String) -> Self {
     Self {
       source,
       ast: None,

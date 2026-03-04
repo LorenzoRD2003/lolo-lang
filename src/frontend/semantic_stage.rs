@@ -1,6 +1,6 @@
 use crate::{
   frontend::{
-    FrontendConfig,
+    config::FrontendConfig,
     pipeline_context::PipelineContext,
     stage::{Stage, StageResult},
   },
@@ -8,7 +8,7 @@ use crate::{
 };
 
 #[derive(Debug, Clone)]
-pub struct SemanticStage;
+pub(crate) struct SemanticStage;
 
 impl Stage for SemanticStage {
   fn run(&self, ctx: &mut PipelineContext, config: &FrontendConfig) -> StageResult {

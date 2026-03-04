@@ -5,14 +5,14 @@ use crate::{
 };
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct FrontendResult {
+pub(crate) struct FrontendResult {
   ast: Option<Ast>,
   semantic: Option<SemanticResult>,
   diagnostics: Vec<Diagnostic>,
 }
 
 impl FrontendResult {
-  pub fn from(
+  pub(crate) fn from(
     ast: Option<Ast>,
     semantic: Option<SemanticResult>,
     diagnostics: Vec<Diagnostic>,
@@ -24,15 +24,15 @@ impl FrontendResult {
     }
   }
 
-  pub fn into_diagnostics(self) -> Vec<Diagnostic> {
+  pub(crate) fn into_diagnostics(self) -> Vec<Diagnostic> {
     self.diagnostics
   }
 
-  pub fn ast(&self) -> Option<&Ast> {
+  pub(crate) fn ast(&self) -> Option<&Ast> {
     self.ast.as_ref()
   }
 
-  pub fn semantic(&self) -> Option<&SemanticResult> {
+  pub(crate) fn semantic(&self) -> Option<&SemanticResult> {
     self.semantic.as_ref()
   }
 }

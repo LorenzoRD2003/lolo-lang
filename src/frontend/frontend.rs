@@ -5,20 +5,20 @@
 // Debe ser la unica puerta de entrada publica del compilador.
 // Orquesta lexer, parser, semantic analyzer
 
-use crate::frontend::{FrontendConfig, FrontendResult, pipeline::FrontendPipeline};
+use crate::frontend::{config::FrontendConfig, frontend_result::FrontendResult, pipeline::FrontendPipeline};
 
 #[derive(Debug, Clone)]
-pub struct Frontend {
+pub(crate) struct Frontend {
   config: FrontendConfig,
 }
 
 impl Frontend {
-  pub fn new(config: FrontendConfig) -> Self {
+  pub(crate) fn new(config: FrontendConfig) -> Self {
     Self { config }
   }
 
   /// Compila el codigo fuente
-  pub fn compile(&self, source: &str) -> FrontendResult {
+  pub(crate) fn compile(&self, source: &str) -> FrontendResult {
     let pipeline = FrontendPipeline::default();
     pipeline.run(source, &self.config)
   }
