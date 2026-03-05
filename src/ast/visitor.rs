@@ -1,9 +1,4 @@
-use crate::ast::{
-  ast::{Ast, BlockId, ExprId, StmtId},
-  expr::Expr,
-  program::Program,
-  stmt::Stmt,
-};
+use crate::ast::{Ast, BlockId, ExprId, StmtId, expr::Expr, program::Program, stmt::Stmt};
 
 pub(crate) trait AstVisitor {
   fn visit_block(&mut self, block_id: BlockId);

@@ -61,7 +61,7 @@ impl<'a> SourceMap<'a> {
   }
 
   pub(crate) fn get_nth_line(&self, line: usize) -> Option<Span> {
-    if self.source.len() == 0 || line == 0 || line > self.newlines.len() + 1 {
+    if self.source.is_empty() || line == 0 || line > self.newlines.len() + 1 {
       return None;
     }
     let span_start = if line == 1 {

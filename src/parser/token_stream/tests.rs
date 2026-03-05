@@ -99,7 +99,7 @@ fn expect_works_for_eof_on_empty_stream() {
   let mut diagnostics = Vec::new();
   let lexer = Lexer::new("");
   let mut ts = TokenStream::new(lexer);
-  let token = ts.expect(TokenKind::EOF, &mut diagnostics).unwrap();
+  let token = ts.expect(TokenKind::Eof, &mut diagnostics).unwrap();
   assert!(token.is_eof());
 }
 
@@ -108,8 +108,8 @@ fn expect_fails_when_there_are_no_more_tokens() {
   let mut diagnostics = Vec::new();
   let lexer = Lexer::new("");
   let mut ts = TokenStream::new(lexer);
-  ts.expect(TokenKind::EOF, &mut diagnostics).unwrap();
-  let err = ts.expect(TokenKind::EOF, &mut diagnostics).unwrap_err();
+  ts.expect(TokenKind::Eof, &mut diagnostics).unwrap();
+  let err = ts.expect(TokenKind::Eof, &mut diagnostics).unwrap_err();
   assert!(matches!(err, ParserError::UnexpectedEOF));
 }
 

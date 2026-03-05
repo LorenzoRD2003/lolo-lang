@@ -8,17 +8,18 @@
 // Finalmente, debe producir `TypeInfo` y diagnosticos de errores de tipo
 // No usa la tabla de simbolos, pero si la ResolutionInfo.
 
+mod error;
+mod type_info;
+
+pub(crate) use type_info::TypeInfo;
+
 use crate::{
   ast::{
     Ast, AstVisitor, BinaryExpr, BlockId, Expr, ExprId, Stmt, StmtId, UnaryExpr, walk_block,
     walk_expr, walk_stmt,
   },
   diagnostics::{Diagnosable, Diagnostic},
-  semantic::{
-    resolver::ResolutionInfo,
-    type_checker::{TypeInfo, error::TypeError},
-    types::Type,
-  },
+  semantic::{name_resolver::ResolutionInfo, type_checker::error::TypeError, types::Type},
 };
 
 /// Responsabilidades: Recorrer el AST y:
@@ -94,14 +95,13 @@ impl AstVisitor for TypeChecker<'_> {
         let value_expr_type = self.type_info.type_of_expr(value_expr);
         if let Some(symbol) = self.resolution_info.symbol_of(var)
           && let Some(symbol_type) = self.type_info.type_of_symbol(symbol)
+          && value_expr_type != symbol_type
         {
-          if value_expr_type != symbol_type {
-            self.emit_error(&TypeError::MismatchedTypes {
-              expected: symbol_type,
-              found: value_expr_type,
-              span: self.ast.stmt_span(stmt_id),
-            });
-          }
+          self.emit_error(&TypeError::MismatchedTypes {
+            expected: symbol_type,
+            found: value_expr_type,
+            span: self.ast.stmt_span(stmt_id),
+          });
         }
       }
       Stmt::If { condition, .. } | Stmt::IfElse { condition, .. } => {
@@ -130,27 +130,31 @@ impl AstVisitor for TypeChecker<'_> {
       }
       Expr::Unary(UnaryExpr { op, operand }) => {
         let operand_type = self.type_info.type_of_expr(operand);
-        if !op.is_valid_for_operand_type(operand_type) {
+        if op.is_valid_for_operand_type(operand_type) {
+          op.result_type()
+        } else {
           self.emit_error(&TypeError::InvalidUnaryOperation {
             op,
             operand: operand_type,
             span: self.ast.expr_span(expr_id),
           });
+          Type::DefaultErrorType
         }
-        op.result_type()
       }
       Expr::Binary(BinaryExpr { op, lhs, rhs }) => {
         let lhs_type = self.type_info.type_of_expr(lhs);
         let rhs_type = self.type_info.type_of_expr(rhs);
-        if !op.is_valid_for_operand_types(lhs_type, rhs_type) {
+        if op.is_valid_for_operand_types(lhs_type, rhs_type) {
+          op.result_type()
+        } else {
           self.emit_error(&TypeError::InvalidBinaryOperation {
             op,
             lhs: lhs_type,
             rhs: rhs_type,
             span: self.ast.expr_span(expr_id),
           });
+          Type::DefaultErrorType
         }
-        op.result_type()
       }
       Expr::Block(block_id) => {
         let block = self.ast.block(block_id);

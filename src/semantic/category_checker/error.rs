@@ -5,6 +5,7 @@ use crate::{
   diagnostics::{Diagnosable, Diagnostic},
 };
 
+#[allow(clippy::enum_variant_names)]
 #[derive(Debug, Clone)]
 pub(crate) enum CategoryError {
   /// Se esperaba una PlaceExpr (a la hora de recibir un valor).

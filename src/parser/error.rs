@@ -15,7 +15,7 @@ pub(crate) enum ParserError {
 
 impl ParserError {
   fn token_error_fmt(token: &Token, template: &str) -> Diagnostic {
-    Diagnostic::error(template.replace("{}", &token.lexeme())).with_span(token.span().clone())
+    Diagnostic::error(template.replace("{}", token.lexeme())).with_span(token.span().clone())
   }
 }
 

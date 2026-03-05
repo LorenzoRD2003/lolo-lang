@@ -1,6 +1,6 @@
 use crate::{
   ast::{Expr, Stmt},
-  semantic::resolver::resolve,
+  semantic::name_resolver::resolve,
 };
 
 #[test]

@@ -39,9 +39,9 @@ pub struct Renderer<'a, W: fmt::Write> {
 }
 
 impl<'a, W: fmt::Write> Renderer<'a, W> {
-  pub fn new(source_code: &'a str, writer: W) -> Self {
+  pub fn new(source_code: &'a str, filename: &'a str, writer: W) -> Self {
     // TODO: cambiar el file name
-    let source_map = SourceMap::new(&source_code, "main.lolo");
+    let source_map = SourceMap::new(source_code, filename);
     Self { source_map, writer }
   }
 
@@ -149,10 +149,10 @@ impl<'a, W: fmt::Write> Renderer<'a, W> {
           writeln!(self.writer, "  | {}", underline)?;
 
           // si hay mensaje, lo escribimos al final de la primera linea del span
-          if let Some(msg) = &label.message {
-            if cur_line == line_start {
-              writeln!(self.writer, "    = {}", msg)?;
-            }
+          if let Some(msg) = &label.message
+            && cur_line == line_start
+          {
+            writeln!(self.writer, "    = {}", msg)?;
           }
         }
       }

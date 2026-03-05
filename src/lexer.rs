@@ -4,14 +4,16 @@
 // Solamente emite tokens. Si estoy modelando semantica en el lexer, estoy haciendo algo mal
 // Mientras mas tonto sea el lexer, mejor. si no, vienen los bugs.
 
+mod error;
+mod keywords;
+mod operators;
+mod token;
+
+pub(crate) use token::{Token, TokenKind};
+
 use crate::{
   diagnostics::{Diagnosable, Diagnostic},
-  lexer::{
-    error::LexerError,
-    keywords::lookup_keyword,
-    operators::match_operator,
-    token::{Token, TokenKind},
-  },
+  lexer::{error::LexerError, keywords::lookup_keyword, operators::match_operator},
 };
 
 // &'a u8 es un slice del source que vive fuera del Lexer.
@@ -54,7 +56,7 @@ impl<'a> Lexer<'a> {
             return None;
           }
           self.emitted_eof = true;
-          return Some(self.make_token(TokenKind::EOF, self.position));
+          return Some(self.make_token(TokenKind::Eof, self.position));
         }
 
         // whitespace: no genera ningun token
@@ -144,7 +146,7 @@ impl<'a> Lexer<'a> {
   // la idea es que solamente se actualice `self.position` aca, reduciendo bugs
   fn advance(&mut self) -> Option<char> {
     let ch = self.current_char();
-    if let Some(_) = ch {
+    if ch.is_some() {
       // Observemos que EOF no rompe nada
       self.position += 1;
     }

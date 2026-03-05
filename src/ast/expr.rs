@@ -3,7 +3,7 @@
 use std::fmt::Display;
 
 use crate::{
-  ast::ast::{BlockId, ExprId},
+  ast::{BlockId, ExprId},
   lexer::{Token, TokenKind},
   semantic::Type,
 };
@@ -91,7 +91,7 @@ impl UnaryOp {
     }
   }
 
-  fn to_string(&self) -> &str {
+  fn as_string(&self) -> &str {
     match self {
       Self::Neg => "-",
       Self::Not => "!",
@@ -101,7 +101,7 @@ impl UnaryOp {
 
 impl Display for UnaryOp {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{}", self.to_string())
+    write!(f, "{}", self.as_string())
   }
 }
 
@@ -187,7 +187,7 @@ impl BinaryOp {
     }
   }
 
-  fn to_string(&self) -> &str {
+  fn as_string(&self) -> &str {
     match self {
       Self::Add => "+",
       Self::Sub => "-",
@@ -208,6 +208,6 @@ impl BinaryOp {
 
 impl Display for BinaryOp {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{}", self.to_string())
+    write!(f, "{}", self.as_string())
   }
 }

@@ -1,4 +1,4 @@
-use crate::ast::ast::StmtId;
+use crate::ast::StmtId;
 
 #[cfg(test)]
 use crate::ast::{Ast, Stmt};

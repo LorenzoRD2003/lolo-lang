@@ -5,10 +5,10 @@ use crate::{
   diagnostics::Diagnostic,
   semantic::{
     category_checker::{CategoryChecker, CategoryInfo},
-    compile_time_constant::{CompileTimeConstantChecker, CompileTimeConstantInfo},
+    compile_time_constant_checker::{CompileTimeConstantChecker, CompileTimeConstantInfo},
     context::SemanticContext,
     mutability_checker::{MutabilityChecker, MutabilityInfo},
-    resolver::{NameResolver, ResolutionInfo},
+    name_resolver::{NameResolver, ResolutionInfo},
     symbol_table::SymbolTable,
     type_checker::{TypeChecker, TypeInfo},
   },
@@ -17,7 +17,9 @@ use crate::{
 #[derive(Debug, Clone)]
 pub(crate) enum PhaseOutputInfo {
   Resolution {
-    resolution_info: ResolutionInfo,
+    /// Uso Box<ResolutionInfo> ya que `cargo clippy` me informa que de otro modo estoy
+    /// haciendo crecer demasiado el tamanio del `enum` para todos los casos.
+    resolution_info: Box<ResolutionInfo>,
     symbol_table: SymbolTable,
   },
   Types(TypeInfo),
@@ -29,7 +31,7 @@ pub(crate) enum PhaseOutputInfo {
 impl From<(ResolutionInfo, SymbolTable)> for PhaseOutputInfo {
   fn from(value: (ResolutionInfo, SymbolTable)) -> Self {
     PhaseOutputInfo::Resolution {
-      resolution_info: value.0,
+      resolution_info: Box::new(value.0),
       symbol_table: value.1,
     }
   }

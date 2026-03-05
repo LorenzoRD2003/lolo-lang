@@ -1,13 +1,14 @@
 // Responsable de los errores semanticos.
 
 use crate::{
+  Diagnostic,
   ast::{BinaryOp, ConstValue},
   common::Span,
-  diagnostics::{Diagnosable, Diagnostic},
+  diagnostics::Diagnosable,
 };
 
 #[derive(Debug, Clone)]
-pub(crate) enum CompileTimeConstantError {
+pub enum CompileTimeConstantError {
   /// Una operacion de suma/resta/multiplicacion hizo overflow en 32 bits
   ArithmeticOverflow {
     op: BinaryOp,
@@ -27,7 +28,7 @@ impl Diagnosable for CompileTimeConstantError {
           .with_span(span.clone())
       }
       Self::ZeroDivision { span } => {
-        Diagnostic::error(format!("division por cero encontrada")).with_span(span.clone())
+        Diagnostic::error("division por cero encontrada".into()).with_span(span.clone())
       }
     }
   }

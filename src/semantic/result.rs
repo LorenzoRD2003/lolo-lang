@@ -1,6 +1,6 @@
 use crate::semantic::{
-  category_checker::CategoryInfo, compile_time_constant::CompileTimeConstantInfo,
-  context::SemanticContext, mutability_checker::MutabilityInfo, resolver::ResolutionInfo,
+  category_checker::CategoryInfo, compile_time_constant_checker::CompileTimeConstantInfo,
+  context::SemanticContext, mutability_checker::MutabilityInfo, name_resolver::ResolutionInfo,
   type_checker::TypeInfo,
 };
 

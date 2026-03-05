@@ -41,7 +41,7 @@ pub(crate) enum TokenKind {
   // Start of Program
   Main,
   // End-Of-File
-  EOF,
+  Eof,
 }
 
 impl TokenKind {
@@ -113,6 +113,6 @@ impl Token {
   }
 
   pub(crate) fn is_eof(&self) -> bool {
-    self.kind() == TokenKind::EOF
+    self.kind() == TokenKind::Eof
   }
 }

@@ -3,10 +3,19 @@
 // no es exactamente un arbol ahora, sino una arena de nodos (pool)
 // es importante remarcar que una Expr NO TIENE Span, sino que el compilador guarda un Span asociado a cada nodo del "arbol"
 
-use crate::{
-  ast::{block::Block, expr::Expr, stmt::Stmt},
-  common::{IdGenerator, IncrementalId, IncrementalIdGenerator, Span},
-};
+mod block;
+mod expr;
+mod program;
+mod stmt;
+mod visitor;
+
+pub(crate) use block::Block;
+pub(crate) use expr::{BinaryExpr, BinaryOp, ConstValue, Expr, UnaryExpr, UnaryOp};
+pub(crate) use program::Program;
+pub(crate) use stmt::Stmt;
+pub(crate) use visitor::{AstVisitor, walk_block, walk_expr, walk_stmt};
+
+use crate::common::{IdGenerator, IncrementalId, IncrementalIdGenerator, Span};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub(crate) struct ExprId(pub(crate) usize);
@@ -120,8 +129,7 @@ impl Ast {
 
   pub(crate) fn add_block_expr(&mut self, block_id: BlockId) -> ExprId {
     let span = self.block_span(block_id);
-    let expr_id = self.add_expr(Expr::Block(block_id), span);
-    expr_id
+    self.add_expr(Expr::Block(block_id), span)
   }
 }
 

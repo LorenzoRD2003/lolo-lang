@@ -4,10 +4,10 @@ use crate::{
   diagnostics::Diagnostic,
   semantic::{
     category_checker::CategoryInfo,
-    compile_time_constant::CompileTimeConstantInfo,
+    compile_time_constant_checker::CompileTimeConstantInfo,
     mutability_checker::MutabilityInfo,
+    name_resolver::ResolutionInfo,
     phase::{PhaseOutput, PhaseOutputInfo},
-    resolver::ResolutionInfo,
     symbol_table::SymbolTable,
     type_checker::TypeInfo,
   },
@@ -44,7 +44,7 @@ impl<'a> SemanticContext<'a> {
         resolution_info,
         symbol_table,
       } => {
-        self.resolution_info = Some(resolution_info);
+        self.resolution_info = Some(*resolution_info);
         self.symbol_table = Some(symbol_table);
       }
       PhaseOutputInfo::Types(type_info) => self.type_info = Some(type_info),

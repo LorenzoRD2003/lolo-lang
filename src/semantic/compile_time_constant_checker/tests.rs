@@ -1,10 +1,10 @@
 use crate::{
+  Diagnostic,
   ast::{Ast, AstVisitor, BinaryExpr, BinaryOp, ConstValue, Expr, Program, Stmt},
-  diagnostics::Diagnostic,
   parser::parse_program,
   semantic::{
-    compile_time_constant::{CompileTimeConstantChecker, CompileTimeConstantInfo},
-    resolver::NameResolver,
+    compile_time_constant_checker::{CompileTimeConstantChecker, CompileTimeConstantInfo},
+    name_resolver::NameResolver,
   },
 };
 

@@ -1,6 +1,6 @@
 use crate::{
   ast::{
-    ast::{Ast, BlockId, ExprId, StmtId},
+    Ast, BlockId, ExprId, StmtId,
     block::Block,
     expr::{ConstValue, Expr},
     stmt::Stmt,

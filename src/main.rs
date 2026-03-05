@@ -10,9 +10,13 @@ fn compile(source_code: &str) -> FrontendResult {
   frontend.compile(source_code)
 }
 
-fn render_diagnostics(source_code: &str, result: &FrontendResult) -> Result<String, fmt::Error> {
+fn render_diagnostics(
+  source_code: &str,
+  filename: &str,
+  result: &FrontendResult,
+) -> Result<String, fmt::Error> {
   let mut out = String::new();
-  let mut renderer = Renderer::new(source_code, &mut out);
+  let mut renderer = Renderer::new(source_code, filename, &mut out);
   if result.has_diagnostics() {
     for diag in result.diagnostics() {
       renderer.render(diag)?;
@@ -33,7 +37,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
   let source_code = fs::read_to_string(path)?;
 
   let result = compile(&source_code);
-  let out = render_diagnostics(&source_code, &result)?;
+  let out = render_diagnostics(&source_code, filename, &result)?;
   if out.is_empty() {
     println!("No se encontraron diagnosticos sobre el programa. O sea, todo piola!");
   } else {

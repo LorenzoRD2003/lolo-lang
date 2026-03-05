@@ -4,8 +4,8 @@ use crate::{
   parser::parse_program,
   semantic::{
     category_checker::{CategoryChecker, CategoryInfo},
-    compile_time_constant::CompileTimeConstantChecker,
-    resolver::NameResolver,
+    compile_time_constant_checker::CompileTimeConstantChecker,
+    name_resolver::NameResolver,
   },
 };
 

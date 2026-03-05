@@ -1,3 +1,5 @@
+mod error;
+
 use rustc_hash::FxHashMap;
 
 use crate::{
@@ -7,7 +9,7 @@ use crate::{
   },
   diagnostics::{Diagnosable, Diagnostic},
   semantic::{
-    compile_time_constant::error::CompileTimeConstantError, resolver::ResolutionInfo,
+    compile_time_constant_checker::error::CompileTimeConstantError, name_resolver::ResolutionInfo,
     symbol::SymbolId,
   },
 };
@@ -63,16 +65,12 @@ impl AstVisitor for CompileTimeConstantChecker<'_> {
   fn visit_stmt(&mut self, stmt_id: StmtId) {
     walk_stmt(self, self.ast, stmt_id);
 
-    match self.ast.stmt(stmt_id) {
-      Stmt::ConstBinding { var, initializer } => {
-        // Asocio un const binding al simbolo de la variable, si el initializer es constante
-        if let Some(value) = self.compile_time_constant_info.get(&initializer)
-          && let Some(symbol_id) = self.resolution_info.symbol_of(var)
-        {
-          self.const_bindings.insert(symbol_id, value.clone());
-        }
-      }
-      _ => {}
+    // Asocio un const binding al simbolo de la variable, si el initializer es constante
+    if let Stmt::ConstBinding { var, initializer } = self.ast.stmt(stmt_id)
+      && let Some(value) = self.compile_time_constant_info.get(&initializer)
+      && let Some(symbol_id) = self.resolution_info.symbol_of(var)
+    {
+      self.const_bindings.insert(symbol_id, value.clone());
     }
   }
 

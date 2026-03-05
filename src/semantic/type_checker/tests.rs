@@ -2,8 +2,8 @@ use crate::{
   ast::{Ast, AstVisitor, BinaryOp, Program, Stmt, UnaryOp},
   diagnostics::Diagnostic,
   semantic::{
-    resolver::{ResolutionInfo, resolve},
-    type_checker::{TypeInfo, type_checker::TypeChecker},
+    name_resolver::{ResolutionInfo, resolve},
+    type_checker::{TypeChecker, TypeInfo},
     types::Type,
   },
 };

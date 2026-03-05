@@ -1,11 +1,11 @@
 mod category_checker;
-mod compile_time_constant;
+mod compile_time_constant_checker;
 mod context;
 mod mutability_checker;
+mod name_resolver;
 mod phase;
 mod phase_executor;
 mod phase_graph;
-mod resolver;
 mod result;
 mod scope;
 mod semantic_analyzer;

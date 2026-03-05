@@ -1,4 +1,4 @@
-use crate::ast::ast::{BlockId, ExprId};
+use crate::ast::{BlockId, ExprId};
 
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) enum Stmt {

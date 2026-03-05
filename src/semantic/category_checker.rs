@@ -1,3 +1,6 @@
+mod category;
+mod error;
+
 use rustc_hash::FxHashMap;
 
 use crate::{
@@ -5,7 +8,7 @@ use crate::{
   diagnostics::{Diagnosable, Diagnostic},
   semantic::{
     category_checker::{category::ExprCategory, error::CategoryError},
-    compile_time_constant::CompileTimeConstantInfo,
+    compile_time_constant_checker::CompileTimeConstantInfo,
   },
 };
 

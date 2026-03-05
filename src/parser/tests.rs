@@ -3,7 +3,7 @@ use crate::{
   diagnostics::Diagnostic,
   lexer::Lexer,
   parser::{
-    parser::Parser,
+    Parser,
     program_parsing::{parse_block, parse_expr, parse_program, parse_stmt},
     token_stream::TokenStream,
   },

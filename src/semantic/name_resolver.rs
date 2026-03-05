@@ -6,13 +6,16 @@
 // - Hay errores de redeclaracion?
 // - Hay variables no definidas?
 
+mod error;
+mod resolution_info;
+
+pub(crate) use resolution_info::ResolutionInfo;
+
 use crate::{
   ast::{Ast, AstVisitor, BlockId, Expr, ExprId, Stmt, StmtId, walk_block, walk_expr, walk_stmt},
   diagnostics::{Diagnosable, Diagnostic},
   semantic::{
-    resolver::{ResolutionInfo, error::ResolverError},
-    scope::ScopeArena,
-    symbol::SymbolData,
+    name_resolver::error::ResolverError, scope::ScopeArena, symbol::SymbolData,
     symbol_table::SymbolTable,
   },
 };
@@ -151,10 +154,9 @@ impl AstVisitor for NameResolver<'_> {
       .expect("toda expresion debe tener scope");
     self.resolution_info.insert_expr_scope(expr_id, scope);
 
-    match self.ast.expr(expr_id) {
-      Expr::Var(name) => self.resolve_var_expr(expr_id, name),
-      _ => {}
-    };
+    if let Expr::Var(name) = self.ast.expr(expr_id) {
+      self.resolve_var_expr(expr_id, name);
+    }
 
     walk_expr(self, self.ast, expr_id);
   }

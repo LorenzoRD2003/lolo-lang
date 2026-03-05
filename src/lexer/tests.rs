@@ -1,6 +1,6 @@
 use proptest::prelude::*;
 
-use crate::lexer::{lexer::Lexer, token::TokenKind};
+use crate::lexer::{Lexer, token::TokenKind};
 
 #[test]
 fn eof_is_emitted() {
@@ -21,7 +21,7 @@ fn lex_simple_delimiters_tokens() {
     TokenKind::LCurlyBrace,
     TokenKind::RCurlyBrace,
     TokenKind::Semicolon,
-    TokenKind::EOF,
+    TokenKind::Eof,
   ];
   for expected_token in expected_tokens {
     let token = lexer.next(&mut diagnostics).unwrap();
@@ -41,7 +41,7 @@ fn lex_keywords() {
     TokenKind::Const,
     TokenKind::Else,
     TokenKind::Return,
-    TokenKind::EOF,
+    TokenKind::Eof,
   ];
   for expected_token in expected_tokens {
     let token = lexer.next(&mut diagnostics).unwrap();
@@ -84,7 +84,7 @@ fn lex_operators() {
     TokenKind::Bang,
     TokenKind::Slash,
     TokenKind::CaretCaret,
-    TokenKind::EOF,
+    TokenKind::Eof,
   ];
   for expected_token in expected_tokens {
     let token = lexer.next(&mut diagnostics);
@@ -148,7 +148,7 @@ fn lex_mixed_input() {
     TokenKind::NumberLiteral,
     TokenKind::Equal,
     TokenKind::BooleanLiteral,
-    TokenKind::EOF,
+    TokenKind::Eof,
   ];
   for expected_token in expected_tokens {
     let token = lexer.next(&mut diagnostics).unwrap();
@@ -198,7 +198,7 @@ proptest! {
     }
     let reconstructed: String = tokens
         .iter()
-        .filter(|t| t.kind() != TokenKind::EOF)
+        .filter(|t| t.kind() != TokenKind::Eof)
         .map(|t| t.lexeme().to_string())
         .collect();
     let no_ws: String = input.chars().filter(|c| !c.is_whitespace()).collect();

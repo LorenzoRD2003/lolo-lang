@@ -5,6 +5,17 @@
 // - Fusionar spans
 // - Emitir errores sintacticos (luego el que los muestra es el Renderer de diagnostics)
 
+mod error;
+mod precedence;
+mod program_parsing;
+mod token_binding;
+mod token_stream;
+
+pub(crate) use token_stream::TokenStream;
+
+#[cfg(test)]
+pub(crate) use program_parsing::parse_program;
+
 use crate::{
   ast::{
     Ast, BinaryExpr, BinaryOp, Block, BlockId, ConstValue, Expr, ExprId, Program, Stmt, StmtId,
@@ -17,7 +28,6 @@ use crate::{
     error::ParserError,
     precedence::ASSIGN_BP,
     token_binding::{infix_binding_power, prefix_binding_power},
-    token_stream::TokenStream,
   },
 };
 
@@ -54,6 +64,7 @@ impl<'a> Parser<'a> {
   /// - Prefix (nud)
   /// - Loop infix (led) -> Binding powers, Mergear los spans
   /// - Error handling
+  ///
   /// "Parseame una expresion cuya precedencia minima sea `min_bp`"
   fn parse_expr_bp(&mut self, min_bp: u8) -> Option<ExprId> {
     let mut lhs = self.parse_prefix()?;
@@ -63,9 +74,7 @@ impl<'a> Parser<'a> {
     }
     // Mientras el siguiente token pueda extender la expresion...
     // o el token no es operador, o el binding power es insuficiente
-    let mut i = 5;
     loop {
-      i = i + 1;
       let token = self.tokens.peek_first(self.diagnostics)?;
       let Some((lbp, _)) = infix_binding_power(token.kind()) else {
         break;
