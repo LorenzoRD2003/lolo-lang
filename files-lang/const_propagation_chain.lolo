@@ -1,0 +1,6 @@
+main {
+  const x = 5;
+  const y = x + 3;
+  const z = 2 * y;
+  return z;
+}

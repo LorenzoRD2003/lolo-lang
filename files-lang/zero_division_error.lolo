@@ -1,0 +1,6 @@
+main {
+  const x = 2;
+  const y = 3;
+  let z = 10 / (x + y - 5);
+  return z;
+}
