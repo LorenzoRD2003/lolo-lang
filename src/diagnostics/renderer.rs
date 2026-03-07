@@ -125,34 +125,55 @@ impl<'a, W: fmt::Write> Renderer<'a, W> {
   /// Renderiza los labels secundarios (y primarios opcionales) de un Diagnostic
   fn render_labels(&mut self, diag: &Diagnostic) -> fmt::Result {
     for label in diag.labels() {
-      let (line_start, _, line_end, _) = self.source_map.span_to_line_column(&label.span);
+      let (line_start, column_start, line_end, _) =
+        self.source_map.span_to_line_column(&label.span);
 
-      // imprimimos cada línea del span
+      // imprimimos cada linea del span
       for cur_line in line_start..=line_end {
         if let Some(Span {
-          start: line_start_offset,
-          end: line_end_offset,
+          start: cur_line_start,
+          end: cur_line_end,
         }) = self.source_map.get_nth_line(cur_line)
         {
-          let intersection_start = label.span.start.max(line_start_offset);
-          let intersection_end = label.span.end.min(line_end_offset);
+          let intersection_start = label.span.start.max(cur_line_start);
+          let intersection_end = label.span.end.min(cur_line_end);
           let width = (intersection_end - intersection_start).max(1);
-
-          let underline_char = match label.style {
-            LabelStyle::Primary => '^',
-            LabelStyle::Secondary => '~',
-          };
-          let underline = " ".repeat(intersection_start - line_start_offset)
-            + &underline_char.to_string().repeat(width);
-
-          // escribimos la linea de subrayado
-          writeln!(self.writer, "  | {}", underline)?;
 
           // si hay mensaje, lo escribimos al final de la primera linea del span
           if let Some(msg) = &label.message
             && cur_line == line_start
           {
-            writeln!(self.writer, "    = {}", msg)?;
+            writeln!(self.writer, "      {}", msg)?;
+          }
+
+          // si no es el primary span, hay que imprimir los demas datos
+          if let Some(primary_span) = diag.primary_span()
+            && primary_span != &label.span
+          {
+            writeln!(
+              self.writer,
+              " --> {}:{}:{}",
+              self.source_map.file_name(),
+              line_start,
+              column_start
+            )?;
+
+            writeln!(
+              self.writer,
+              "{} | {}",
+              cur_line,
+              &self.source_map.source()[cur_line_start..cur_line_end] // esto no se rompe porque mi lenguaje va a ser ASCII-only
+            )?;
+
+            // escribimos la linea de subrayado
+            let underline_char = match label.style {
+              LabelStyle::Primary => '^',
+              LabelStyle::Secondary => '~',
+            };
+            let underline = " ".repeat(intersection_start - cur_line_start)
+              + &underline_char.to_string().repeat(width);
+
+            writeln!(self.writer, "  | {}", underline)?;
           }
         }
       }
