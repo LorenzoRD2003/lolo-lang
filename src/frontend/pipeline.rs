@@ -1,4 +1,4 @@
-// Responsabilidad: ejecuta fases y aplica
+use std::time::Instant;
 
 use crate::frontend::{
   config::FrontendConfig,
@@ -24,7 +24,15 @@ impl FrontendPipeline {
   pub(crate) fn run(&self, source: &str, config: &FrontendConfig) -> FrontendResult {
     let mut ctx = PipelineContext::start(source.into());
     for stage in &self.stages {
-      match stage.run(&mut ctx, config) {
+      let start = Instant::now();
+      let result = stage.run(&mut ctx, config);
+      let elapsed = start.elapsed();
+
+      if config.show_stage_timings {
+        eprintln!("[timing] {}: {:?}", stage.name(), elapsed);
+      }
+
+      match result {
         StageResult::Continue => {}
         StageResult::Stop => break,
       }

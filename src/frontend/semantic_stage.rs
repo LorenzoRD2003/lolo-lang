@@ -11,6 +11,10 @@ use crate::{
 pub(crate) struct SemanticStage;
 
 impl Stage for SemanticStage {
+  fn name(&self) -> &'static str {
+    "Semantic"
+  }
+
   fn run(&self, ctx: &mut PipelineContext, config: &FrontendConfig) -> StageResult {
     let before_errors = ctx.diagnostics.len();
     let result = {

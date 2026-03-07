@@ -12,6 +12,8 @@ pub struct FrontendConfig {
   pub(crate) stop_after_parse_errors: bool,
   /// Deja de compilar si encuentra errores en la fase de analisis semantico.
   pub(crate) stop_after_semantic_errors: bool,
+  /// Indica cuanto tiempo tardo cada stage.
+  pub(crate) show_stage_timings: bool,
 }
 
 impl FrontendConfig {
@@ -22,6 +24,7 @@ impl FrontendConfig {
       show_semantic_result: false,
       stop_after_parse_errors: false,
       stop_after_semantic_errors: false,
+      show_stage_timings: false,
     }
   }
 
@@ -32,6 +35,7 @@ impl FrontendConfig {
       show_semantic_result: false,
       stop_after_parse_errors: true,
       stop_after_semantic_errors: true,
+      show_stage_timings: false,
     }
   }
 
@@ -42,6 +46,12 @@ impl FrontendConfig {
       show_semantic_result: true,
       stop_after_parse_errors: false,
       stop_after_semantic_errors: false,
+      show_stage_timings: false,
     }
+  }
+
+  pub fn with_stage_timings(mut self, enabled: bool) -> Self {
+    self.show_stage_timings = enabled;
+    self
   }
 }

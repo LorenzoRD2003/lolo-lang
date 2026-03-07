@@ -3,6 +3,8 @@
 use crate::frontend::{config::FrontendConfig, pipeline_context::PipelineContext};
 
 pub(crate) trait Stage {
+  fn name(&self) -> &'static str;
+
   fn run(&self, ctx: &mut PipelineContext, config: &FrontendConfig) -> StageResult;
 }
 

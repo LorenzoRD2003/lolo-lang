@@ -12,6 +12,10 @@ use crate::{
 pub(crate) struct ParsingStage;
 
 impl Stage for ParsingStage {
+  fn name(&self) -> &'static str {
+    "Parsing"
+  }
+
   fn run(&self, ctx: &mut PipelineContext, config: &FrontendConfig) -> StageResult {
     let lexer = Lexer::new(&ctx.source);
     let mut ts = TokenStream::new(lexer);
