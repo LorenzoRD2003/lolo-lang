@@ -1,7 +1,7 @@
-use std::env;
 use std::fmt;
 use std::fs;
 
+use lolo_lang::CliOptions;
 use lolo_lang::{Frontend, FrontendConfig, FrontendResult, Renderer};
 
 fn compile(source_code: &str, show_stage_timings: bool) -> FrontendResult {
@@ -26,32 +26,13 @@ fn render_diagnostics(
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-  let args: Vec<String> = env::args().skip(1).collect();
-  if args.is_empty() {
-    eprintln!("Uso: cargo run -- <archivo.lolo> [--timings]");
-    std::process::exit(1);
-  }
-
-  let mut filename: Option<&str> = None;
-  let mut show_stage_timings = false;
-
-  for arg in &args {
-    match arg.as_str() {
-      "--timings" => show_stage_timings = true,
-      s if !s.starts_with("--") && filename.is_none() => filename = Some(s),
-      _ => {
-        eprintln!("Argumento no reconocido: {arg}");
-        eprintln!("Uso: cargo run -- <archivo.lolo> [--timings]");
-        std::process::exit(1);
-      }
-    }
-  }
-
-  let filename = match filename {
-    Some(name) => name,
-    None => {
-      eprintln!("Falta el archivo de entrada.");
-      eprintln!("Uso: cargo run -- <archivo.lolo> [--timings]");
+  let CliOptions {
+    filename,
+    show_stage_timings,
+  } = match CliOptions::parse() {
+    Ok(v) => v,
+    Err(e) => {
+      eprintln!("{e}");
       std::process::exit(1);
     }
   };
@@ -60,7 +41,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
   let source_code = fs::read_to_string(path)?;
 
   let result = compile(&source_code, show_stage_timings);
-  let out = render_diagnostics(&source_code, filename, &result)?;
+  let out = render_diagnostics(&source_code, &filename, &result)?;
   if out.is_empty() {
     println!("No se encontraron diagnosticos sobre el programa. O sea, todo piola!");
   } else {
