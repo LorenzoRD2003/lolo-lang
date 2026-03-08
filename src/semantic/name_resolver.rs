@@ -83,7 +83,7 @@ impl<'a> NameResolver<'a> {
           .symbol_data_of(previous_symbol)
           .expect("debe existir una declaracion anterior");
         self.emit_error(&ResolverError::RedeclaredVariable {
-          name,
+          name: name.to_string(),
           span: self.ast.stmt_span(stmt_id),
           previous_span: self.ast.stmt_span(declaration_stmt),
         });
@@ -138,9 +138,9 @@ impl AstVisitor for NameResolver<'_> {
 
     match self.ast.stmt(stmt_id) {
       Stmt::LetBinding { var, .. } | Stmt::ConstBinding { var, .. } => {
-        self.resolve_binding(var, stmt_id)
+        self.resolve_binding(*var, stmt_id)
       }
-      Stmt::Assign { var, .. } => self.resolve_assign(var),
+      Stmt::Assign { var, .. } => self.resolve_assign(*var),
       _ => {}
     }
     walk_stmt(self, self.ast, stmt_id);
@@ -155,7 +155,7 @@ impl AstVisitor for NameResolver<'_> {
     self.resolution_info.insert_expr_scope(expr_id, scope);
 
     if let Expr::Var(name) = self.ast.expr(expr_id) {
-      self.resolve_var_expr(expr_id, name);
+      self.resolve_var_expr(expr_id, name.to_string());
     }
 
     walk_expr(self, self.ast, expr_id);

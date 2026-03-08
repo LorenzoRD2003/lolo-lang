@@ -27,7 +27,7 @@ impl Program {
   pub(crate) fn main_block(&self, ast: &Ast) -> BlockId {
     let main_block_expr = ast.expr(self.main_block_expr());
     match main_block_expr {
-      Expr::Block(bid) => bid,
+      Expr::Block(bid) => *bid,
       _ => unreachable!("la expresion del main_block deberia ser Block"),
     }
   }

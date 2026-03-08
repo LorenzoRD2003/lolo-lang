@@ -112,8 +112,8 @@ impl AstVisitor for CategoryChecker<'_> {
         var,
         initializer: value_expr,
       }
-      | Stmt::Assign { var, value_expr } => self.check_assignment(var, value_expr),
-      Stmt::ConstBinding { var, initializer } => self.check_const_binding(var, initializer),
+      | Stmt::Assign { var, value_expr } => self.check_assignment(*var, *value_expr),
+      Stmt::ConstBinding { var, initializer } => self.check_const_binding(*var, *initializer),
       _ => {}
     }
   }

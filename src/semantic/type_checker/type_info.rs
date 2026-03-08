@@ -29,7 +29,8 @@ impl TypeInfo {
     self.expr_types.insert(expr_id, ty);
   }
 
-  pub(crate) fn type_of_expr(&self, expr_id: ExprId) -> Type {
+  pub(crate) fn type_of_expr<I: Into<ExprId>>(&self, expr_id: I) -> Type {
+    let expr_id = expr_id.into();
     *self.expr_types.get(&expr_id).expect("ya debe tener tipo")
   }
 

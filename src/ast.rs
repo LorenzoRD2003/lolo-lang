@@ -26,6 +26,12 @@ impl IncrementalId for ExprId {
   }
 }
 
+impl From<&ExprId> for ExprId {
+  fn from(value: &ExprId) -> Self {
+    *value
+  }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub(crate) struct StmtId(pub(crate) usize);
 
@@ -35,12 +41,24 @@ impl IncrementalId for StmtId {
   }
 }
 
+impl From<&StmtId> for StmtId {
+  fn from(value: &StmtId) -> Self {
+    *value
+  }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub(crate) struct BlockId(pub(crate) usize);
 
 impl IncrementalId for BlockId {
   fn from_usize(value: usize) -> Self {
     BlockId(value)
+  }
+}
+
+impl From<&BlockId> for BlockId {
+  fn from(value: &BlockId) -> Self {
+    *value
   }
 }
 
@@ -77,11 +95,13 @@ impl Ast {
     }
   }
 
-  pub(crate) fn expr(&self, id: ExprId) -> Expr {
-    self.expr_arena[id.0].clone()
+  pub(crate) fn expr<I: Into<ExprId>>(&self, id: I) -> &Expr {
+    let id = id.into();
+    &self.expr_arena[id.0]
   }
 
-  pub(crate) fn expr_span(&self, id: ExprId) -> Span {
+  pub(crate) fn expr_span<I: Into<ExprId>>(&self, id: I) -> Span {
+    let id = id.into();
     self.expr_spans[id.0].clone()
   }
 
@@ -97,11 +117,13 @@ impl Ast {
     id
   }
 
-  pub(crate) fn stmt(&self, id: StmtId) -> Stmt {
-    self.stmt_arena[id.0].clone()
+  pub(crate) fn stmt<I: Into<StmtId>>(&self, id: I) -> &Stmt {
+    let id = id.into();
+    &self.stmt_arena[id.0]
   }
 
-  pub(crate) fn stmt_span(&self, id: StmtId) -> Span {
+  pub(crate) fn stmt_span<I: Into<StmtId>>(&self, id: I) -> Span {
+    let id = id.into();
     self.stmt_spans[id.0].clone()
   }
 
@@ -112,11 +134,13 @@ impl Ast {
     stmt_id
   }
 
-  pub(crate) fn block(&self, id: BlockId) -> Block {
-    self.block_arena[id.0].clone()
+  pub(crate) fn block<I: Into<BlockId>>(&self, id: I) -> &Block {
+    let id = id.into();
+    &self.block_arena[id.0]
   }
 
-  pub(crate) fn block_span(&self, id: BlockId) -> Span {
+  pub(crate) fn block_span<I: Into<BlockId>>(&self, id: I) -> Span {
+    let id = id.into();
     self.block_spans[id.0].clone()
   }
 

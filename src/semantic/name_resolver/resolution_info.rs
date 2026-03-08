@@ -61,7 +61,8 @@ impl ResolutionInfo {
     self.symbol_data.insert(symbol, data);
   }
 
-  pub(crate) fn symbol_of(&self, expr: ExprId) -> Option<SymbolId> {
+  pub(crate) fn symbol_of<I: Into<ExprId>>(&self, expr: I) -> Option<SymbolId> {
+    let expr = expr.into();
     self.expr_symbol_by_id.get(&expr).copied()
   }
 

@@ -30,11 +30,11 @@ pub(crate) fn walk_stmt<V: AstVisitor>(visitor: &mut V, ast: &Ast, stmt_id: Stmt
       initializer: value_expr,
     }
     | Stmt::Assign { var, value_expr } => {
-      visitor.visit_expr(var);
-      visitor.visit_expr(value_expr);
+      visitor.visit_expr(*var);
+      visitor.visit_expr(*value_expr);
     }
     Stmt::Expr(expr_id) | Stmt::Print(expr_id) | Stmt::Return(Some(expr_id)) => {
-      visitor.visit_expr(expr_id);
+      visitor.visit_expr(*expr_id);
     }
     Stmt::Return(None) => {}
   }
@@ -49,7 +49,7 @@ pub(crate) fn walk_expr<V: AstVisitor>(visitor: &mut V, ast: &Ast, expr_id: Expr
       visitor.visit_expr(binary_expr.lhs);
       visitor.visit_expr(binary_expr.rhs);
     }
-    Expr::Block(block_id) => visitor.visit_block(block_id),
+    Expr::Block(block_id) => visitor.visit_block(*block_id),
     Expr::If(if_expr) => {
       visitor.visit_if_expr(expr_id);
       visitor.visit_expr(if_expr.condition);

@@ -85,7 +85,7 @@ impl AstVisitor for MutabilityChecker<'_> {
         initializer: _,
       } => {
         // siempre deberiamos entrar a esta guarda
-        if let Some(symbol) = self.resolution_info.symbol_of(var) {
+        if let Some(symbol) = self.resolution_info.symbol_of(*var) {
           self.mutability_info.insert(symbol, Mutability::Mutable);
         }
       }
@@ -93,12 +93,12 @@ impl AstVisitor for MutabilityChecker<'_> {
         var,
         initializer: _,
       } => {
-        if let Some(symbol) = self.resolution_info.symbol_of(var) {
+        if let Some(symbol) = self.resolution_info.symbol_of(*var) {
           self.mutability_info.insert(symbol, Mutability::Immutable);
         }
       }
       Stmt::Assign { var, value_expr: _ } => {
-        if let Some(symbol) = self.resolution_info.symbol_of(var)
+        if let Some(symbol) = self.resolution_info.symbol_of(*var)
           && self
             .mutability_info
             .get(&symbol)
@@ -106,7 +106,7 @@ impl AstVisitor for MutabilityChecker<'_> {
         {
           self.emit_error(&MutabilityError::ImmutableVariable {
             name: self.symbol_table.symbol(symbol).name().to_string(),
-            span: self.ast.expr_span(var),
+            span: self.ast.expr_span(*var),
           });
         }
       }

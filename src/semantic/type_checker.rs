@@ -78,7 +78,7 @@ impl<'a> TypeChecker<'a> {
     let block = self.ast.block(block_id);
     match block.terminator() {
       Some(stmt_id) => match self.ast.stmt(stmt_id) {
-        Stmt::Return(Some(expr_id)) => self.type_info.type_of_expr(expr_id),
+        Stmt::Return(Some(expr_id)) => self.type_info.type_of_expr(*expr_id),
         Stmt::Return(None) => Type::Unit,
         _ => unreachable!("el terminador de bloque debe ser un Return"),
       },
@@ -119,14 +119,14 @@ impl AstVisitor for TypeChecker<'_> {
     walk_stmt(self, self.ast, stmt_id);
     match self.ast.stmt(stmt_id) {
       Stmt::LetBinding { var, initializer } | Stmt::ConstBinding { var, initializer } => {
-        let initializer_type = self.type_info.type_of_expr(initializer);
-        if let Some(symbol) = self.resolution_info.symbol_of(var) {
+        let initializer_type = self.type_info.type_of_expr(*initializer);
+        if let Some(symbol) = self.resolution_info.symbol_of(*var) {
           self.type_info.set_symbol_type(symbol, initializer_type);
         }
       }
       Stmt::Assign { var, value_expr } => {
-        let value_expr_type = self.type_info.type_of_expr(value_expr);
-        if let Some(symbol) = self.resolution_info.symbol_of(var)
+        let value_expr_type = self.type_info.type_of_expr(*value_expr);
+        if let Some(symbol) = self.resolution_info.symbol_of(*var)
           && let Some(symbol_type) = self.type_info.type_of_symbol(symbol)
           && value_expr_type != symbol_type
         {
@@ -147,7 +147,7 @@ impl AstVisitor for TypeChecker<'_> {
     walk_expr(self, self.ast, expr_id);
 
     let ty = match self.ast.expr(expr_id) {
-      Expr::Const(const_value) => const_value.into(),
+      Expr::Const(const_value) => const_value.clone().into(),
       Expr::Var(_) => {
         if let Some(symbol) = self.resolution_info.symbol_of(expr_id) {
           match self.type_info.type_of_symbol(symbol) {
@@ -159,12 +159,12 @@ impl AstVisitor for TypeChecker<'_> {
         }
       }
       Expr::Unary(UnaryExpr { op, operand }) => {
-        let operand_type = self.type_info.type_of_expr(operand);
+        let operand_type = self.type_info.type_of_expr(*operand);
         if op.is_valid_for_operand_type(operand_type) {
           op.result_type()
         } else {
           self.emit_error(&TypeError::InvalidUnaryOperation {
-            op,
+            op: *op,
             operand: operand_type,
             span: self.ast.expr_span(expr_id),
           });
@@ -172,13 +172,13 @@ impl AstVisitor for TypeChecker<'_> {
         }
       }
       Expr::Binary(BinaryExpr { op, lhs, rhs }) => {
-        let lhs_type = self.type_info.type_of_expr(lhs);
-        let rhs_type = self.type_info.type_of_expr(rhs);
+        let lhs_type = self.type_info.type_of_expr(*lhs);
+        let rhs_type = self.type_info.type_of_expr(*rhs);
         if op.is_valid_for_operand_types(lhs_type, rhs_type) {
           op.result_type()
         } else {
           self.emit_error(&TypeError::InvalidBinaryOperation {
-            op,
+            op: *op,
             lhs: lhs_type,
             rhs: rhs_type,
             span: self.ast.expr_span(expr_id),
@@ -186,7 +186,7 @@ impl AstVisitor for TypeChecker<'_> {
           Type::DefaultErrorType
         }
       }
-      Expr::Block(block_id) => self.block_type(block_id),
+      Expr::Block(block_id) => self.block_type(*block_id),
       Expr::If(if_expr) => self.infer_if_expr_type(expr_id, &if_expr),
     };
     self.type_info.insert_expr_type(expr_id, ty);

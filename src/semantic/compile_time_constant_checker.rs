@@ -78,8 +78,8 @@ impl AstVisitor for CompileTimeConstantChecker<'_> {
 
     // Asocio un const binding al simbolo de la variable, si el initializer es constante
     if let Stmt::ConstBinding { var, initializer } = self.ast.stmt(stmt_id)
-      && let Some(value) = self.compile_time_constant_info.get(&initializer)
-      && let Some(symbol_id) = self.resolution_info.symbol_of(var)
+      && let Some(value) = self.compile_time_constant_info.get(initializer)
+      && let Some(symbol_id) = self.resolution_info.symbol_of(*var)
     {
       self.const_bindings.insert(symbol_id, value.clone());
     }
@@ -90,12 +90,12 @@ impl AstVisitor for CompileTimeConstantChecker<'_> {
     walk_expr(self, self.ast, expr_id);
 
     let ctc_value = match self.ast.expr(expr_id) {
-      Expr::Const(v) => Some(v),
+      Expr::Const(v) => Some(v.clone()),
       Expr::Var(_) => self
         .resolution_info
         .symbol_of(expr_id)
         .and_then(|symbol_id| self.const_bindings.get(&symbol_id).cloned()),
-      Expr::Block(block_id) => self.block_const_value(block_id),
+      Expr::Block(block_id) => self.block_const_value(*block_id),
       Expr::If(if_expr) => {
         let condition_value = self.compile_time_constant_info.get(&if_expr.condition);
         match condition_value {
@@ -163,7 +163,7 @@ impl AstVisitor for CompileTimeConstantChecker<'_> {
           }
           (Some(ConstValue::Int32(x)), BinaryOp::Div, Some(ConstValue::Int32(y))) => {
             if y == 0 {
-              let rhs_span = self.ast.expr_span(rhs);
+              let rhs_span = self.ast.expr_span(*rhs);
               self.emit_error(&CompileTimeConstantError::ZeroDivision { span: rhs_span });
               None
             } else {

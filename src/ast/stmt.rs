@@ -19,3 +19,9 @@ pub(crate) enum Stmt {
   Return(Option<ExprId>),
   Print(ExprId),
 }
+
+impl PartialEq<Stmt> for &Stmt {
+  fn eq(&self, other: &Stmt) -> bool {
+    **self == *other
+  }
+}

@@ -18,6 +18,12 @@ pub(crate) enum Expr {
   If(IfExpr), // IfExpr := "if" Expr Block ("else" (Block | IfExpr))?
 }
 
+impl PartialEq<Expr> for &Expr {
+  fn eq(&self, other: &Expr) -> bool {
+    **self == *other
+  }
+}
+
 impl Expr {
   #[cfg(test)]
   pub(crate) fn is_var(&self) -> bool {
