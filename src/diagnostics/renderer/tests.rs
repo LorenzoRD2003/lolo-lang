@@ -83,6 +83,7 @@ fn renders_span_at_line_end() {
 fn renders_primary_and_secondary_labels() {
   let source_code = "abcde\nfghij\nklmno";
   let diag = Diagnostic::warning("warning".into())
+    .with_span(2..3)
     .with_label(Label::primary(0..2, Some("primary here".into())))
     .with_label(Label::secondary(5..7, Some("secondary here".into())));
 
@@ -99,7 +100,9 @@ fn renders_primary_and_secondary_labels() {
 #[test]
 fn renders_label_without_msg() {
   let source_code = "abcde\nfghij\nklmno";
-  let diag = Diagnostic::warning("warning".into()).with_label(Label::primary(0..2, None));
+  let diag = Diagnostic::warning("warning".into())
+    .with_span(2..3)
+    .with_label(Label::primary(0..2, None));
 
   let mut out = String::new();
   let mut renderer = Renderer::new(&source_code, "main.lolo", &mut out);
@@ -112,15 +115,15 @@ fn renders_label_without_msg() {
 fn renders_multiline_label() {
   let source_code = "1\n2\n3\n432\n5\n";
   let diag = Diagnostic::error("oops".into())
+    .with_span(0..1)
     .with_label(Label::secondary(0..12, Some("multiline epic label".into()))); // abarca line1 + line2
 
   let mut out = String::new();
   let mut renderer = Renderer::new(&source_code, "main.lolo", &mut out);
   renderer.render_labels(&diag).unwrap();
 
-  // debería contener varias líneas de '~'
+  // debería contener varias lineas de '~'
   let dash_count = out.chars().filter(|&c| c == '~').count();
-  dbg!(dash_count);
   assert!(dash_count >= 6); // al menos un dash por cada linea del span
   assert!(out.contains("multiline"));
 }
@@ -205,9 +208,16 @@ proptest! {
     len in 1usize..50
   ) {
     let input = String::from_utf8(bytes).unwrap();
+    prop_assume!(input.len() > 1);
     let safe_start = start.min(input.len() - 1);
     let safe_end = (safe_start + len).min(input.len());
+    let primary_span = if safe_start == 0 && safe_end == 1 {
+      1..2
+    } else {
+      0..1
+    };
     let diag = Diagnostic::error("prop test".into())
+        .with_span(primary_span)
         .with_label(Label::secondary(safe_start..safe_end, Some("label".into())));
 
     let mut out = String::new();
