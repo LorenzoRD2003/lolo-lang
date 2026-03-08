@@ -1,5 +1,5 @@
 use crate::{
-  ast::{Ast, AstVisitor, BinaryOp, Program, Stmt, UnaryOp},
+  ast::{Ast, AstVisitor, BinaryOp, Expr, Program, Stmt, UnaryOp},
   diagnostics::Diagnostic,
   semantic::{
     name_resolver::{ResolutionInfo, resolve},
@@ -119,6 +119,71 @@ fn if_condition_must_be_bool() {
 }
 
 #[test]
+fn if_expression_with_else_flows_type_into_let() {
+  let source = r#"
+    main {
+      let x = if true {
+        return 10;
+      } else {
+        return 20;
+      };
+    }
+  "#;
+  let (resolution_info, type_info, diagnostics, ast, program) = typecheck(source);
+
+  assert!(diagnostics.is_empty());
+  let main_block = ast.block(program.main_block(&ast));
+  let let_stmt_id = main_block.stmts()[0];
+  if let Stmt::LetBinding { var, initializer } = ast.stmt(let_stmt_id)
+    && let Some(symbol) = resolution_info.symbol_of(var)
+  {
+    assert_eq!(type_info.type_of_expr(initializer), Type::Int32);
+    assert_eq!(type_info.type_of_symbol(symbol), Some(Type::Int32));
+  } else {
+    panic!("se esperaba un let binding");
+  }
+}
+
+#[test]
+fn if_expression_without_else_has_unit_type() {
+  let source = r#"
+    main {
+      let x = if true { return 10; };
+    }
+  "#;
+  let (resolution_info, type_info, diagnostics, ast, program) = typecheck(source);
+
+  assert!(diagnostics.is_empty());
+  let main_block = ast.block(program.main_block(&ast));
+  let let_stmt_id = main_block.stmts()[0];
+  if let Stmt::LetBinding { var, initializer } = ast.stmt(let_stmt_id)
+    && let Some(symbol) = resolution_info.symbol_of(var)
+  {
+    assert_eq!(type_info.type_of_expr(initializer), Type::Unit);
+    assert_eq!(type_info.type_of_symbol(symbol), Some(Type::Unit));
+  } else {
+    panic!("se esperaba un let binding");
+  }
+}
+
+#[test]
+fn if_expression_branch_mismatch_produces_error() {
+  let source = r#"
+    main {
+      let x = if true { return 10; } else { return false; };
+    }
+  "#;
+  let (_, _, diagnostics, _, _) = typecheck(source);
+
+  assert_eq!(diagnostics.len(), 1);
+  assert!(diagnostics[0].msg().contains(&format!(
+    "mismatch de tipos: se esperaba {}, pero se encontro {}",
+    Type::Int32,
+    Type::Bool
+  )));
+}
+
+#[test]
 fn unary_negation_on_int_is_int() {
   let source = r#"
     main {
@@ -166,8 +231,10 @@ fn shadowing_preserves_inner_type() {
   assert!(diagnostics.is_empty());
   let main_block = ast.block(program.main_block(&ast));
   let if_stmt = ast.stmt(main_block.stmts()[1]);
-  if let Stmt::If { if_block, .. } = if_stmt {
-    let inner_stmt = ast.block(if_block).stmts()[1];
+  if let Stmt::Expr(if_expr_id) = if_stmt
+    && let Expr::If(if_expr) = ast.expr(if_expr_id)
+  {
+    let inner_stmt = ast.block(if_expr.if_block).stmts()[1];
     if let Stmt::Expr(expr_id) = ast.stmt(inner_stmt) {
       assert_eq!(type_info.type_of_expr(expr_id), Type::Bool);
     }

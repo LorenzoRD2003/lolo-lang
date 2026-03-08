@@ -1,0 +1,9 @@
+main {
+  let x = if true {
+    return 10;
+  } else {
+    return false;
+  };
+
+  print x;
+}

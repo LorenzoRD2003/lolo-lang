@@ -262,3 +262,50 @@ fn const_initialized_with_block_without_value() {
   assert!(compile_time_constant_info.is_empty());
   assert!(diagnostics.is_empty());
 }
+
+#[test]
+fn if_expression_with_constant_condition_is_constant() {
+  let source = r#"
+    main {
+      if true { return 10; } else { return 20; };
+    }
+  "#;
+  let (info, diagnostics, ast, program) = compile_time_check(source);
+  assert!(diagnostics.is_empty());
+  let stmt = ast.block(program.main_block(&ast)).stmts()[0];
+  if let Stmt::Expr(expr_id) = ast.stmt(stmt) {
+    assert_eq!(info.get(&expr_id), Some(&ConstValue::Int32(10)));
+  }
+}
+
+#[test]
+fn else_if_chain_constant_selects_matching_branch() {
+  let source = r#"
+    main {
+      if false { return 10; } else if true { return 20; } else { return 30; };
+    }
+  "#;
+  let (info, diagnostics, ast, program) = compile_time_check(source);
+  assert!(diagnostics.is_empty());
+  let stmt = ast.block(program.main_block(&ast)).stmts()[0];
+  if let Stmt::Expr(expr_id) = ast.stmt(stmt) {
+    assert_eq!(info.get(&expr_id), Some(&ConstValue::Int32(20)));
+  }
+}
+
+#[test]
+fn if_expression_with_non_constant_condition_is_not_constant() {
+  let source = r#"
+    main {
+      let cond = true;
+      if cond { return 1; } else { return 2; };
+    }
+  "#;
+  let (info, diagnostics, ast, program) = compile_time_check(source);
+  assert!(diagnostics.is_empty());
+  let block = ast.block(program.main_block(&ast));
+  let if_stmt = block.stmts()[1];
+  if let Stmt::Expr(expr_id) = ast.stmt(if_stmt) {
+    assert!(info.get(&expr_id).is_none());
+  }
+}

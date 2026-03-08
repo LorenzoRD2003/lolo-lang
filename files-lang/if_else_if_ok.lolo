@@ -1,0 +1,11 @@
+main {
+  const x = if true {
+    return 10;
+  } else if false {
+    return 20;
+  } else {
+    return 30;
+  };
+
+  print x;
+}

@@ -418,3 +418,51 @@ fn const_initialized_with_block_without_value() {
     assert!(block_cat.is_value() && !block_cat.is_constant() && !block_cat.is_place());
   }
 }
+
+#[test]
+fn if_expression_constant_is_value_and_constant() {
+  let source = r#"
+    main {
+      if true { return 1; } else { return 2; };
+    }
+  "#;
+  let (info, diagnostics, ast, program) = category_check(source);
+  assert!(diagnostics.is_empty());
+  let stmt = ast.block(program.main_block(&ast)).stmts()[0];
+  if let Stmt::Expr(expr_id) = ast.stmt(stmt) {
+    let cat = info.get(&expr_id).expect("debe existir categoria");
+    assert!(cat.is_value());
+    assert!(cat.is_constant());
+    assert!(!cat.is_place());
+  }
+}
+
+#[test]
+fn if_expression_non_constant_is_only_value() {
+  let source = r#"
+    main {
+      let cond = true;
+      if cond { return 1; } else { return 2; };
+    }
+  "#;
+  let (info, diagnostics, ast, program) = category_check(source);
+  assert!(diagnostics.is_empty());
+  let stmt = ast.block(program.main_block(&ast)).stmts()[1];
+  if let Stmt::Expr(expr_id) = ast.stmt(stmt) {
+    let cat = info.get(&expr_id).expect("debe existir categoria");
+    assert!(cat.is_value());
+    assert!(!cat.is_constant());
+    assert!(!cat.is_place());
+  }
+}
+
+#[test]
+fn const_binding_with_constant_if_expression_is_valid() {
+  let source = r#"
+    main {
+      const x = if false { return 1; } else if true { return 2; } else { return 3; };
+    }
+  "#;
+  let (_, diagnostics, _, _) = category_check(source);
+  assert!(diagnostics.is_empty());
+}

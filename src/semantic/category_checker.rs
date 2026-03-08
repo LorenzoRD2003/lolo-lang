@@ -128,7 +128,7 @@ impl AstVisitor for CategoryChecker<'_> {
       Expr::Var(_) => {
         ExprCategory::value().with(ExprCategory::place()) // todo()
       }
-      Expr::Unary(_) | Expr::Binary(_) => {
+      Expr::Unary(_) | Expr::Binary(_) | Expr::If(_) => {
         let value_category = ExprCategory::value();
         if self.compile_time_constant_info.contains_key(&expr_id) {
           value_category.with(ExprCategory::constant())

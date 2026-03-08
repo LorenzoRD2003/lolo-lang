@@ -103,6 +103,7 @@ impl<'a> Lexer<'a> {
 
         // Identifiers / Keywords
         // en particular, al terminar de parsear se verifica si el lexema obtenido es una keyword
+        // (incluyendo `if` y `else`, que ahora alimentan IfExpr en el parser)
         Some(c) if is_identifier_start(c) => return Some(self.lex_identifier_or_keyword()),
 
         // operadores: todavia no tenemos (serian +, -, *, ==, etc). pero irian aca

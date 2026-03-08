@@ -18,8 +18,8 @@ pub(crate) use program_parsing::parse_program;
 
 use crate::{
   ast::{
-    Ast, BinaryExpr, BinaryOp, Block, BlockId, ConstValue, Expr, ExprId, Program, Stmt, StmtId,
-    UnaryExpr, UnaryOp,
+    Ast, BinaryExpr, BinaryOp, Block, BlockId, ConstValue, Expr, ExprId, IfExpr, Program, Stmt,
+    StmtId, UnaryExpr, UnaryOp,
   },
   common::Span,
   diagnostics::{Diagnosable, Diagnostic},
@@ -135,6 +135,7 @@ impl<'a> Parser<'a> {
       }
       // inicio de un bloque. // Consumir `{` (con el bump ya lo hicimos)
       TokenKind::LCurlyBrace => self.parse_block_expression(span),
+      TokenKind::If => self.parse_if_expression_after_if(span.start),
       kind if kind.is_unary() => {
         // Consumir el operador `!` o `-` (con el bump ya lo hicimos)
         let rhs_id = self.parse_expr_bp(prefix_binding_power(kind)?)?;
@@ -208,7 +209,6 @@ impl<'a> Parser<'a> {
       TokenKind::Let => self.parse_let_stmt()?,
       TokenKind::Const => self.parse_const_stmt()?,
       TokenKind::Return => self.parse_return_stmt()?,
-      TokenKind::If => self.parse_if_stmt()?,
       TokenKind::Print => self.parse_print_stmt()?,
       _ => {
         // Ahora depende si el segundo token es un `=` o no
@@ -219,7 +219,14 @@ impl<'a> Parser<'a> {
           self.parse_assign_stmt()?
         } else {
           let expr_id = self.parse_expression()?;
-          self.expect_token(TokenKind::Semicolon);
+          if self
+            .tokens
+            .check_kind(0, TokenKind::Semicolon, self.diagnostics)
+          {
+            self.expect_token(TokenKind::Semicolon);
+          } else if !matches!(self.ast.expr(expr_id), Expr::If(_)) {
+            self.expect_token(TokenKind::Semicolon);
+          }
           (Stmt::Expr(expr_id), self.ast.expr_span(expr_id))
         }
       }
@@ -305,38 +312,43 @@ impl<'a> Parser<'a> {
     Some((Stmt::Return(Some(expr_id)), span_start..span_end))
   }
 
-  fn parse_if_stmt(&mut self) -> ParseResult<Stmt> {
-    // if expr { block } [ else { block } ]
-    let span_start = self.tokens.peek_first(self.diagnostics)?.span().start;
-    self.expect_token(TokenKind::If);
+  fn parse_if_expression_after_if(&mut self, span_start: usize) -> Option<ExprId> {
+    // IfExpr := "if" Expr Block ("else" (Block | IfExpr))?
     let condition = self.parse_expression()?;
-    // parsear el bloque if
     let if_block = self.parse_block()?;
+    let mut else_branch = None;
     let mut span_end = self.ast.block_span(if_block).end;
-    // si hay un bloque else, lo tengo que parsear
     if let Some(token) = self.tokens.peek_first(self.diagnostics)
       && matches!(token.kind(), TokenKind::Else)
     {
       self.expect_token(TokenKind::Else);
-      // parsear el bloque else
-      let else_block = self.parse_block()?;
-      span_end = self.ast.block_span(else_block).end;
-      Some((
-        Stmt::IfElse {
-          condition,
-          if_block,
-          else_block,
-        },
-        span_start..span_end,
-      ))
-    } else {
-      Some((
-        Stmt::If {
-          condition,
-          if_block,
-        },
-        span_start..span_end,
-      ))
+      let branch = self.parse_if_else_branch_expr()?;
+      span_end = self.ast.expr_span(branch).end;
+      else_branch = Some(branch);
+    }
+    let if_expr = Expr::If(IfExpr {
+      condition,
+      if_block,
+      else_branch,
+    });
+    Some(self.ast.add_expr(if_expr, span_start..span_end))
+  }
+
+  fn parse_if_else_branch_expr(&mut self) -> Option<ExprId> {
+    let token = self.tokens.peek_first(self.diagnostics)?.clone();
+    match token.kind() {
+      TokenKind::LCurlyBrace => {
+        let block_id = self.parse_block()?;
+        Some(self.ast.add_block_expr(block_id))
+      }
+      TokenKind::If => {
+        let if_token = self.tokens.bump(self.diagnostics)?;
+        self.parse_if_expression_after_if(if_token.span().start)
+      }
+      _ => {
+        self.emit_error(&ParserError::UnexpectedToken(token));
+        None
+      }
     }
   }
 

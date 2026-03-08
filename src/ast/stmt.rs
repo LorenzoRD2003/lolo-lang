@@ -1,4 +1,4 @@
-use crate::ast::{BlockId, ExprId};
+use crate::ast::ExprId;
 
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) enum Stmt {
@@ -17,14 +17,5 @@ pub(crate) enum Stmt {
     value_expr: ExprId,
   },
   Return(Option<ExprId>),
-  If {
-    condition: ExprId,
-    if_block: BlockId,
-  },
-  IfElse {
-    condition: ExprId,
-    if_block: BlockId,
-    else_block: BlockId,
-  },
   Print(ExprId),
 }

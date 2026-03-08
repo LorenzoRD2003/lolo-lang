@@ -450,14 +450,14 @@ fn parse_if_stmt_structure() {
   let (ast, stmt_id) = parse_stmt("if abc { def; fg; }");
   let stmt_id = stmt_id.unwrap();
   match ast.stmt(stmt_id) {
-    Stmt::If {
-      condition,
-      if_block,
-    } => {
-      assert!(ast.expr(condition).is_var());
-      assert_eq!(ast.block(if_block).stmts().len(), 2);
-    }
-    _ => panic!("Expected If"),
+    Stmt::Expr(expr_id) => match ast.expr(expr_id) {
+      Expr::If(if_expr) => {
+        assert!(ast.expr(if_expr.condition).is_var());
+        assert_eq!(ast.block(if_expr.if_block).stmts().len(), 2);
+      }
+      _ => panic!("Expected If expression"),
+    },
+    _ => panic!("Expected Expr statement"),
   }
 }
 
@@ -466,17 +466,20 @@ fn if_condition_expression() {
   let (ast, stmt_id) = parse_stmt("if a != b { c; }");
   let stmt_id = stmt_id.unwrap();
   match ast.stmt(stmt_id) {
-    Stmt::If { condition, .. } => {
-      assert!(matches!(
-        ast.expr(condition),
-        Expr::Binary(BinaryExpr {
-          op: BinaryOp::Neq,
-          lhs: _,
-          rhs: _
-        })
-      ));
-    }
-    _ => panic!("Expected If"),
+    Stmt::Expr(expr_id) => match ast.expr(expr_id) {
+      Expr::If(if_expr) => {
+        assert!(matches!(
+          ast.expr(if_expr.condition),
+          Expr::Binary(BinaryExpr {
+            op: BinaryOp::Neq,
+            lhs: _,
+            rhs: _
+          })
+        ));
+      }
+      _ => panic!("Expected If expression"),
+    },
+    _ => panic!("Expected Expr statement"),
   }
 }
 
@@ -492,30 +495,100 @@ fn parse_if_else_stmt_structure() {
   let (ast, stmt_id) = parse_stmt("if !x { def; } else { ghi; jkl; mno; }");
   let stmt_id = stmt_id.unwrap();
   match ast.stmt(stmt_id) {
-    Stmt::IfElse {
-      condition,
-      if_block,
-      else_block,
-    } => {
-      assert!(matches!(
-        ast.expr(condition),
-        Expr::Unary(UnaryExpr {
-          op: UnaryOp::Not,
-          operand: _
-        })
-      ));
-      assert_eq!(ast.block(if_block).stmts().len(), 1);
-      assert_eq!(ast.block(else_block).stmts().len(), 3);
-    }
-    _ => panic!("Expected IfElse"),
+    Stmt::Expr(expr_id) => match ast.expr(expr_id) {
+      Expr::If(if_expr) => {
+        assert!(matches!(
+          ast.expr(if_expr.condition),
+          Expr::Unary(UnaryExpr {
+            op: UnaryOp::Not,
+            operand: _
+          })
+        ));
+        assert_eq!(ast.block(if_expr.if_block).stmts().len(), 1);
+        let else_expr = if_expr.else_branch.expect("else branch expected");
+        match ast.expr(else_expr) {
+          Expr::Block(else_block) => assert_eq!(ast.block(else_block).stmts().len(), 3),
+          _ => panic!("Expected else block expression"),
+        }
+      }
+      _ => panic!("Expected If expression"),
+    },
+    _ => panic!("Expected Expr statement"),
   }
+}
+
+#[test]
+fn parse_else_if_chain_structure() {
+  let (ast, stmt_id) = parse_stmt("if a { b; } else if c { d; }");
+  let stmt_id = stmt_id.unwrap();
+  match ast.stmt(stmt_id) {
+    Stmt::Expr(expr_id) => match ast.expr(expr_id) {
+      Expr::If(if_expr) => {
+        let else_expr = if_expr.else_branch.expect("else-if branch expected");
+        assert!(matches!(ast.expr(else_expr), Expr::If(_)));
+      }
+      _ => panic!("Expected If expression"),
+    },
+    _ => panic!("Expected Expr statement"),
+  }
+}
+
+#[test]
+fn parse_if_expression_with_deep_else_if_and_final_else() {
+  let (ast, expr_id) = parse_expr("if a { b; } else if c { d; } else { e; }");
+  let expr_id = expr_id.expect("if expression expected");
+  let Expr::If(root_if) = ast.expr(expr_id) else {
+    panic!("Expected If expression")
+  };
+  let Some(else_if_expr_id) = root_if.else_branch else {
+    panic!("Expected else-if branch")
+  };
+  let Expr::If(else_if) = ast.expr(else_if_expr_id) else {
+    panic!("Expected nested If expression")
+  };
+  let Some(final_else_expr_id) = else_if.else_branch else {
+    panic!("Expected final else branch")
+  };
+  assert!(matches!(ast.expr(final_else_expr_id), Expr::Block(_)));
+}
+
+#[test]
+fn if_expression_statement_allows_optional_semicolon() {
+  let (ast, stmt_id) = parse_stmt("if cond { x; };");
+  let stmt_id = stmt_id.expect("statement expected");
+  match ast.stmt(stmt_id) {
+    Stmt::Expr(expr_id) => assert!(matches!(ast.expr(expr_id), Expr::If(_))),
+    _ => panic!("Expected Expr statement"),
+  }
+}
+
+#[test]
+fn invalid_else_branch_in_if_expression_emits_error() {
+  let source = r#"
+    main {
+      if true { a; } else 123;
+    }
+  "#;
+  let diagnostics = source_to_parser_diagnostics(source);
+  assert!(!diagnostics.is_empty());
+  assert!(
+    diagnostics
+      .iter()
+      .any(|d| d.msg().contains("hubo un token inesperado '123'"))
+  );
 }
 
 #[test]
 fn if_without_else_is_not_if_else() {
   let (ast, stmt_id) = parse_stmt("if abc { def; }");
   let stmt_id = stmt_id.unwrap();
-  assert!(matches!(ast.stmt(stmt_id), Stmt::If { .. }));
+  match ast.stmt(stmt_id) {
+    Stmt::Expr(expr_id) => match ast.expr(expr_id) {
+      Expr::If(if_expr) => assert!(if_expr.else_branch.is_none()),
+      _ => panic!("Expected If expression"),
+    },
+    _ => panic!("Expected Expr statement"),
+  }
 }
 
 #[test]
@@ -523,13 +596,19 @@ fn nested_if_parses_correctly() {
   let (ast, stmt_id) = parse_stmt("if a { if b { c; } }");
   let stmt_id = stmt_id.unwrap();
   match ast.stmt(stmt_id) {
-    Stmt::If { if_block, .. } => {
-      let block = ast.block(if_block);
-      let stmts = block.stmts();
-      assert_eq!(stmts.len(), 1);
-      assert!(matches!(ast.stmt(stmts[0]), Stmt::If { .. }));
-    }
-    _ => panic!("Expected If"),
+    Stmt::Expr(expr_id) => match ast.expr(expr_id) {
+      Expr::If(if_expr) => {
+        let block = ast.block(if_expr.if_block);
+        let stmts = block.stmts();
+        assert_eq!(stmts.len(), 1);
+        match ast.stmt(stmts[0]) {
+          Stmt::Expr(inner_expr) => assert!(matches!(ast.expr(inner_expr), Expr::If(_))),
+          _ => panic!("Expected nested If expression statement"),
+        }
+      }
+      _ => panic!("Expected If expression"),
+    },
+    _ => panic!("Expected Expr statement"),
   }
 }
 

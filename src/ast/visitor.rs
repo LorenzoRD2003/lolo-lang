@@ -4,6 +4,7 @@ pub(crate) trait AstVisitor {
   fn visit_block(&mut self, block_id: BlockId);
   fn visit_stmt(&mut self, stmt_id: StmtId);
   fn visit_expr(&mut self, expr_id: ExprId);
+  fn visit_if_expr(&mut self, _expr_id: ExprId) {}
   fn visit_program(&mut self, program: &Program) {
     self.visit_expr(program.main_block_expr());
   }
@@ -36,22 +37,6 @@ pub(crate) fn walk_stmt<V: AstVisitor>(visitor: &mut V, ast: &Ast, stmt_id: Stmt
       visitor.visit_expr(expr_id);
     }
     Stmt::Return(None) => {}
-    Stmt::If {
-      condition,
-      if_block,
-    } => {
-      visitor.visit_expr(condition);
-      visitor.visit_block(if_block);
-    }
-    Stmt::IfElse {
-      condition,
-      if_block,
-      else_block,
-    } => {
-      visitor.visit_expr(condition);
-      visitor.visit_block(if_block);
-      visitor.visit_block(else_block);
-    }
   }
 }
 
@@ -65,5 +50,13 @@ pub(crate) fn walk_expr<V: AstVisitor>(visitor: &mut V, ast: &Ast, expr_id: Expr
       visitor.visit_expr(binary_expr.rhs);
     }
     Expr::Block(block_id) => visitor.visit_block(block_id),
+    Expr::If(if_expr) => {
+      visitor.visit_if_expr(expr_id);
+      visitor.visit_expr(if_expr.condition);
+      visitor.visit_block(if_expr.if_block);
+      if let Some(else_expr) = if_expr.else_branch {
+        visitor.visit_expr(else_expr);
+      }
+    }
   }
 }

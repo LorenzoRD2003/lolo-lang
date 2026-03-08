@@ -15,6 +15,7 @@ pub(crate) enum Expr {
   Unary(UnaryExpr),
   Binary(BinaryExpr),
   Block(BlockId),
+  If(IfExpr), // IfExpr := "if" Expr Block ("else" (Block | IfExpr))?
 }
 
 impl Expr {
@@ -210,4 +211,12 @@ impl Display for BinaryOp {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     write!(f, "{}", self.as_string())
   }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub(crate) struct IfExpr {
+  pub(crate) condition: ExprId,
+  pub(crate) if_block: BlockId,
+  /// `else <block>` se representa como `Expr::Block`, y `else if ...` como `Expr::If`.
+  pub(crate) else_branch: Option<ExprId>,
 }

@@ -15,8 +15,8 @@ pub(crate) use type_info::TypeInfo;
 
 use crate::{
   ast::{
-    Ast, AstVisitor, BinaryExpr, BlockId, Expr, ExprId, Stmt, StmtId, UnaryExpr, walk_block,
-    walk_expr, walk_stmt,
+    Ast, AstVisitor, BinaryExpr, BlockId, Expr, ExprId, IfExpr, Stmt, StmtId, UnaryExpr,
+    walk_block, walk_expr, walk_stmt,
   },
   diagnostics::{Diagnosable, Diagnostic},
   semantic::{name_resolver::ResolutionInfo, type_checker::error::TypeError, types::Type},
@@ -73,6 +73,39 @@ impl<'a> TypeChecker<'a> {
   fn emit_error(&mut self, err: &TypeError) {
     self.diagnostics.push(err.to_diagnostic());
   }
+
+  fn block_type(&self, block_id: BlockId) -> Type {
+    let block = self.ast.block(block_id);
+    match block.terminator() {
+      Some(stmt_id) => match self.ast.stmt(stmt_id) {
+        Stmt::Return(Some(expr_id)) => self.type_info.type_of_expr(expr_id),
+        Stmt::Return(None) => Type::Unit,
+        _ => unreachable!("el terminador de bloque debe ser un Return"),
+      },
+      None => Type::Unit,
+    }
+  }
+
+  fn infer_if_expr_type(&mut self, expr_id: ExprId, if_expr: &IfExpr) -> Type {
+    self.check_condition(if_expr.condition);
+    let if_block_ty = self.block_type(if_expr.if_block);
+    if let Some(else_branch_expr) = if_expr.else_branch {
+      let else_ty = self.type_info.type_of_expr(else_branch_expr);
+      if if_block_ty == Type::DefaultErrorType || else_ty == Type::DefaultErrorType {
+        return Type::DefaultErrorType;
+      }
+      if if_block_ty != else_ty {
+        self.emit_error(&TypeError::MismatchedTypes {
+          expected: if_block_ty,
+          found: else_ty,
+          span: self.ast.expr_span(expr_id),
+        });
+        return Type::DefaultErrorType;
+      }
+      return if_block_ty;
+    }
+    Type::Unit
+  }
 }
 
 impl AstVisitor for TypeChecker<'_> {
@@ -103,9 +136,6 @@ impl AstVisitor for TypeChecker<'_> {
             span: self.ast.stmt_span(stmt_id),
           });
         }
-      }
-      Stmt::If { condition, .. } | Stmt::IfElse { condition, .. } => {
-        self.check_condition(condition)
       }
       _ => {}
     }
@@ -156,20 +186,8 @@ impl AstVisitor for TypeChecker<'_> {
           Type::DefaultErrorType
         }
       }
-      Expr::Block(block_id) => {
-        let block = self.ast.block(block_id);
-        match block.terminator() {
-          // 2. Si hay terminator, debe ser Stmt::Return(...)
-          // Tipo del bloque = tipo del return
-          Some(stmt_id) => match self.ast.stmt(stmt_id) {
-            Stmt::Return(Some(expr_id)) => self.type_info.type_of_expr(expr_id),
-            Stmt::Return(None) => Type::Unit,
-            _ => unreachable!("el terminador de bloque debe ser un Return"),
-          },
-          // 3. Si no hay terminator, tipo del bloque = Unit
-          None => Type::Unit,
-        }
-      }
+      Expr::Block(block_id) => self.block_type(block_id),
+      Expr::If(if_expr) => self.infer_if_expr_type(expr_id, &if_expr),
     };
     self.type_info.insert_expr_type(expr_id, ty);
   }

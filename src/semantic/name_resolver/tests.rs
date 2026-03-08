@@ -191,12 +191,10 @@ fn assignment_in_inner_scope_resolves_to_the_same_symbol_id() {
     panic!("Se esperaba un statement LetBinding");
   };
 
-  if let Stmt::If {
-    condition: _,
-    if_block: if_block_id,
-  } = ast.stmt(main_block_stmts[1])
+  if let Stmt::Expr(if_expr_id) = ast.stmt(main_block_stmts[1])
+    && let Expr::If(if_expr) = ast.expr(if_expr_id)
   {
-    let if_block = ast.block(if_block_id);
+    let if_block = ast.block(if_expr.if_block);
     let assign_stmt_id = if_block.stmts()[0];
     assert!(
       resolution_info
@@ -210,7 +208,7 @@ fn assignment_in_inner_scope_resolves_to_the_same_symbol_id() {
         .expect("se esperaba un simbolo");
       assert_eq!(symbol_outer_scope, symbol_inner_scope);
     } else {
-      panic!("Se esperaba un statement If");
+      panic!("Se esperaba un statement Assign");
     }
   }
 }

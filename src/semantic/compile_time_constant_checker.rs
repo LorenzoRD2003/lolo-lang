@@ -53,6 +53,17 @@ impl<'a> CompileTimeConstantChecker<'a> {
   fn emit_error(&mut self, err: &CompileTimeConstantError) {
     self.diagnostics.push(err.to_diagnostic());
   }
+
+  fn block_const_value(&self, block_id: crate::ast::BlockId) -> Option<ConstValue> {
+    let block = self.ast.block(block_id);
+    block.terminator().and_then(|stmt| {
+      if let Stmt::Return(Some(expr)) = self.ast.stmt(stmt) {
+        self.compile_time_constant_info.get(&expr).cloned()
+      } else {
+        None
+      }
+    })
+  }
 }
 
 impl AstVisitor for CompileTimeConstantChecker<'_> {
@@ -84,15 +95,16 @@ impl AstVisitor for CompileTimeConstantChecker<'_> {
         .resolution_info
         .symbol_of(expr_id)
         .and_then(|symbol_id| self.const_bindings.get(&symbol_id).cloned()),
-      Expr::Block(block_id) => {
-        let block = self.ast.block(block_id);
-        block.terminator().and_then(|stmt| {
-          if let Stmt::Return(Some(expr)) = self.ast.stmt(stmt) {
-            self.compile_time_constant_info.get(&expr).cloned()
-          } else {
-            None
-          }
-        })
+      Expr::Block(block_id) => self.block_const_value(block_id),
+      Expr::If(if_expr) => {
+        let condition_value = self.compile_time_constant_info.get(&if_expr.condition);
+        match condition_value {
+          Some(ConstValue::Bool(true)) => self.block_const_value(if_expr.if_block),
+          Some(ConstValue::Bool(false)) => if_expr
+            .else_branch
+            .and_then(|expr| self.compile_time_constant_info.get(&expr).cloned()),
+          _ => None,
+        }
       }
       // Todos los operadores que tenemos son puros asi que esto está bien
       Expr::Unary(UnaryExpr { op, operand }) => {
