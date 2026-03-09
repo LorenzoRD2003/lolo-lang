@@ -219,12 +219,11 @@ impl<'a> Parser<'a> {
           self.parse_assign_stmt()?
         } else {
           let expr_id = self.parse_expression()?;
-          if self
-            .tokens
-            .check_kind(0, TokenKind::Semicolon, self.diagnostics)
+          if !matches!(self.ast.expr(expr_id), Expr::If(_))
+            || self
+              .tokens
+              .check_kind(0, TokenKind::Semicolon, self.diagnostics)
           {
-            self.expect_token(TokenKind::Semicolon);
-          } else if !matches!(self.ast.expr(expr_id), Expr::If(_)) {
             self.expect_token(TokenKind::Semicolon);
           }
           (Stmt::Expr(expr_id), self.ast.expr_span(expr_id))

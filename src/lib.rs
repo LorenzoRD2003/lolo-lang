@@ -3,6 +3,7 @@ mod cli;
 mod common;
 mod diagnostics;
 mod frontend;
+mod ir;
 mod lexer;
 mod parser;
 mod passes;
