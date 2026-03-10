@@ -199,7 +199,7 @@ impl ProgramBuilder {
       block.set_terminator(inst_id);
     } else {
       debug_assert!(
-        block.has_terminator(),
+        !block.has_terminator(),
         "no se puede agregar una instruccion tras el terminador"
       );
       block.add_inst(inst_id);

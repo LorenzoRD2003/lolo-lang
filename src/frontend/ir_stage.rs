@@ -12,7 +12,7 @@ pub(crate) struct IrStage;
 
 impl Stage for IrStage {
   fn name(&self) -> &'static str {
-    "Semantic"
+    "Intermediate Representation (IR)"
   }
 
   fn run(&self, ctx: &mut PipelineContext, config: &FrontendConfig) -> StageResult {

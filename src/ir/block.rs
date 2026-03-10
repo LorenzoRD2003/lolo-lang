@@ -27,7 +27,7 @@ impl BlockData {
   }
 
   pub(crate) fn add_phi(&mut self, phi: InstId) {
-    self.insts.push(phi);
+    self.phis.push(phi);
   }
 
   pub(crate) fn insts(&self) -> &[InstId] {

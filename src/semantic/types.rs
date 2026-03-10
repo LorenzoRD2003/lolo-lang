@@ -42,6 +42,14 @@ impl SemanticType {
       _ => false,
     }
   }
+
+  #[allow(clippy::match_like_matches_macro)]
+  pub(crate) fn is_error(&self) -> bool {
+    match &self {
+      Self::DefaultErrorType => true,
+      _ => false,
+    }
+  }
 }
 
 impl Display for SemanticType {

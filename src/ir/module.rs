@@ -1,10 +1,16 @@
 // Representar el programa completo en IR.
 // Por ahora no hay funciones, cuando haya funciones mucha de la logica de aca ira a otro archivo.
 
+#[cfg(test)]
+use std::collections::{BTreeSet, VecDeque};
+
+#[cfg(test)]
+use crate::ir::{inst::InstKind, value::IrConstant};
+
 use crate::ir::{
   block::BlockData,
   ids::{BlockId, InstId, ValueId},
-  inst::{InstData, InstKind},
+  inst::InstData,
   types::IrType,
   value::ValueData,
 };
@@ -57,6 +63,7 @@ impl IrModule {
     self.insts.push(data);
   }
 
+  #[allow(dead_code)]
   pub(crate) fn block(&self, id: BlockId) -> &BlockData {
     &self.blocks[id.0]
   }
@@ -77,10 +84,11 @@ impl IrModule {
     self.values.push(data);
   }
 
+  #[cfg(test)]
   #[allow(dead_code)]
   /// Obtiene los predecesores de un bloque en el CFG del modulo.
   /// Es supralineal, luego TODO seria ideal construir una estructura CFG y usar eso.
-  pub(crate) fn predecessors(&self, block: BlockId) -> Vec<BlockId> {
+  fn predecessors(&self, block: BlockId) -> Vec<BlockId> {
     let mut preds = vec![];
     for i in 0..self.blocks.len() {
       let block_id = BlockId(i);
@@ -94,9 +102,9 @@ impl IrModule {
     preds
   }
 
-  #[allow(dead_code)]
+  #[cfg(test)]
   /// Obtiene los sucesores de un bloque en el CFG del modulo.
-  pub(crate) fn successors(&self, block: BlockId) -> Vec<BlockId> {
+  fn successors(&self, block: BlockId) -> Vec<BlockId> {
     let terminator = self.block(block).terminator();
     match self.inst(terminator).kind {
       InstKind::Jump { target } => vec![target],
@@ -108,5 +116,104 @@ impl IrModule {
       InstKind::Return { .. } => vec![],
       _ => unreachable!(),
     }
+  }
+
+  // ======================
+  //   Helpers para tests
+  // ======================
+
+  #[cfg(test)]
+  fn reachable_blocks(&self) -> Vec<BlockId> {
+    let mut seen = BTreeSet::new();
+    let mut queue = VecDeque::new();
+    queue.push_back(self.entry_block());
+    while let Some(block) = queue.pop_front() {
+      if !seen.insert(block.0) {
+        continue;
+      }
+      for succ in self.successors(block) {
+        queue.push_back(succ);
+      }
+    }
+    seen.into_iter().map(BlockId).collect()
+  }
+
+  #[cfg(test)]
+  pub(crate) fn reachable_inst_ids(&self) -> Vec<InstId> {
+    let mut seen = BTreeSet::new();
+    for block in self.reachable_blocks() {
+      // insert phi instructions before the other instructions
+      for inst_id in self.block(block).phis() {
+        seen.insert(inst_id.0);
+      }
+      for inst_id in self.block(block).insts() {
+        seen.insert(inst_id.0);
+      }
+      seen.insert(self.block(block).terminator().0);
+    }
+    seen.into_iter().map(InstId).collect()
+  }
+
+  #[cfg(test)]
+  pub(crate) fn count_insts_by_kind(&self, pred: impl Fn(&InstKind) -> bool) -> usize {
+    self
+      .reachable_inst_ids()
+      .into_iter()
+      .filter(|inst_id| pred(&self.inst(*inst_id).kind))
+      .count()
+  }
+
+  #[cfg(test)]
+  pub(crate) fn const_results(&self, constant: IrConstant) -> Vec<ValueId> {
+    self
+      .reachable_inst_ids()
+      .into_iter()
+      .filter_map(|inst_id| match &self.inst(inst_id).kind {
+        InstKind::Const(c) if *c == constant => self.inst(inst_id).result,
+        _ => None,
+      })
+      .collect()
+  }
+
+  #[cfg(test)]
+  pub(crate) fn print_operands(&self) -> Vec<ValueId> {
+    self
+      .reachable_inst_ids()
+      .into_iter()
+      .filter_map(|inst_id| match &self.inst(inst_id).kind {
+        InstKind::Print(value_id) => Some(*value_id),
+        _ => None,
+      })
+      .collect()
+  }
+
+  #[cfg(test)]
+  pub(crate) fn phi_results_with_types(&self) -> Vec<(ValueId, IrType)> {
+    self
+      .reachable_inst_ids()
+      .into_iter()
+      .filter_map(|inst_id| match self.inst(inst_id).kind {
+        InstKind::Phi { .. } => {
+          let result = self
+            .inst(inst_id)
+            .result
+            .expect("todo phi debe tener resultado");
+          Some((result, self.value(result).ty().clone()))
+        }
+        _ => None,
+      })
+      .collect()
+  }
+
+  #[cfg(test)]
+  pub(crate) fn return_values(&self) -> Vec<Option<ValueId>> {
+    self
+      .reachable_inst_ids()
+      .into_iter()
+      .filter_map(|inst_id| match &self.inst(inst_id).kind {
+        InstKind::Return { value } => Some(*value),
+        _ => None,
+      })
+      .collect()
   }
 }

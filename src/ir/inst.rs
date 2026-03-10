@@ -30,7 +30,7 @@ impl InstData {
 
   pub(crate) fn without_result(kind: InstKind) -> Self {
     debug_assert!(
-      kind.produces_value(),
+      !kind.produces_value(),
       "la instruccion IR debe tener resultado, pero se hallo {kind}"
     );
     Self { result: None, kind }

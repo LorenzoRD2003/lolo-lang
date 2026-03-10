@@ -38,11 +38,11 @@ The following modules are complete and conceptually stable:
 - ✅ Diagnostics
 - ✅ Semantic analysis (NameResolver -> TypeChecker -> ConstantTimeCompileChecker -> MutabilityChecker -> CategoryChecker)
 - ✅ Frontend (Lexer → Parser → Semantic Pipeline)
+- ✅ Design a simple intermediate representation (IR)
+- ✅ Implement lowering from AST to IR
 
 The frontend is implemented as a configurable, extensible pipeline with
 well-defined compilation stages.
-
-The next planned phase is **lowering to an intermediate representation (IR)**.
 
 ---
 
@@ -62,14 +62,13 @@ The next planned phase is **lowering to an intermediate representation (IR)**.
   - Comparisons: `<`, `<=`, `>`, `>=`, `==`, `!=`
   - Logical: `&&`, `||`
 - Block expressions
+- `if/else` expressions
 
 ### Statements
 
 - `let` and `const` bindings
 - `assign` to already declared variables
 - `return`
-- `if`
-- `if/else`
 - `print`
 
 ### Semantic Analysis Phases
@@ -137,7 +136,9 @@ Semantic Stages:
   - Compile-Time Constant Analysis
   - Category Analysis
 ↓
-(coming next: IR lowering stage)
+IR lowering stage
+↓
+CFG construction (TODO)
 ```
 
 Each stage is clearly separated and tested independently.
@@ -165,6 +166,7 @@ Current frontend stages:
    - Mutability Checking
    - Compile-Time Constant Analysis
    - Category Checking
+3. IR Lowering
 
 ## Extensibility
 
@@ -172,7 +174,7 @@ The frontend pipeline is designed to be open for extension. Compilation phases a
 
 - Each stage implements a common interface.
 - Stages are dynamically dispatched.
-- Adding a new phase (e.g., IR lowering, optimizations) requires no modification to existing stages.
+- Adding a new phase (e.g., optimizations) requires no modification to existing stages.
 
 ---
 
@@ -188,7 +190,9 @@ The crate intentionally exposes a minimal public API:
 
 - `Renderer`
 
-The AST, semantic internals, and compiler passes remain encapsulated.
+- `CliOptions`
+
+Everything else remains encapsulated.
 
 ---
 
@@ -284,8 +288,6 @@ main {
 
 Next milestones:
 
-- Design a simple intermediate representation (IR)
-- Implement lowering from AST to IR
 - Introduce control flow graph (CFG)
 - Optimization passes
 - Optional interpreter or backend

@@ -8,8 +8,10 @@ use crate::{
     Ast, BinaryExpr, BinaryOp, BlockId as AstBlockId, Expr, ExprId, IfExpr, Program as AstProgram,
     Stmt, StmtId, UnaryExpr, UnaryOp,
   },
+  diagnostics::Diagnosable,
   ir::{
     builder::ProgramBuilder,
+    error::LoweringError,
     ids::{BlockId, ValueId},
     inst::PhiInput,
     module::IrModule,
@@ -25,7 +27,6 @@ pub(crate) struct LoweringCtx<'a> {
   semantic: &'a SemanticResult,
   builder: ProgramBuilder,
   env: SsaEnv,
-  #[allow(dead_code)]
   diagnostics: &'a mut Vec<Diagnostic>,
 }
 
@@ -43,7 +44,8 @@ impl<'a> LoweringCtx<'a> {
   ) -> IrModule {
     let mut ctx = Self::new(program, ast, semantics, diagnostics);
     let main_block = program.main_block(ast);
-    ctx.lower_block(main_block);
+    let ret = ctx.lower_block(main_block);
+    ctx.builder.emit_return(Some(ret));
     ctx.builder.finish()
   }
 
@@ -56,14 +58,26 @@ impl<'a> LoweringCtx<'a> {
     semantics: &'a SemanticResult,
     diagnostics: &'a mut Vec<Diagnostic>,
   ) -> Self {
-    let return_ty = semantics.type_info.type_of_expr(program.main_block_expr());
-    Self {
+    let main_block_expr_id = program.main_block_expr();
+    let return_ty = semantics.type_info.type_of_expr(main_block_expr_id);
+    let mut ctx = Self {
       ast,
       semantic: semantics,
       builder: ProgramBuilder::new("main".into(), return_ty.into()),
       env: SsaEnv::new(),
       diagnostics,
+    };
+    if return_ty.is_error() {
+      ctx.emit_error(&LoweringError::CannotLowerErrorTypedExpr {
+        expr_id: main_block_expr_id,
+        span: ctx.ast.expr_span(main_block_expr_id),
+      });
     }
+    ctx
+  }
+
+  fn emit_error(&mut self, err: &LoweringError) {
+    self.diagnostics.push(err.to_diagnostic());
   }
 
   /// Asocia un simbolo fuente con su valor SSA actual.
@@ -75,26 +89,30 @@ impl<'a> LoweringCtx<'a> {
   fn lower_block(&mut self, ast_block_id: AstBlockId) -> ValueId {
     let ast_block = self.ast.block(ast_block_id);
     for stmt_id in ast_block.stmts() {
-      self.lower_stmt(*stmt_id);
+      match self.ast.stmt(stmt_id) {
+        // En AST, Return determina el valor del bloque.
+        Stmt::Return(Some(expr_id)) => return self.lower_expr(*expr_id),
+        Stmt::Return(None) => return self.builder.emit_const(IrConstant::Unit),
+        _ => self.lower_stmt(*stmt_id),
+      }
     }
-
-    if let Some(tail_expr) = ast_block.tail_expr() {
-      self.lower_expr(tail_expr)
-    } else {
-      self.builder.emit_const(IrConstant::Unit)
-    }
+    self.builder.emit_const(IrConstant::Unit)
   }
 
   /// Baja un statement del AST a instrucciones IR.
   fn lower_stmt(&mut self, stmt_id: StmtId) {
     match self.ast.stmt(stmt_id) {
       Stmt::LetBinding { var, initializer } | Stmt::ConstBinding { var, initializer } => {
-        let symbol = self.lower_lvalue(*var);
+        let Some(symbol) = self.lower_lvalue(*var) else {
+          return;
+        };
         let value = self.lower_expr(*initializer);
         self.bind_symbol(symbol, value);
       }
       Stmt::Assign { var, value_expr } => {
-        let symbol = self.lower_lvalue(*var);
+        let Some(symbol) = self.lower_lvalue(*var) else {
+          return;
+        };
         let value = self.lower_expr(*value_expr);
         self.bind_symbol(symbol, value);
       }
@@ -105,13 +123,8 @@ impl<'a> LoweringCtx<'a> {
         let value = self.lower_expr(*expr_id);
         self.builder.emit_print(value);
       }
-      Stmt::Return(Some(expr_id)) => {
-        let value = self.lower_expr(*expr_id);
-        self.builder.emit_return(Some(value));
-      }
-      Stmt::Return(None) => {
-        self.builder.emit_return(None);
-      }
+      // lower_block consume Return y lo interpreta como valor del bloque.
+      Stmt::Return(_) => {}
     }
   }
 
@@ -119,15 +132,25 @@ impl<'a> LoweringCtx<'a> {
   fn lower_expr(&mut self, expr_id: ExprId) -> ValueId {
     match self.ast.expr(expr_id) {
       Expr::Var(_) => {
-        let symbol = self
-          .semantic
-          .resolution_info
-          .symbol_of(expr_id)
-          .expect("debe haber un simbolo para la expresion");
-        self
-          .env
-          .get(symbol)
-          .expect("debe haber un simbolo para el valor")
+        let Some(symbol) = self.semantic.resolution_info.symbol_of(expr_id) else {
+          self.emit_error(&LoweringError::MissingSymbol {
+            expr_id,
+            span: self.ast.expr_span(expr_id),
+          });
+          // Recuperacion minima para mantener el lowering en marcha.
+          return self.builder.emit_const(IrConstant::Unit);
+        };
+        match self.env.get(symbol) {
+          Some(value_id) => value_id,
+          None => {
+            self.emit_error(&LoweringError::MissingSsaValueForSymbol {
+              symbol,
+              span: self.ast.expr_span(expr_id),
+            });
+            // Recuperacion minima para mantener el lowering en marcha.
+            self.builder.emit_const(IrConstant::Unit)
+          }
+        }
       }
       Expr::Const(c) => self.builder.emit_const(c.into()),
       Expr::Unary(UnaryExpr { op, operand }) => self.lower_unary(*op, *operand),
@@ -143,13 +166,18 @@ impl<'a> LoweringCtx<'a> {
 
   /// Baja una expresion que aparece del lado izquierdo de una asignacion.
   /// Develve el SymbolId que se va a (re)definir.
-  fn lower_lvalue(&mut self, expr_id: ExprId) -> SymbolId {
+  fn lower_lvalue(&mut self, expr_id: ExprId) -> Option<SymbolId> {
     match self.ast.expr(expr_id) {
-      Expr::Var(_) => self
-        .semantic
-        .resolution_info
-        .symbol_of(expr_id)
-        .expect("debe haber un simbolo para la expresion"),
+      Expr::Var(_) => {
+        let symbol = self.semantic.resolution_info.symbol_of(expr_id);
+        if symbol.is_none() {
+          self.emit_error(&LoweringError::MissingSymbol {
+            expr_id,
+            span: self.ast.expr_span(expr_id),
+          });
+        }
+        symbol
+      }
       _ => unreachable!(),
     }
   }
@@ -176,6 +204,13 @@ impl<'a> LoweringCtx<'a> {
     else_branch: Option<ExprId>,
   ) -> ValueId {
     let branch_ty = self.semantic.type_info.type_of_expr(expr_id);
+    if branch_ty.is_error() {
+      self.emit_error(&LoweringError::CannotLowerErrorTypedExpr {
+        expr_id,
+        span: self.ast.expr_span(expr_id),
+      });
+    }
+    let has_else_branch = else_branch.is_some();
 
     let env_before = self.env.clone();
     let cond_value = self.lower_expr(cond);
@@ -196,11 +231,7 @@ impl<'a> LoweringCtx<'a> {
     // Rama Else
     self.env = env_before.clone_for_branch();
     self.builder.switch_to_block(else_block);
-    let else_val = if let Some(else_expr) = else_branch {
-      self.lower_expr(else_expr)
-    } else {
-      self.builder.emit_const(IrConstant::Unit)
-    };
+    let else_val = else_branch.map(|else_expr| self.lower_expr(else_expr));
     self.builder.emit_jump(merge_block);
     let else_env_out = self.env.clone();
 
@@ -214,11 +245,20 @@ impl<'a> LoweringCtx<'a> {
       &else_env_out,
     );
 
-    let phi_inputs = vec![
-      PhiInput::new(if_block, if_val),
-      PhiInput::new(else_block, else_val),
-    ];
-    self.builder.emit_phi(branch_ty.into(), phi_inputs)
+    if has_else_branch {
+      self.builder.emit_phi(
+        branch_ty.into(),
+        vec![
+          PhiInput::new(if_block, if_val),
+          PhiInput::new(
+            else_block,
+            else_val.expect("debe existir valor de rama else para construir el phi"),
+          ),
+        ],
+      )
+    } else {
+      self.builder.emit_const(IrConstant::Unit)
+    }
   }
 
   fn merge_envs_with_phis(
@@ -249,3 +289,6 @@ impl<'a> LoweringCtx<'a> {
     merged
   }
 }
+
+#[cfg(test)]
+mod tests;

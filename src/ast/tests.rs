@@ -215,7 +215,12 @@ fn block_with_return_has_tail_expr() {
   assert!(block.tail_expr().is_some());
   let tail_expr = block.tail_expr().unwrap();
   match ast.expr(tail_expr) {
-    Expr::Binary(_) | Expr::Var(_) | Expr::Const(_) | Expr::Unary(_) | Expr::Block(_) | Expr::If(_) => {}
+    Expr::Binary(_)
+    | Expr::Var(_)
+    | Expr::Const(_)
+    | Expr::Unary(_)
+    | Expr::Block(_)
+    | Expr::If(_) => {}
   }
 }
 

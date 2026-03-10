@@ -87,7 +87,8 @@ impl<'a> TypeChecker<'a> {
     let if_block_ty = self.block_type(if_expr.if_block);
     if let Some(else_branch_expr) = if_expr.else_branch {
       let else_ty = self.type_info.type_of_expr(else_branch_expr);
-      if if_block_ty == SemanticType::DefaultErrorType || else_ty == SemanticType::DefaultErrorType {
+      if if_block_ty == SemanticType::DefaultErrorType || else_ty == SemanticType::DefaultErrorType
+      {
         return SemanticType::DefaultErrorType;
       }
       if if_block_ty != else_ty {
