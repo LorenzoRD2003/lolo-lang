@@ -51,12 +51,12 @@ pub(crate) fn walk_expr<V: AstVisitor>(visitor: &mut V, ast: &Ast, expr_id: Expr
     }
     Expr::Block(block_id) => visitor.visit_block(*block_id),
     Expr::If(if_expr) => {
-      visitor.visit_if_expr(expr_id);
       visitor.visit_expr(if_expr.condition);
       visitor.visit_block(if_expr.if_block);
       if let Some(else_expr) = if_expr.else_branch {
         visitor.visit_expr(else_expr);
       }
+      visitor.visit_if_expr(expr_id);
     }
   }
 }

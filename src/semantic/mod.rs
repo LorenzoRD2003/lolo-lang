@@ -18,4 +18,4 @@ pub(crate) use phase_graph::PhaseGraph;
 pub(crate) use result::SemanticResult;
 pub(crate) use semantic_analyzer::SemanticAnalyzer;
 pub(crate) use symbol::SymbolId;
-pub(crate) use types::Type;
+pub(crate) use types::SemanticType;

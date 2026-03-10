@@ -3,17 +3,16 @@
 use crate::{
   ast::{Ast, Program},
   diagnostics::Diagnostic,
+  ir::IrModule,
   semantic::SemanticResult,
 };
-pub(crate) type IrModule = ();
 
 pub(crate) struct PipelineContext {
   pub(crate) source: String,
   pub(crate) ast: Option<Ast>,
   pub(crate) program: Option<Program>,
   pub(crate) semantic: Option<SemanticResult>,
-  #[allow(dead_code)]
-  pub(crate) ir: Option<IrModule>, // futuro
+  pub(crate) ir: Option<IrModule>,
   pub(crate) diagnostics: Vec<Diagnostic>,
 }
 

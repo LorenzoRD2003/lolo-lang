@@ -6,7 +6,7 @@ use std::fmt::Display;
 use crate::ast::ConstValue;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub(crate) enum Type {
+pub(crate) enum SemanticType {
   Int32,
   Bool,
   /// `Unit` significa "no hay valor significativo". Es como `void` en C, `()` en Rust, etc.
@@ -16,7 +16,7 @@ pub(crate) enum Type {
   DefaultErrorType,
 }
 
-impl Type {
+impl SemanticType {
   fn as_string(&self) -> &str {
     match &self {
       Self::Int32 => "Int32",
@@ -44,13 +44,13 @@ impl Type {
   }
 }
 
-impl Display for Type {
+impl Display for SemanticType {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     write!(f, "{}", self.as_string())
   }
 }
 
-impl From<ConstValue> for Type {
+impl From<ConstValue> for SemanticType {
   fn from(value: ConstValue) -> Self {
     match value {
       ConstValue::Int32(_) => Self::Int32,

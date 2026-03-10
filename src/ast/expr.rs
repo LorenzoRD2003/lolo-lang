@@ -5,7 +5,7 @@ use std::fmt::Display;
 use crate::{
   ast::{BlockId, ExprId},
   lexer::{Token, TokenKind},
-  semantic::Type,
+  semantic::SemanticType,
 };
 
 #[derive(Debug, Clone, PartialEq)]
@@ -82,7 +82,7 @@ impl UnaryOp {
     }
   }
 
-  pub(crate) fn is_valid_for_operand_type(&self, operand_type: Type) -> bool {
+  pub(crate) fn is_valid_for_operand_type(&self, operand_type: SemanticType) -> bool {
     match self {
       Self::Neg => operand_type.is_number(),
       Self::Not => operand_type.is_boolean(),
@@ -91,10 +91,10 @@ impl UnaryOp {
 
   /// Por ahora esta funcion no depende de los operandos.
   /// En un futuro eso podria cambiar, e ir directamente en UnaryExpr
-  pub(crate) fn result_type(&self) -> Type {
+  pub(crate) fn result_type(&self) -> SemanticType {
     match self {
-      Self::Neg => Type::Int32,
-      Self::Not => Type::Bool,
+      Self::Neg => SemanticType::Int32,
+      Self::Not => SemanticType::Bool,
     }
   }
 
@@ -159,7 +159,11 @@ impl BinaryOp {
     }
   }
 
-  pub(crate) fn is_valid_for_operand_types(&self, lhs_type: Type, rhs_type: Type) -> bool {
+  pub(crate) fn is_valid_for_operand_types(
+    &self,
+    lhs_type: SemanticType,
+    rhs_type: SemanticType,
+  ) -> bool {
     match self {
       Self::Add
       | Self::Sub
@@ -179,9 +183,9 @@ impl BinaryOp {
 
   /// Por ahora esta funcion no depende de los operandos.
   /// En un futuro eso podria cambiar, e ir directamente en BinaryExpr
-  pub(crate) fn result_type(&self) -> Type {
+  pub(crate) fn result_type(&self) -> SemanticType {
     match self {
-      Self::Add | Self::Sub | Self::Mul | Self::Div => Type::Int32,
+      Self::Add | Self::Sub | Self::Mul | Self::Div => SemanticType::Int32,
       Self::Eq
       | Self::Neq
       | Self::Gt
@@ -190,7 +194,7 @@ impl BinaryOp {
       | Self::Lte
       | Self::And
       | Self::Or
-      | Self::Xor => Type::Bool,
+      | Self::Xor => SemanticType::Bool,
     }
   }
 

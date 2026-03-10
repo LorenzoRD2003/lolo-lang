@@ -7,6 +7,7 @@
 
 mod config;
 mod frontend_result;
+mod ir_stage;
 mod parsing_stage;
 mod pipeline;
 mod pipeline_context;

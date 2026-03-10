@@ -378,6 +378,7 @@ impl<'a> Parser<'a> {
   fn parse_block_after_lbrace(&mut self, lbrace_span: &Span) -> Option<BlockId> {
     // block ::== { stmt* }
     let mut block = Block::new();
+    let mut has_terminator = false;
     let span_start = lbrace_span.start;
     loop {
       // el bloque termina cuando encontramos el `}` correspondiente, o con un error si se teremina el archivo
@@ -391,15 +392,16 @@ impl<'a> Parser<'a> {
       }
       // hay que parsear un statement
       let stmt_id = self.parse_statement()?;
-      // Si el statement es un return, lo marcamos como terminator
-      if matches!(self.ast.stmt(stmt_id), Stmt::Return(_)) {
+      // Si el statement es un return, el bloque no acepta mas statements
+      if let Stmt::Return(maybe_expr) = self.ast.stmt(stmt_id) {
         block.add_stmt(stmt_id);
-        block.set_terminator(Some(stmt_id));
+        block.set_tail_expr(*maybe_expr);
+        has_terminator = true;
         // Después de un return no debería haber más statements
         // pero dejamos que el loop detecte el '}'
         continue;
       }
-      if block.terminator().is_some() {
+      if has_terminator {
         self.emit_error(&ParserError::StatementAfterReturn(
           self.ast.stmt_span(stmt_id),
         ));

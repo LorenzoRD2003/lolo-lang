@@ -56,13 +56,9 @@ impl<'a> CompileTimeConstantChecker<'a> {
 
   fn block_const_value(&self, block_id: crate::ast::BlockId) -> Option<ConstValue> {
     let block = self.ast.block(block_id);
-    block.terminator().and_then(|stmt| {
-      if let Stmt::Return(Some(expr)) = self.ast.stmt(stmt) {
-        self.compile_time_constant_info.get(&expr).cloned()
-      } else {
-        None
-      }
-    })
+    block
+      .tail_expr()
+      .and_then(|expr| self.compile_time_constant_info.get(&expr).cloned())
   }
 }
 

@@ -6,18 +6,19 @@ use std::collections::HashMap;
 use crate::{
   ast::ExprId,
   common::Span,
-  ir::ids::{InstId, LocalId, ValueId},
+  ir::ids::{InstId, ValueId},
   semantic::SymbolId,
 };
 
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub(crate) struct IrSourceMap {
   /// Vinculo entre instrucciones y el span que ocupaba en el codigo fuente original.
   inst_to_span: HashMap<InstId, Span>,
-  /// Vinculo entre valores de la IR y expresiones del AST
+  /// Vinculo entre valores SSA y expresiones del AST
   value_to_expr: HashMap<ValueId, ExprId>,
-  /// Vinculo entre locales de la IR y simbolos de la resolucion semantica.
-  local_to_symbol: HashMap<LocalId, SymbolId>,
+  /// Vinculo entre valores SSA y simbolos de la fuente
+  value_to_symbol: HashMap<ValueId, SymbolId>,
 }
 
 impl IrSourceMap {
@@ -25,7 +26,7 @@ impl IrSourceMap {
     Self {
       inst_to_span: HashMap::new(),
       value_to_expr: HashMap::new(),
-      local_to_symbol: HashMap::new(),
+      value_to_symbol: HashMap::new(),
     }
   }
 }

@@ -3,22 +3,21 @@
 
 use crate::ir::{
   block::BlockData,
-  ids::{BlockId, InstId, LocalId, ValueId},
-  inst::InstData,
-  local::LocalData,
+  ids::{BlockId, InstId, ValueId},
+  inst::{InstData, InstKind},
   types::IrType,
   value::ValueData,
 };
 
 #[derive(Debug, Clone)]
-pub(crate) struct Program {
+pub(crate) struct IrModule {
+  #[allow(dead_code)]
   name: String,
   entry_block: Option<BlockId>,
   // params: Vec<...> en un futuro
   /// tipo de los valores de retorno del programa
+  #[allow(dead_code)]
   return_type: IrType,
-  /// variables locales del programa
-  locals: Vec<LocalData>,
   /// instrucciones del programa
   insts: Vec<InstData>,
   /// bloques del programa
@@ -27,19 +26,19 @@ pub(crate) struct Program {
   values: Vec<ValueData>,
 }
 
-impl Program {
+impl IrModule {
   pub(crate) fn new(name: String, return_type: IrType) -> Self {
     Self {
       name,
       entry_block: None,
       return_type,
-      locals: Vec::new(),
       insts: Vec::new(),
       blocks: Vec::new(),
       values: Vec::new(),
     }
   }
 
+  #[allow(dead_code)]
   pub(crate) fn entry_block(&self) -> BlockId {
     self
       .entry_block
@@ -48,14 +47,6 @@ impl Program {
 
   pub(crate) fn set_entry_block(&mut self, main_block: BlockId) {
     self.entry_block = Some(main_block);
-  }
-
-  pub(crate) fn local(&self, id: LocalId) -> &LocalData {
-    &self.locals[id.0]
-  }
-
-  pub(crate) fn add_local(&mut self, data: LocalData) {
-    self.locals.push(data);
   }
 
   pub(crate) fn inst(&self, id: InstId) -> &InstData {
@@ -86,11 +77,36 @@ impl Program {
     self.values.push(data);
   }
 
+  #[allow(dead_code)]
+  /// Obtiene los predecesores de un bloque en el CFG del modulo.
+  /// Es supralineal, luego TODO seria ideal construir una estructura CFG y usar eso.
   pub(crate) fn predecessors(&self, block: BlockId) -> Vec<BlockId> {
-    todo!()
+    let mut preds = vec![];
+    for i in 0..self.blocks.len() {
+      let block_id = BlockId(i);
+      preds.extend(
+        self
+          .successors(block_id)
+          .iter()
+          .filter(|&&succ| succ == block),
+      );
+    }
+    preds
   }
 
+  #[allow(dead_code)]
+  /// Obtiene los sucesores de un bloque en el CFG del modulo.
   pub(crate) fn successors(&self, block: BlockId) -> Vec<BlockId> {
-    todo!()
+    let terminator = self.block(block).terminator();
+    match self.inst(terminator).kind {
+      InstKind::Jump { target } => vec![target],
+      InstKind::Branch {
+        if_block,
+        else_block,
+        ..
+      } => vec![if_block, else_block],
+      InstKind::Return { .. } => vec![],
+      _ => unreachable!(),
+    }
   }
 }

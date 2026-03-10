@@ -3,6 +3,7 @@ use std::time::Instant;
 use crate::frontend::{
   config::FrontendConfig,
   frontend_result::FrontendResult,
+  ir_stage::IrStage,
   parsing_stage::ParsingStage,
   pipeline_context::PipelineContext,
   semantic_stage::SemanticStage,
@@ -17,7 +18,11 @@ pub(crate) struct FrontendPipeline {
 impl FrontendPipeline {
   pub(crate) fn default() -> Self {
     Self {
-      stages: vec![Box::new(ParsingStage), Box::new(SemanticStage)],
+      stages: vec![
+        Box::new(ParsingStage),
+        Box::new(SemanticStage),
+        Box::new(IrStage),
+      ],
     }
   }
 

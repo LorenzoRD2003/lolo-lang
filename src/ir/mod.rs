@@ -1,7 +1,6 @@
 // La IR de lolo-lang:
 //  - es tipada,
-//  - es de tres direcciones
-//  - no es SSA
+//  - es SSA
 //  - es basada en bloques
 
 mod block;
@@ -10,11 +9,14 @@ mod error;
 mod ids;
 mod inst;
 mod ir_source_map;
-mod local;
 mod lowering;
+mod module;
 mod pretty;
-mod program;
+mod ssa_env;
 mod types;
 mod value;
 mod verify;
 mod visitor;
+
+pub(crate) use lowering::LoweringCtx;
+pub(crate) use module::IrModule;

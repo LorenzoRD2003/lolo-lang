@@ -1,9 +1,9 @@
 // program = main block
 
-use crate::{ast::ExprId, common::Span};
-
-#[cfg(test)]
-use crate::ast::{Ast, BlockId, Expr};
+use crate::{
+  ast::{Ast, BlockId, Expr, ExprId},
+  common::Span,
+};
 
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) struct Program {
@@ -23,7 +23,6 @@ impl Program {
     self.main_block_expr
   }
 
-  #[cfg(test)]
   pub(crate) fn main_block(&self, ast: &Ast) -> BlockId {
     let main_block_expr = ast.expr(self.main_block_expr());
     match main_block_expr {

@@ -1,9 +1,6 @@
 // Responsabilidad: representar los valores de la IR.
 
-use crate::ir::{
-  ids::{LocalId, ValueId},
-  types::IrType,
-};
+use crate::{ast::ConstValue, ir::types::IrType};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct ValueData {
@@ -15,38 +12,44 @@ impl ValueData {
   pub(crate) fn new(ty: IrType, kind: ValueKind) -> Self {
     Self { ty, kind }
   }
+
+  pub(crate) fn ty(&self) -> &IrType {
+    &self.ty
+  }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) enum ValueKind {
-  Local(LocalId),
-  Const(Constant),
+  Const(IrConstant),
   InstResult,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub(crate) enum Constant {
+pub(crate) enum IrConstant {
   Unit,
-  Boolean(bool),
   Int32(i32),
+  Bool(bool),
 }
 
-impl Constant {
+impl From<&ConstValue> for IrConstant {
+  fn from(value: &ConstValue) -> Self {
+    match value {
+      ConstValue::Int32(x) => Self::Int32(*x),
+      ConstValue::Bool(b) => Self::Bool(*b),
+    }
+  }
+}
+
+impl IrConstant {
   fn ty(&self) -> IrType {
     match self {
-      Constant::Unit => IrType::Unit,
-      Constant::Boolean(_) => IrType::Bool,
-      Constant::Int32(_) => IrType::Int32,
+      IrConstant::Unit => IrType::Unit,
+      IrConstant::Bool(_) => IrType::Bool,
+      IrConstant::Int32(_) => IrType::Int32,
     }
   }
 
   pub(crate) fn as_value(&self) -> ValueData {
     ValueData::new(self.ty(), ValueKind::Const(self.clone()))
   }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub(crate) enum IrOperand {
-  Value(ValueId),
-  Const(Constant),
 }

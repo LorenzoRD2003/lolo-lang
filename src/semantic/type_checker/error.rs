@@ -4,7 +4,7 @@ use crate::{
   ast::{BinaryOp, UnaryOp},
   common::Span,
   diagnostics::{Diagnosable, Diagnostic},
-  semantic::types::Type,
+  semantic::types::SemanticType,
 };
 
 #[derive(Debug, Clone)]
@@ -12,24 +12,24 @@ pub(crate) enum TypeError {
   /// Una operacion binaria es invalida
   InvalidBinaryOperation {
     op: BinaryOp,
-    lhs: Type,
-    rhs: Type,
+    lhs: SemanticType,
+    rhs: SemanticType,
     span: Span,
   },
   /// Una operacion unaria es invalida
   InvalidUnaryOperation {
     op: UnaryOp,
-    operand: Type,
+    operand: SemanticType,
     span: Span,
   },
   /// Se espera un tipo y se recibe otro
   MismatchedTypes {
-    expected: Type,
-    found: Type,
+    expected: SemanticType,
+    found: SemanticType,
     span: Span,
   },
   /// Se encuentra una condicion no booleana en un If
-  NonBooleanCondition { found: Type, span: Span },
+  NonBooleanCondition { found: SemanticType, span: Span },
 }
 
 impl Diagnosable for TypeError {

@@ -190,7 +190,7 @@ fn all_expr_ids_in_nested_blocks_are_valid() {
 }
 
 #[test]
-fn block_with_return_has_terminator() {
+fn block_with_return_has_tail_expr() {
   let source = r#"
     main {
       let x = {
@@ -212,16 +212,15 @@ fn block_with_return_has_terminator() {
   };
 
   let block = ast.block(block_id);
-  assert!(block.terminator().is_some());
-  let terminator_stmt = block.terminator().unwrap();
-  match ast.stmt(terminator_stmt) {
-    Stmt::Return(Some(_)) => {}
-    _ => panic!("Block terminator must be Stmt::Return"),
+  assert!(block.tail_expr().is_some());
+  let tail_expr = block.tail_expr().unwrap();
+  match ast.expr(tail_expr) {
+    Expr::Binary(_) | Expr::Var(_) | Expr::Const(_) | Expr::Unary(_) | Expr::Block(_) | Expr::If(_) => {}
   }
 }
 
 #[test]
-fn block_without_return_has_no_terminator() {
+fn block_without_return_has_no_tail_expr() {
   let source = r#"
     main {
       let x = {
@@ -241,11 +240,11 @@ fn block_without_return_has_no_terminator() {
     _ => panic!("Expected let binding"),
   };
   let block = ast.block(block_id);
-  assert!(block.terminator().is_none());
+  assert!(block.tail_expr().is_none());
 }
 
 #[test]
-fn block_terminator_is_last_statement() {
+fn block_tail_expr_matches_return_expression() {
   let source = r#"
     main {
       let x = {
@@ -266,13 +265,17 @@ fn block_terminator_is_last_statement() {
     _ => panic!("Expected let binding"),
   };
   let block = ast.block(block_id);
+  let tail_expr = block.tail_expr().unwrap();
   let last_stmt = *block.stmts().last().unwrap();
-  let terminator = block.terminator().unwrap();
-  assert_eq!(last_stmt, terminator);
+  let expected_tail_expr = match ast.stmt(last_stmt) {
+    Stmt::Return(Some(expr_id)) => *expr_id,
+    _ => panic!("Expected return statement at end of block"),
+  };
+  assert_eq!(tail_expr, expected_tail_expr);
 }
 
 #[test]
-fn nested_block_has_independent_terminator() {
+fn nested_block_has_independent_tail_expr() {
   let source = r#"
     main {
       let x = {
@@ -295,7 +298,7 @@ fn nested_block_has_independent_terminator() {
     _ => panic!("Expected let binding"),
   };
   let outer_block = ast.block(outer_block_id);
-  assert!(outer_block.terminator().is_some());
+  assert!(outer_block.tail_expr().is_some());
 
   // Buscar el inner block
   let first_stmt = outer_block.stmts()[0];
@@ -308,7 +311,7 @@ fn nested_block_has_independent_terminator() {
   };
 
   let inner_block = ast.block(inner_block_id);
-  assert!(inner_block.terminator().is_some());
+  assert!(inner_block.tail_expr().is_some());
 }
 
 proptest! {

@@ -5,6 +5,8 @@ use crate::ir::ids::InstId;
 
 #[derive(Debug, Clone)]
 pub(crate) struct BlockData {
+  /// Instrucciones PHI del bloque
+  phis: Vec<InstId>,
   /// Instrucciones NO TERMINADORAS del bloque.
   insts: Vec<InstId>,
   /// Instruccion terminadora del bloque.
@@ -14,9 +16,18 @@ pub(crate) struct BlockData {
 impl BlockData {
   pub(crate) fn new_block() -> Self {
     Self {
+      phis: Vec::new(),
       insts: Vec::new(),
       terminator: None,
     }
+  }
+
+  pub(crate) fn phis(&self) -> &[InstId] {
+    &self.phis
+  }
+
+  pub(crate) fn add_phi(&mut self, phi: InstId) {
+    self.insts.push(phi);
   }
 
   pub(crate) fn insts(&self) -> &[InstId] {

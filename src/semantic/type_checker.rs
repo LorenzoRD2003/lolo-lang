@@ -19,7 +19,7 @@ use crate::{
     walk_block, walk_expr, walk_stmt,
   },
   diagnostics::{Diagnosable, Diagnostic},
-  semantic::{name_resolver::ResolutionInfo, type_checker::error::TypeError, types::Type},
+  semantic::{name_resolver::ResolutionInfo, type_checker::error::TypeError, types::SemanticType},
 };
 
 /// Responsabilidades: Recorrer el AST y:
@@ -74,25 +74,21 @@ impl<'a> TypeChecker<'a> {
     self.diagnostics.push(err.to_diagnostic());
   }
 
-  fn block_type(&self, block_id: BlockId) -> Type {
+  fn block_type(&self, block_id: BlockId) -> SemanticType {
     let block = self.ast.block(block_id);
-    match block.terminator() {
-      Some(stmt_id) => match self.ast.stmt(stmt_id) {
-        Stmt::Return(Some(expr_id)) => self.type_info.type_of_expr(*expr_id),
-        Stmt::Return(None) => Type::Unit,
-        _ => unreachable!("el terminador de bloque debe ser un Return"),
-      },
-      None => Type::Unit,
+    match block.tail_expr() {
+      Some(expr_id) => self.type_info.type_of_expr(expr_id),
+      None => SemanticType::Unit,
     }
   }
 
-  fn infer_if_expr_type(&mut self, expr_id: ExprId, if_expr: &IfExpr) -> Type {
+  fn infer_if_expr_type(&mut self, expr_id: ExprId, if_expr: &IfExpr) -> SemanticType {
     self.check_condition(if_expr.condition);
     let if_block_ty = self.block_type(if_expr.if_block);
     if let Some(else_branch_expr) = if_expr.else_branch {
       let else_ty = self.type_info.type_of_expr(else_branch_expr);
-      if if_block_ty == Type::DefaultErrorType || else_ty == Type::DefaultErrorType {
-        return Type::DefaultErrorType;
+      if if_block_ty == SemanticType::DefaultErrorType || else_ty == SemanticType::DefaultErrorType {
+        return SemanticType::DefaultErrorType;
       }
       if if_block_ty != else_ty {
         self.emit_error(&TypeError::MismatchedTypes {
@@ -100,11 +96,11 @@ impl<'a> TypeChecker<'a> {
           found: else_ty,
           span: self.ast.expr_span(expr_id),
         });
-        return Type::DefaultErrorType;
+        return SemanticType::DefaultErrorType;
       }
       return if_block_ty;
     }
-    Type::Unit
+    SemanticType::Unit
   }
 }
 
@@ -152,10 +148,10 @@ impl AstVisitor for TypeChecker<'_> {
         if let Some(symbol) = self.resolution_info.symbol_of(expr_id) {
           match self.type_info.type_of_symbol(symbol) {
             Some(t) => t,
-            None => Type::DefaultErrorType,
+            None => SemanticType::DefaultErrorType,
           }
         } else {
-          Type::DefaultErrorType
+          SemanticType::DefaultErrorType
         }
       }
       Expr::Unary(UnaryExpr { op, operand }) => {
@@ -168,7 +164,7 @@ impl AstVisitor for TypeChecker<'_> {
             operand: operand_type,
             span: self.ast.expr_span(expr_id),
           });
-          Type::DefaultErrorType
+          SemanticType::DefaultErrorType
         }
       }
       Expr::Binary(BinaryExpr { op, lhs, rhs }) => {
@@ -183,7 +179,7 @@ impl AstVisitor for TypeChecker<'_> {
             rhs: rhs_type,
             span: self.ast.expr_span(expr_id),
           });
-          Type::DefaultErrorType
+          SemanticType::DefaultErrorType
         }
       }
       Expr::Block(block_id) => self.block_type(*block_id),

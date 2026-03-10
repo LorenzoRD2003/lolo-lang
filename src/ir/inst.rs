@@ -5,8 +5,8 @@ use std::fmt;
 use crate::{
   ast::{BinaryOp, UnaryOp},
   ir::{
-    ids::{BlockId, LocalId, ValueId},
-    value::{Constant, IrOperand},
+    ids::{BlockId, ValueId},
+    value::IrConstant,
   },
 };
 
@@ -14,11 +14,10 @@ use crate::{
 pub(crate) struct InstData {
   pub(crate) result: Option<ValueId>,
   pub(crate) kind: InstKind,
-} // hay que crear un error en error.rs. debe ser IrError, e implementar el trait Diagnosable de la misma forma
-// que hacen otros errores
+}
 
 impl InstData {
-  pub(crate) fn inst_with_result(result: ValueId, kind: InstKind) -> Self {
+  pub(crate) fn with_result(result: ValueId, kind: InstKind) -> Self {
     debug_assert!(
       kind.produces_value(),
       "la instruccion IR no debe tener resultado, pero se hallo {kind}"
@@ -29,7 +28,7 @@ impl InstData {
     }
   }
 
-  pub(crate) fn inst_without_result(kind: InstKind) -> Self {
+  pub(crate) fn without_result(kind: InstKind) -> Self {
     debug_assert!(
       kind.produces_value(),
       "la instruccion IR debe tener resultado, pero se hallo {kind}"
@@ -41,27 +40,20 @@ impl InstData {
 #[derive(Debug, Clone)]
 pub(crate) enum InstKind {
   // valores
-  Const(Constant),
-  Copy(IrOperand),
-
-  // variables locales
-  Load(LocalId),
-  Store {
-    target: LocalId,
-    operand: IrOperand,
-  },
+  Const(IrConstant),
+  Copy(ValueId),
 
   // operaciones unarias
   Unary {
     op: UnaryOp,
-    operand: IrOperand,
+    operand: ValueId,
   },
 
   // operaciones binarias
   Binary {
     op: BinaryOp,
-    lhs: IrOperand,
-    rhs: IrOperand,
+    lhs: ValueId,
+    rhs: ValueId,
   },
 
   // control
@@ -70,21 +62,27 @@ pub(crate) enum InstKind {
   },
 
   Branch {
-    condition: IrOperand,
+    condition: ValueId,
     if_block: BlockId,
     else_block: BlockId,
   },
 
-  Return {
-    value: Option<IrOperand>,
+  Phi {
+    inputs: Vec<PhiInput>,
   },
+
+  Return {
+    value: Option<ValueId>,
+  },
+
+  Print(ValueId),
 }
 
 impl InstKind {
   pub(crate) fn produces_value(&self) -> bool {
     matches!(
       self,
-      Self::Const(_) | Self::Copy(_) | Self::Load(_) | Self::Unary { .. } | Self::Binary { .. }
+      Self::Const(_) | Self::Copy(_) | Self::Phi { .. } | Self::Unary { .. } | Self::Binary { .. }
     )
   }
 
@@ -94,6 +92,10 @@ impl InstKind {
       Self::Jump { .. } | Self::Branch { .. } | Self::Return { .. }
     )
   }
+
+  pub(crate) fn is_phi(&self) -> bool {
+    matches!(&self, Self::Phi { .. })
+  }
 }
 
 impl fmt::Display for InstKind {
@@ -101,14 +103,26 @@ impl fmt::Display for InstKind {
     let out = match self {
       InstKind::Const(_) => "const",
       InstKind::Copy(_) => "copy",
-      InstKind::Load(_) => "load",
-      InstKind::Store { .. } => "store",
       InstKind::Unary { op, .. } => &op.to_string(),
       InstKind::Binary { op, .. } => &op.to_string(),
+      InstKind::Phi { .. } => "phi",
       InstKind::Jump { .. } => "jump",
       InstKind::Branch { .. } => "branch",
+      InstKind::Print(_) => "print",
       InstKind::Return { .. } => "return",
     };
     write!(f, "{out}")
+  }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) struct PhiInput {
+  pred_block: BlockId,
+  value: ValueId,
+}
+
+impl PhiInput {
+  pub(crate) fn new(pred_block: BlockId, value: ValueId) -> Self {
+    Self { pred_block, value }
   }
 }
