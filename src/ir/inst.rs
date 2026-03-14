@@ -125,4 +125,14 @@ impl PhiInput {
   pub(crate) fn new(pred_block: BlockId, value: ValueId) -> Self {
     Self { pred_block, value }
   }
+
+  #[allow(dead_code)]
+  pub(crate) fn pred_block(&self) -> BlockId {
+    self.pred_block
+  }
+
+  #[allow(dead_code)]
+  pub(crate) fn value(&self) -> ValueId {
+    self.value
+  }
 }

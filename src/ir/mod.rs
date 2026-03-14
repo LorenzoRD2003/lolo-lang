@@ -5,6 +5,7 @@
 
 mod block;
 mod builder;
+mod cfg;
 mod error;
 mod ids;
 mod inst;
@@ -13,6 +14,8 @@ mod lowering;
 mod module;
 mod pretty;
 mod ssa_env;
+#[cfg(test)]
+mod test_helpers;
 mod types;
 mod value;
 mod verify;

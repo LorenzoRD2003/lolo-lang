@@ -2,10 +2,10 @@
 // Por ahora no hay funciones, cuando haya funciones mucha de la logica de aca ira a otro archivo.
 
 #[cfg(test)]
-use std::collections::{BTreeSet, VecDeque};
+use std::collections::BTreeSet;
 
 #[cfg(test)]
-use crate::ir::{inst::InstKind, value::IrConstant};
+use crate::ir::{cfg::Cfg, inst::InstKind, value::IrConstant};
 
 use crate::ir::{
   block::BlockData,
@@ -55,12 +55,22 @@ impl IrModule {
     self.entry_block = Some(main_block);
   }
 
+  #[allow(dead_code)]
+  pub(crate) fn entry_block_opt(&self) -> Option<BlockId> {
+    self.entry_block
+  }
+
   pub(crate) fn inst(&self, id: InstId) -> &InstData {
     &self.insts[id.0]
   }
 
   pub(crate) fn add_inst(&mut self, data: InstData) {
     self.insts.push(data);
+  }
+
+  #[allow(dead_code)]
+  pub(crate) fn inst_count(&self) -> usize {
+    self.insts.len()
   }
 
   #[allow(dead_code)]
@@ -76,6 +86,11 @@ impl IrModule {
     self.blocks.push(data);
   }
 
+  #[allow(dead_code)]
+  pub(crate) fn block_count(&self) -> usize {
+    self.blocks.len()
+  }
+
   pub(crate) fn value(&self, id: ValueId) -> &ValueData {
     &self.values[id.0]
   }
@@ -84,38 +99,19 @@ impl IrModule {
     self.values.push(data);
   }
 
-  #[cfg(test)]
-  #[allow(dead_code)]
-  /// Obtiene los predecesores de un bloque en el CFG del modulo.
-  /// Es supralineal, luego TODO seria ideal construir una estructura CFG y usar eso.
-  fn predecessors(&self, block: BlockId) -> Vec<BlockId> {
-    let mut preds = vec![];
-    for i in 0..self.blocks.len() {
-      let block_id = BlockId(i);
-      preds.extend(
-        self
-          .successors(block_id)
-          .iter()
-          .filter(|&&succ| succ == block),
-      );
-    }
-    preds
+  pub(crate) fn value_count(&self) -> usize {
+    self.values.len()
+  }
+
+  pub(crate) fn return_type(&self) -> &IrType {
+    &self.return_type
   }
 
   #[cfg(test)]
-  /// Obtiene los sucesores de un bloque en el CFG del modulo.
-  fn successors(&self, block: BlockId) -> Vec<BlockId> {
-    let terminator = self.block(block).terminator();
-    match self.inst(terminator).kind {
-      InstKind::Jump { target } => vec![target],
-      InstKind::Branch {
-        if_block,
-        else_block,
-        ..
-      } => vec![if_block, else_block],
-      InstKind::Return { .. } => vec![],
-      _ => unreachable!(),
-    }
+  #[allow(dead_code)]
+  /// Obtiene los predecesores de un bloque en el CFG del modulo.
+  fn predecessors(&self, block: BlockId) -> Vec<BlockId> {
+    self.test_cfg().predecessors(block).to_vec()
   }
 
   // ======================
@@ -124,18 +120,7 @@ impl IrModule {
 
   #[cfg(test)]
   fn reachable_blocks(&self) -> Vec<BlockId> {
-    let mut seen = BTreeSet::new();
-    let mut queue = VecDeque::new();
-    queue.push_back(self.entry_block());
-    while let Some(block) = queue.pop_front() {
-      if !seen.insert(block.0) {
-        continue;
-      }
-      for succ in self.successors(block) {
-        queue.push_back(succ);
-      }
-    }
-    seen.into_iter().map(BlockId).collect()
+    self.test_cfg().reachable_blocks().collect()
   }
 
   #[cfg(test)]
@@ -215,5 +200,10 @@ impl IrModule {
         _ => None,
       })
       .collect()
+  }
+
+  #[cfg(test)]
+  fn test_cfg(&self) -> Cfg {
+    Cfg::build(self, self.entry_block(), &mut vec![])
   }
 }

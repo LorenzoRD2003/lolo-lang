@@ -23,6 +23,11 @@ impl Stage for IrStage {
       &ctx.semantic.as_ref().unwrap(),
       &mut ctx.diagnostics,
     );
+
+    // Integrar la verificacion estructural/tipada de IR
+    // esto se podria cambiar a opcional
+    result.verify(&mut ctx.diagnostics);
+
     ctx.ir = Some(result);
     if ctx.diagnostics.len() > before_errors && config.stop_after_semantic_errors {
       StageResult::Stop

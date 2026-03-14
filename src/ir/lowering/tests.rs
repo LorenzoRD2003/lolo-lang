@@ -1,29 +1,11 @@
 use crate::{
-  ast::{Ast, Program, Stmt},
-  diagnostics::Diagnostic,
+  ast::Stmt,
   ir::{
-    LoweringCtx, ids::ValueId, inst::InstKind, module::IrModule, types::IrType, value::IrConstant,
+    LoweringCtx, ids::ValueId, inst::InstKind, test_helpers::{lower_source, parse_and_analyze},
+    types::IrType, value::IrConstant,
   },
-  parser::parse_program,
-  semantic::{PhaseGraph, SemanticAnalyzer, SemanticResult, SymbolId},
+  semantic::SymbolId,
 };
-
-fn parse_and_analyze(source: &str) -> (Ast, Program, SemanticResult, Vec<Diagnostic>) {
-  let (ast, program) = parse_program(source);
-  let mut diagnostics = Vec::new();
-  let semantic = {
-    let mut analyzer =
-      SemanticAnalyzer::new(&ast, PhaseGraph::default_semantic_graph(), &mut diagnostics);
-    analyzer.analyze(&program)
-  };
-  (ast, program, semantic, diagnostics)
-}
-
-fn lower_source(source: &str) -> (IrModule, Vec<Diagnostic>) {
-  let (ast, program, semantic, mut diagnostics) = parse_and_analyze(source);
-  let ir = LoweringCtx::lower_to_ir(&program, &ast, &semantic, &mut diagnostics);
-  (ir, diagnostics)
-}
 
 #[test]
 fn lower_empty_main_emits_unit_and_single_return() {
