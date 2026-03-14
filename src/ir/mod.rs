@@ -6,11 +6,12 @@
 mod block;
 mod builder;
 mod cfg;
-mod error;
 mod ids;
 mod inst;
+mod ir_invariant_error;
 mod ir_source_map;
 mod lowering;
+mod lowering_error;
 mod module;
 mod pretty;
 mod ssa_env;

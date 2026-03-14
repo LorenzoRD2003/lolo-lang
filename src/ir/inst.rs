@@ -37,6 +37,7 @@ impl InstData {
   }
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub(crate) enum InstKind {
   // valores
@@ -93,6 +94,7 @@ impl InstKind {
     )
   }
 
+  #[allow(dead_code)]
   pub(crate) fn is_phi(&self) -> bool {
     matches!(&self, Self::Phi { .. })
   }
@@ -126,12 +128,10 @@ impl PhiInput {
     Self { pred_block, value }
   }
 
-  #[allow(dead_code)]
   pub(crate) fn pred_block(&self) -> BlockId {
     self.pred_block
   }
 
-  #[allow(dead_code)]
   pub(crate) fn value(&self) -> ValueId {
     self.value
   }

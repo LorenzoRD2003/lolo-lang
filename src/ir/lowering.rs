@@ -11,7 +11,7 @@ use crate::{
   diagnostics::Diagnosable,
   ir::{
     builder::ProgramBuilder,
-    error::LoweringError,
+    lowering_error::LoweringError,
     ids::{BlockId, ValueId},
     inst::PhiInput,
     module::IrModule,

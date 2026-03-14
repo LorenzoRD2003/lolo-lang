@@ -2,7 +2,7 @@
 
 use crate::semantic::SemanticType;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum IrType {
   Unit,
   Int32,
