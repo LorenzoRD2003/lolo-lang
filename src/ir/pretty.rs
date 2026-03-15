@@ -56,7 +56,13 @@ impl IrModule {
 
   fn print_inst(&self, id: InstId, output: &mut String) {
     let inst = self.inst(id);
-    output.push_str(&format!("  {inst}\n"));
+    match inst.result {
+      Some(v) => {
+        let ty = self.value(v).ty();
+        output.push_str(&format!("  {v}: {ty} = {}\n", inst.kind));
+      }
+      None => output.push_str(&format!("  {}\n", inst.kind)),
+    }
   }
 }
 

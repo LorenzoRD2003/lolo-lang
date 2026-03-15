@@ -1,0 +1,10 @@
+main {
+  let x = 10;
+  const y = 20;
+  let z = if x + y > 25 {
+    return 4;
+  } else {
+    return y + 1;
+  };
+  return z;
+}

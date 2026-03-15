@@ -18,14 +18,13 @@ fn lower_empty_main_emits_unit_and_single_return() {
 
   let unit_const_amount =
     ir.count_insts_by_kind(|kind| matches!(kind, InstKind::Const(IrConstant::Unit)));
-  assert_eq!(unit_const_amount, 1);
+  assert_eq!(unit_const_amount, 0);
   let return_inst_amount = ir.count_insts_by_kind(|kind| matches!(kind, InstKind::Return { .. }));
   assert_eq!(return_inst_amount, 1);
 
   let returns = ir.return_values();
   assert_eq!(returns.len(), 1);
-  let returned_value = returns[0].expect("return principal debe tener valor");
-  assert_eq!(ir.value(returned_value).ty(), &IrType::Unit);
+  assert!(returns[0].is_none());
 }
 
 #[test]

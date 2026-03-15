@@ -18,7 +18,7 @@ use crate::{
     ssa_env::SsaEnv,
     value::IrConstant,
   },
-  semantic::{SemanticResult, SymbolId},
+  semantic::{SemanticResult, SemanticType, SymbolId},
 };
 
 #[derive(Debug)]
@@ -44,8 +44,14 @@ impl<'a> LoweringCtx<'a> {
   ) -> IrModule {
     let mut ctx = Self::new(program, ast, semantics, diagnostics);
     let main_block = program.main_block(ast);
-    let ret = ctx.lower_block(main_block);
-    ctx.builder.emit_return(Some(ret));
+    let main_ret_ty = semantics.type_info.type_of_expr(program.main_block_expr());
+    if main_ret_ty == SemanticType::Unit {
+      ctx.lower_block_discard_result(main_block);
+      ctx.builder.emit_return(None);
+    } else {
+      let ret = ctx.lower_block(main_block);
+      ctx.builder.emit_return(Some(ret));
+    }
     ctx.builder.finish()
   }
 
@@ -97,6 +103,22 @@ impl<'a> LoweringCtx<'a> {
       }
     }
     self.builder.emit_const(IrConstant::Unit)
+  }
+
+  /// Baja un bloque por sus efectos cuando su valor final no se usa.
+  fn lower_block_discard_result(&mut self, ast_block_id: AstBlockId) {
+    let ast_block = self.ast.block(ast_block_id);
+    for stmt_id in ast_block.stmts() {
+      match self.ast.stmt(stmt_id) {
+        // Si hay return con expresion, mantenemos sus efectos.
+        Stmt::Return(Some(expr_id)) => {
+          self.lower_expr(*expr_id);
+          return;
+        }
+        Stmt::Return(None) => return,
+        _ => self.lower_stmt(*stmt_id),
+      }
+    }
   }
 
   /// Baja un statement del AST a instrucciones IR.

@@ -128,8 +128,8 @@ impl fmt::Display for InstKind {
     match self {
       InstKind::Const(c) => write!(f, "const {c}"),
       InstKind::Copy(v) => write!(f, "copy {v}"),
-      InstKind::Unary { op, .. } => write!(f, "{op}"),
-      InstKind::Binary { op, .. } => write!(f, "{op}"),
+      InstKind::Unary { op, operand } => write!(f, "{op} {operand}"),
+      InstKind::Binary { op, lhs, rhs } => write!(f, "{lhs} {op} {rhs}"),
       InstKind::Phi { inputs } => {
         let mut out = String::from("phi");
         for input in inputs {

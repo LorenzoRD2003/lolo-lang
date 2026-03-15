@@ -10,8 +10,7 @@ fn pretty_renders_module_header_and_entry_block() {
 
   assert!(pretty.starts_with("module main -> () entry bb0\n"));
   assert!(pretty.contains("bb0:\n"));
-  assert!(pretty.contains("const"));
-  assert!(pretty.contains("return %v"));
+  assert!(pretty.contains("return\n"));
 }
 
 #[test]
@@ -37,6 +36,8 @@ fn pretty_renders_control_flow_and_phi_nodes() {
   assert!(pretty.contains("branch %v"));
   assert!(pretty.contains("jump bb"));
   assert!(pretty.contains("phi["));
+  assert!(pretty.contains(": Int32 = phi["));
+  assert!(pretty.contains(" %v"));
   assert!(pretty.contains("print %v"));
 }
 
@@ -50,4 +51,26 @@ fn pretty_marks_block_without_terminator() {
 
   assert!(pretty.contains("bb0:\n"));
   assert!(pretty.contains("  <missing terminator>\n"));
+}
+
+#[test]
+fn pretty_renders_binary_operands_in_instructions() {
+  let source = r#"
+    main {
+      let a = 10;
+      let b = 20;
+      if a + b > 25 {
+        return 4;
+      } else {
+        return 21;
+      };
+    }
+  "#;
+  let (ir, diagnostics) = lower_source(source);
+  assert!(diagnostics.is_empty());
+
+  let pretty = ir.pretty();
+
+  assert!(pretty.contains(" + %v"));
+  assert!(pretty.contains(" > %v"));
 }
