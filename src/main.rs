@@ -44,11 +44,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
   let source_code = fs::read_to_string(path)?;
 
   let result = compile(&source_code, show_stage_timings, show_ir);
-  if show_ir {
-    if let Some(ir_pretty) = result.ir_pretty() {
-      println!("--- IR (debug) ---");
-      println!("{ir_pretty}");
-    }
+  if show_ir && let Some(ir_pretty) = result.ir_pretty() {
+    println!("--- IR (debug) ---");
+    println!("{ir_pretty}");
   }
 
   let out = render_diagnostics(&source_code, &filename, &result)?;

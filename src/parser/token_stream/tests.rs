@@ -140,11 +140,10 @@ proptest! {
     let _ = ts.check_kind(0, TokenKind::Plus, &mut diagnostics); // tratar de coincidir con + arbitrario
     let after_peek = ts.peek_first(&mut diagnostics).cloned();
     // si no coincide, peek sigue igual
-    if let (Some(init), Some(after)) = (initial_peek, after_peek) {
-      if init.kind() != TokenKind::Plus {
+    if let (Some(init), Some(after)) = (initial_peek, after_peek)
+      && init.kind() != TokenKind::Plus {
         prop_assert_eq!(init, after);
       }
-    }
   }
 
   // Property test: expect siempre avanza (peek cambia o se consume EOF)

@@ -51,7 +51,7 @@ impl ProgramBuilder {
   // ======================
 
   pub(crate) fn get_value_type(&self, id: ValueId) -> IrType {
-    self.program.value(id).ty().clone()
+    *self.program.value(id).ty()
   }
 
   // ===========================

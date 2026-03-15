@@ -17,7 +17,7 @@ fn renders_location_with_span() {
   let diag = Diagnostic::warning("warning".into()).with_span(1..2);
 
   let mut out = String::new();
-  let mut renderer = Renderer::new(&source_code, "main.lolo", &mut out);
+  let mut renderer = Renderer::new(source_code, "main.lolo", &mut out);
   renderer.render_location(&diag).unwrap();
   assert_eq!(out, " --> main.lolo:1:2\n");
 }
@@ -28,7 +28,7 @@ fn renders_location_without_span() {
   let diag = Diagnostic::help("help".into());
 
   let mut out = String::new();
-  let mut renderer = Renderer::new(&source_code, "main.lolo", &mut out);
+  let mut renderer = Renderer::new(source_code, "main.lolo", &mut out);
   renderer.render_location(&diag).unwrap();
   assert_eq!(out, " --> main.lolo:unknown location\n");
 }
@@ -38,7 +38,7 @@ fn renders_single_line_diagnostic() {
   let source_code = "let x = add 1 true;";
   let diag = Diagnostic::error("type mismatch".into()).with_span(14..18); // "true"
   let mut out = String::new();
-  let mut renderer = Renderer::new(&source_code, "main.lolo", &mut out);
+  let mut renderer = Renderer::new(source_code, "main.lolo", &mut out);
 
   renderer.render(&diag).unwrap();
   let expected = "error: type mismatch\n --> main.lolo:1:15\n  |\n1 | let x = add 1 true;\n  |               ^^^^\n";
@@ -50,7 +50,7 @@ fn renders_multiline_snippet() {
   let source_code = "aaa\nbbb\nccc";
   let diag = Diagnostic::note("note: aguante boca".into()).with_span(2..8);
   let mut out = String::new();
-  let mut renderer = Renderer::new(&source_code, "main.lolo", &mut out);
+  let mut renderer = Renderer::new(source_code, "main.lolo", &mut out);
 
   renderer.render_code_snippet(&diag).unwrap();
   let expected = "  |\n1 | aaa\n  |   ^\n2 | bbb\n  | ^^^\n3 | ccc\n  | ^\n";
@@ -62,7 +62,7 @@ fn renders_span_at_line_start() {
   let source_code = "abcdef";
   let diag = Diagnostic::error("boom".into()).with_span(0..3);
   let mut out = String::new();
-  let mut renderer = Renderer::new(&source_code, "main.lolo", &mut out);
+  let mut renderer = Renderer::new(source_code, "main.lolo", &mut out);
 
   renderer.render_code_snippet(&diag).unwrap();
   assert!(out.contains("^^^"));
@@ -73,7 +73,7 @@ fn renders_span_at_line_end() {
   let source_code = "abcdef";
   let diag = Diagnostic::error("boom".into()).with_span(3..6);
   let mut out = String::new();
-  let mut renderer = Renderer::new(&source_code, "main.lolo", &mut out);
+  let mut renderer = Renderer::new(source_code, "main.lolo", &mut out);
 
   renderer.render_code_snippet(&diag).unwrap();
   assert!(out.contains("^^^"));
@@ -88,7 +88,7 @@ fn renders_primary_and_secondary_labels() {
     .with_label(Label::secondary(5..7, Some("secondary here".into())));
 
   let mut out = String::new();
-  let mut renderer = Renderer::new(&source_code, "main.lolo", &mut out);
+  let mut renderer = Renderer::new(source_code, "main.lolo", &mut out);
   renderer.render_labels(&diag).unwrap();
 
   assert!(out.contains("^")); // primary
@@ -105,7 +105,7 @@ fn renders_label_without_msg() {
     .with_label(Label::primary(0..2, None));
 
   let mut out = String::new();
-  let mut renderer = Renderer::new(&source_code, "main.lolo", &mut out);
+  let mut renderer = Renderer::new(source_code, "main.lolo", &mut out);
   renderer.render_labels(&diag).unwrap();
   assert!(out.contains("^"));
   assert!(!out.contains("primary here"));
@@ -119,7 +119,7 @@ fn renders_multiline_label() {
     .with_label(Label::secondary(0..12, Some("multiline epic label".into()))); // abarca line1 + line2
 
   let mut out = String::new();
-  let mut renderer = Renderer::new(&source_code, "main.lolo", &mut out);
+  let mut renderer = Renderer::new(source_code, "main.lolo", &mut out);
   renderer.render_labels(&diag).unwrap();
 
   // debería contener varias lineas de '~'
@@ -135,7 +135,7 @@ fn renders_notes() {
     .with_note("note: something".into())
     .with_note("help: do X".into());
   let mut out = String::new();
-  let mut renderer = Renderer::new(&source_code, "main.lolo", &mut out);
+  let mut renderer = Renderer::new(source_code, "main.lolo", &mut out);
 
   renderer.render_notes(&diag).unwrap();
   let expected = "note: something\n\
@@ -226,7 +226,7 @@ proptest! {
 
     // nunca subrayar fuera del input
     let slice = &input[safe_start..safe_end];
-    prop_assert!(slice.len() >= 1);
+    prop_assert!(!slice.is_empty());
     prop_assert!(out.contains("~"));
   }
 }

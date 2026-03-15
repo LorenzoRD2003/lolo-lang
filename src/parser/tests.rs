@@ -882,7 +882,7 @@ proptest! {
         };
         program.push_str(&stmt);
       }
-      program.push_str("}");
+      program.push('}');
       parse_program(&program);
     }
 }

@@ -38,7 +38,7 @@ fn const_binding_is_immutable() {
   assert!(
     diagnostics[0]
       .msg()
-      .contains(&format!("se intento modificar la variable inmutable 'x'"))
+      .contains(&"se intento modificar la variable inmutable 'x'".to_string())
   );
 }
 
@@ -54,7 +54,7 @@ fn multiple_let_bindings_are_all_mutable() {
   let (mutability_info, diagnostics) = mutability_check(source);
   assert!(diagnostics.is_empty());
   assert_eq!(mutability_info.len(), 3);
-  for (_, mutability) in &mutability_info {
+  for mutability in mutability_info.values() {
     assert!(mutability.is_mutable());
   }
 }

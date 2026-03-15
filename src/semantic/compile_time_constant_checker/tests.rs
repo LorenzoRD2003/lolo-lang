@@ -28,7 +28,7 @@ fn int_literal_is_constant() {
   assert!(diagnostics.is_empty());
   let stmt = ast.block(program.main_block(&ast)).stmts()[0];
   if let Stmt::Expr(expr_id) = ast.stmt(stmt) {
-    assert_eq!(info.get(&expr_id), Some(&ConstValue::Int32(5)));
+    assert_eq!(info.get(expr_id), Some(&ConstValue::Int32(5)));
   }
 }
 
@@ -38,7 +38,7 @@ fn bool_literal_is_constant() {
   assert!(diagnostics.is_empty());
   let stmt = ast.block(program.main_block(&ast)).stmts()[0];
   if let Stmt::Expr(expr_id) = ast.stmt(stmt) {
-    assert_eq!(info.get(&expr_id), Some(&ConstValue::Bool(true)));
+    assert_eq!(info.get(expr_id), Some(&ConstValue::Bool(true)));
   }
 }
 
@@ -48,7 +48,7 @@ fn unary_neg_of_constant_is_constant() {
   assert!(diagnostics.is_empty());
   let stmt = ast.block(program.main_block(&ast)).stmts()[0];
   if let Stmt::Expr(expr_id) = ast.stmt(stmt) {
-    assert_eq!(info.get(&expr_id), Some(&ConstValue::Int32(-5)));
+    assert_eq!(info.get(expr_id), Some(&ConstValue::Int32(-5)));
   }
 }
 
@@ -58,7 +58,7 @@ fn add_two_constants_is_constant() {
   assert!(diagnostics.is_empty());
   let stmt = ast.block(program.main_block(&ast)).stmts()[0];
   if let Stmt::Expr(expr_id) = ast.stmt(stmt) {
-    assert_eq!(info.get(&expr_id), Some(&ConstValue::Int32(5)));
+    assert_eq!(info.get(expr_id), Some(&ConstValue::Int32(5)));
   }
 }
 
@@ -68,7 +68,7 @@ fn nested_constant_expression_is_constant() {
   assert!(diagnostics.is_empty());
   let stmt = ast.block(program.main_block(&ast)).stmts()[0];
   if let Stmt::Expr(expr_id) = ast.stmt(stmt) {
-    assert_eq!(info.get(&expr_id), Some(&ConstValue::Int32(20)));
+    assert_eq!(info.get(expr_id), Some(&ConstValue::Int32(20)));
   }
 }
 
@@ -78,7 +78,7 @@ fn comparison_is_constant() {
   assert!(diagnostics.is_empty());
   let stmt = ast.block(program.main_block(&ast)).stmts()[0];
   if let Stmt::Expr(expr_id) = ast.stmt(stmt) {
-    assert_eq!(info.get(&expr_id), Some(&ConstValue::Bool(true)));
+    assert_eq!(info.get(expr_id), Some(&ConstValue::Bool(true)));
   }
 }
 
@@ -98,7 +98,7 @@ fn logical_expression_constants() {
   assert!(diagnostics.is_empty());
   let stmt = ast.block(program.main_block(&ast)).stmts()[0];
   if let Stmt::Expr(expr_id) = ast.stmt(stmt) {
-    assert_eq!(info.get(&expr_id), Some(&ConstValue::Bool(false)));
+    assert_eq!(info.get(expr_id), Some(&ConstValue::Bool(false)));
   }
 }
 
@@ -109,7 +109,7 @@ fn variable_is_not_constant() {
   let block = ast.block(program.main_block(&ast));
   let stmts = block.stmts();
   if let Stmt::Expr(expr_id) = ast.stmt(stmts[1]) {
-    assert!(info.get(&expr_id).is_none());
+    assert!(info.get(expr_id).is_none());
   }
 }
 
@@ -120,7 +120,7 @@ fn mixed_expression_is_not_constant() {
   let block = ast.block(program.main_block(&ast));
   let stmts = block.stmts();
   if let Stmt::Expr(expr_id) = ast.stmt(stmts[1]) {
-    assert!(info.get(&expr_id).is_none());
+    assert!(info.get(expr_id).is_none());
   }
 }
 
@@ -144,7 +144,7 @@ fn overflow_is_reported() {
 
   let stmt = ast.block(program.main_block(&ast)).stmts()[0];
   if let Stmt::Expr(expr_id) = ast.stmt(stmt) {
-    assert!(info.get(&expr_id).is_none());
+    assert!(info.get(expr_id).is_none());
   }
 }
 
@@ -155,12 +155,12 @@ fn division_by_zero_is_reported() {
   assert!(
     diagnostics[0]
       .msg()
-      .contains(&format!("division por cero encontrada"))
+      .contains(&"division por cero encontrada".to_string())
   );
 
   let stmt = ast.block(program.main_block(&ast)).stmts()[1];
   if let Stmt::Expr(expr_id) = ast.stmt(stmt) {
-    assert!(info.get(&expr_id).is_none());
+    assert!(info.get(expr_id).is_none());
   }
 }
 
@@ -172,12 +172,12 @@ fn subexpressions_can_be_constant_even_if_parent_is_not() {
   let stmts = block.stmts();
   if let Stmt::Expr(expr_id) = ast.stmt(stmts[1]) {
     // el padre no es constante
-    assert!(info.get(&expr_id).is_none());
+    assert!(info.get(expr_id).is_none());
     // pero el (2 * 3) sí deberia estar en el map
     let expr = ast.expr(expr_id);
     if let Expr::Binary(BinaryExpr { op: _, lhs, rhs }) = expr {
-      assert_eq!(info.get(&lhs), Some(&ConstValue::Int32(6)));
-      assert!(info.get(&rhs).is_none());
+      assert_eq!(info.get(lhs), Some(&ConstValue::Int32(6)));
+      assert!(info.get(rhs).is_none());
     }
   }
 }
@@ -198,7 +198,7 @@ fn const_propagation_chain() {
   let stmt_id = block.stmts()[3];
   if let Stmt::Return(Some(expr_id)) = ast.stmt(stmt_id) {
     assert_eq!(
-      compile_time_constant_info.get(&expr_id),
+      compile_time_constant_info.get(expr_id),
       Some(&ConstValue::Int32(16))
     );
   }
@@ -218,12 +218,12 @@ fn division_by_zero_in_const_is_error() {
   assert!(
     diagnostics[0]
       .msg()
-      .contains(&format!("division por cero encontrada"))
+      .contains(&"division por cero encontrada".to_string())
   );
   let block = ast.block(program.main_block(&ast));
   let stmt = block.stmts()[1];
   if let Stmt::Print(expr_id) = ast.stmt(stmt) {
-    assert!(info.get(&expr_id).is_none());
+    assert!(info.get(expr_id).is_none());
   }
 }
 
@@ -244,7 +244,7 @@ fn const_initialized_with_block() {
   } = ast.stmt(stmt_id)
   {
     assert_eq!(
-      compile_time_constant_info.get(&initializer),
+      compile_time_constant_info.get(initializer),
       Some(&ConstValue::Int32(9))
     );
   }
@@ -274,7 +274,7 @@ fn if_expression_with_constant_condition_is_constant() {
   assert!(diagnostics.is_empty());
   let stmt = ast.block(program.main_block(&ast)).stmts()[0];
   if let Stmt::Expr(expr_id) = ast.stmt(stmt) {
-    assert_eq!(info.get(&expr_id), Some(&ConstValue::Int32(10)));
+    assert_eq!(info.get(expr_id), Some(&ConstValue::Int32(10)));
   }
 }
 
@@ -289,7 +289,7 @@ fn else_if_chain_constant_selects_matching_branch() {
   assert!(diagnostics.is_empty());
   let stmt = ast.block(program.main_block(&ast)).stmts()[0];
   if let Stmt::Expr(expr_id) = ast.stmt(stmt) {
-    assert_eq!(info.get(&expr_id), Some(&ConstValue::Int32(20)));
+    assert_eq!(info.get(expr_id), Some(&ConstValue::Int32(20)));
   }
 }
 
@@ -306,7 +306,7 @@ fn if_expression_with_non_constant_condition_is_not_constant() {
   let block = ast.block(program.main_block(&ast));
   let if_stmt = block.stmts()[1];
   if let Stmt::Expr(expr_id) = ast.stmt(if_stmt) {
-    assert!(info.get(&expr_id).is_none());
+    assert!(info.get(expr_id).is_none());
   }
 }
 

@@ -35,16 +35,13 @@ impl IrModule {
       return;
     }
 
-    let mut block_inst_ids: Vec<Vec<InstId>> = vec![vec![]; self.block_count()];
-
-    for block_index in 0..self.block_count() {
-      let block_id = BlockId(block_index);
+    for i in 0..self.block_count() {
+      let block_id = BlockId(i);
       let block = self.block(block_id);
 
       let mut seen_ids = BTreeSet::new();
 
       for &phi_id in block.phis() {
-        block_inst_ids[block_index].push(phi_id);
         if !self.check_inst_id(phi_id, &mut errors, format!("phi de {:?}", block_id)) {
           continue;
         }
@@ -62,7 +59,6 @@ impl IrModule {
       }
 
       for &inst_id in block.insts() {
-        block_inst_ids[block_index].push(inst_id);
         if !self.check_inst_id(inst_id, &mut errors, format!("inst de {:?}", block_id)) {
           continue;
         }
@@ -85,7 +81,6 @@ impl IrModule {
       }
 
       let term_id = block.terminator();
-      block_inst_ids[block_index].push(term_id);
       if !self.check_inst_id(
         term_id,
         &mut errors,

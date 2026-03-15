@@ -434,7 +434,7 @@ impl<'a> Parser<'a> {
 
   #[cfg(test)]
   pub(crate) fn diagnostics(&self) -> &[Diagnostic] {
-    &self.diagnostics
+    self.diagnostics
   }
 
   /// Devuelve el Ast generado, consumiendose.

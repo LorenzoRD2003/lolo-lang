@@ -101,7 +101,7 @@ fn lex_ill_formed_literal() {
   assert!(
     diagnostics[0]
       .msg()
-      .contains(&format!("se detecto un literal mal formado 123abc"))
+      .contains(&"se detecto un literal mal formado 123abc".to_string())
   );
 }
 
@@ -114,7 +114,7 @@ fn lex_invalid_character() {
   assert!(
     diagnostics[0]
       .msg()
-      .contains(&format!("se detecto un caracter invalido '@'"))
+      .contains(&"se detecto un caracter invalido '@'".to_string())
   );
 }
 
@@ -167,7 +167,7 @@ proptest! {
     let mut diagnostics = Vec::new();
     let input = String::from_utf8(bytes).unwrap();
     let mut lexer = Lexer::new(&input);
-    while let Some(_) = lexer.next(&mut diagnostics) {}
+    while lexer.next(&mut diagnostics).is_some() {}
   }
 }
 

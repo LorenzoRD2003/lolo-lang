@@ -74,7 +74,7 @@ impl<'a> NameResolver<'a> {
       _ => return,
     };
     // Chequear redeclaracion en el scope actual
-    let symbol = match self.symbol_table.declared_in_scope(&name) {
+    let symbol = match self.symbol_table.declared_in_scope(name) {
       Some(previous_symbol) => {
         let SymbolData {
           declaration_stmt, ..
@@ -90,7 +90,7 @@ impl<'a> NameResolver<'a> {
         return;
       }
       // Insertar el simbolo en la tabla
-      None => self.symbol_table.add_symbol(&name, self.ast.expr_span(var)),
+      None => self.symbol_table.add_symbol(name, self.ast.expr_span(var)),
     };
     self.resolution_info.insert_expr_symbol(var, symbol);
     self.resolution_info.insert_declared_symbol(stmt_id, symbol);
@@ -105,7 +105,7 @@ impl<'a> NameResolver<'a> {
       Expr::Var(name) => name,
       _ => return,
     };
-    if let Some(symbol) = self.symbol_table.resolve(&name) {
+    if let Some(symbol) = self.symbol_table.resolve(name) {
       self.resolution_info.insert_expr_symbol(var, symbol)
     }
   }

@@ -143,7 +143,7 @@ impl AstVisitor for CompileTimeConstantChecker<'_> {
       }
       // Todos los operadores que tenemos son puros asi que esto está bien
       Expr::Unary(UnaryExpr { op, operand }) => {
-        let operand_value = self.compile_time_constant_info.get(&operand).cloned();
+        let operand_value = self.compile_time_constant_info.get(operand).cloned();
         match (operand_value, op) {
           (Some(ConstValue::Int32(x)), UnaryOp::Neg) => Some(ConstValue::Int32(-x)),
           (Some(ConstValue::Bool(b)), UnaryOp::Not) => Some(ConstValue::Bool(!b)),
@@ -151,8 +151,8 @@ impl AstVisitor for CompileTimeConstantChecker<'_> {
         }
       }
       Expr::Binary(BinaryExpr { op, lhs, rhs }) => {
-        let lvalue = self.compile_time_constant_info.get(&lhs).cloned();
-        let rvalue = self.compile_time_constant_info.get(&rhs).cloned();
+        let lvalue = self.compile_time_constant_info.get(lhs).cloned();
+        let rvalue = self.compile_time_constant_info.get(rhs).cloned();
         match (lvalue, op, rvalue) {
           (Some(ConstValue::Int32(x)), BinaryOp::Add, Some(ConstValue::Int32(y))) => {
             match x.checked_add(y) {

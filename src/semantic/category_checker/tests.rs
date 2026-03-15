@@ -30,7 +30,7 @@ fn int_literal_is_value_and_constant() {
   assert!(diagnostics.is_empty());
   let stmt = ast.block(program.main_block(&ast)).stmts()[0];
   if let Stmt::Expr(expr_id) = ast.stmt(stmt) {
-    let cat = info.get(&expr_id).unwrap();
+    let cat = info.get(expr_id).unwrap();
     assert!(cat.is_value());
     assert!(cat.is_constant());
     assert!(!cat.is_place());
@@ -44,7 +44,7 @@ fn variable_is_value_and_place() {
   let block = ast.block(program.main_block(&ast));
   let stmts = block.stmts();
   if let Stmt::Expr(expr_id) = ast.stmt(stmts[1]) {
-    let cat = info.get(&expr_id).unwrap();
+    let cat = info.get(expr_id).unwrap();
     assert!(cat.is_value());
     assert!(cat.is_place());
     assert!(!cat.is_constant());
@@ -57,7 +57,7 @@ fn binary_constant_is_value_and_constant() {
   assert!(diagnostics.is_empty());
   let stmt = ast.block(program.main_block(&ast)).stmts()[0];
   if let Stmt::Expr(expr_id) = ast.stmt(stmt) {
-    let cat = info.get(&expr_id).unwrap();
+    let cat = info.get(expr_id).unwrap();
     assert!(cat.is_value());
     assert!(cat.is_constant());
     assert!(!cat.is_place());
@@ -71,7 +71,7 @@ fn binary_non_constant_is_only_value() {
   let block = ast.block(program.main_block(&ast));
   let stmts = block.stmts();
   if let Stmt::Expr(expr_id) = ast.stmt(stmts[1]) {
-    let cat = info.get(&expr_id).unwrap();
+    let cat = info.get(expr_id).unwrap();
     assert!(cat.is_value());
     assert!(!cat.is_constant());
     assert!(!cat.is_place());
@@ -84,7 +84,7 @@ fn unary_constant_is_value_and_constant() {
   assert!(diagnostics.is_empty());
   let stmt = ast.block(program.main_block(&ast)).stmts()[0];
   if let Stmt::Expr(expr_id) = ast.stmt(stmt) {
-    let cat = info.get(&expr_id).unwrap();
+    let cat = info.get(expr_id).unwrap();
     assert!(cat.is_value());
     assert!(cat.is_constant());
     assert!(!cat.is_place());
@@ -98,7 +98,7 @@ fn unary_non_constant_is_only_value() {
   let block = ast.block(program.main_block(&ast));
   let stmts = block.stmts();
   if let Stmt::Expr(expr_id) = ast.stmt(stmts[1]) {
-    let cat = info.get(&expr_id).unwrap();
+    let cat = info.get(expr_id).unwrap();
     assert!(cat.is_value());
     assert!(!cat.is_constant());
     assert!(!cat.is_place());
@@ -145,7 +145,7 @@ fn assignment_to_non_place_is_error() {
   assert!(
     category_checker.diagnostics()[0]
       .msg()
-      .contains(&format!("se esperaba una place expression"))
+      .contains(&"se esperaba una place expression".to_string())
   );
 }
 
@@ -164,7 +164,7 @@ fn subexpression_constant_marked_correctly() {
   let stmt = ast.block(program.main_block(&ast)).stmts()[0];
   if let Stmt::Expr(root_id) = ast.stmt(stmt) {
     // root debería ser constante
-    let root_cat = info.get(&root_id).unwrap();
+    let root_cat = info.get(root_id).unwrap();
     assert!(root_cat.is_constant());
   }
 }
@@ -176,7 +176,7 @@ fn variable_is_never_constant() {
   let block = ast.block(program.main_block(&ast));
   let stmts = block.stmts();
   if let Stmt::Expr(expr_id) = ast.stmt(stmts[1]) {
-    let cat = info.get(&expr_id).unwrap();
+    let cat = info.get(expr_id).unwrap();
     assert!(!cat.is_constant());
   }
 }
@@ -188,7 +188,7 @@ fn constant_flag_depends_on_compile_time_analysis() {
   let block = ast.block(program.main_block(&ast));
   let stmts = block.stmts();
   if let Stmt::Expr(expr_id) = ast.stmt(stmts[1]) {
-    let cat = info.get(&expr_id).unwrap();
+    let cat = info.get(expr_id).unwrap();
     assert!(!cat.is_constant());
   }
 }
@@ -299,7 +299,7 @@ fn const_binding_lhs_must_be_place() {
   assert!(
     category_checker.diagnostics()[0]
       .msg()
-      .contains(&format!("se esperaba una place expression"))
+      .contains(&"se esperaba una place expression".to_string())
   );
 }
 
@@ -387,10 +387,10 @@ fn const_initialized_with_block() {
   let stmt_id = block.stmts()[0];
   dbg!(&category_info);
   if let Stmt::ConstBinding { var, initializer } = ast.stmt(stmt_id) {
-    let var_cat = category_info.get(&var).unwrap();
+    let var_cat = category_info.get(var).unwrap();
     // dbg!(const_cat);
     assert!(var_cat.is_value() && !var_cat.is_constant() && var_cat.is_place());
-    let block_cat = category_info.get(&initializer).unwrap();
+    let block_cat = category_info.get(initializer).unwrap();
     assert!(block_cat.is_value() && block_cat.is_constant() && !block_cat.is_place());
   }
 }
@@ -412,8 +412,8 @@ fn const_initialized_with_block_without_value() {
   let block = ast.block(program.main_block(&ast));
   let stmt_id = block.stmts()[0];
   if let Stmt::ConstBinding { var, initializer } = ast.stmt(stmt_id) {
-    let var_cat = category_info.get(&var).unwrap();
-    let block_cat = category_info.get(&initializer).unwrap();
+    let var_cat = category_info.get(var).unwrap();
+    let block_cat = category_info.get(initializer).unwrap();
     assert!(var_cat.is_value() && !var_cat.is_constant() && var_cat.is_place());
     assert!(block_cat.is_value() && !block_cat.is_constant() && !block_cat.is_place());
   }
@@ -430,7 +430,7 @@ fn if_expression_constant_is_value_and_constant() {
   assert!(diagnostics.is_empty());
   let stmt = ast.block(program.main_block(&ast)).stmts()[0];
   if let Stmt::Expr(expr_id) = ast.stmt(stmt) {
-    let cat = info.get(&expr_id).expect("debe existir categoria");
+    let cat = info.get(expr_id).expect("debe existir categoria");
     assert!(cat.is_value());
     assert!(cat.is_constant());
     assert!(!cat.is_place());
@@ -449,7 +449,7 @@ fn if_expression_non_constant_is_only_value() {
   assert!(diagnostics.is_empty());
   let stmt = ast.block(program.main_block(&ast)).stmts()[1];
   if let Stmt::Expr(expr_id) = ast.stmt(stmt) {
-    let cat = info.get(&expr_id).expect("debe existir categoria");
+    let cat = info.get(expr_id).expect("debe existir categoria");
     assert!(cat.is_value());
     assert!(!cat.is_constant());
     assert!(!cat.is_place());

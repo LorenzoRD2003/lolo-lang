@@ -94,7 +94,7 @@ impl IrModule {
             .inst(inst_id)
             .result
             .expect("todo phi debe tener resultado");
-          Some((result, self.value(result).ty().clone()))
+          Some((result, *self.value(result).ty()))
         }
         _ => None,
       })

@@ -25,9 +25,9 @@ fn resolve_walks_up_scopes() {
   let scopes = ScopeArena::new();
   let mut table = SymbolTable::new(scopes);
   let name = "a";
-  let sym = table.add_symbol(&name, 0..1);
+  let sym = table.add_symbol(name, 0..1);
   table.enter_scope();
-  assert_eq!(table.resolve(&name), Some(sym));
+  assert_eq!(table.resolve(name), Some(sym));
 }
 
 /// Este test indica que en lolo-lang si hay dos declaraciones de una misma variable (lo que debe ser)
@@ -38,14 +38,14 @@ fn shadowing_prefers_inner_scope() {
   let mut table = SymbolTable::new(scopes);
 
   let name = "x";
-  let outer = table.add_symbol(&name, 0..1);
+  let outer = table.add_symbol(name, 0..1);
 
   table.enter_scope();
-  let inner = table.add_symbol(&name, 2..3);
-  assert_eq!(table.resolve(&name), Some(inner));
+  let inner = table.add_symbol(name, 2..3);
+  assert_eq!(table.resolve(name), Some(inner));
 
   table.exit_scope();
-  assert_eq!(table.resolve(&name), Some(outer));
+  assert_eq!(table.resolve(name), Some(outer));
 }
 
 #[test]
@@ -97,13 +97,13 @@ fn variable_was_declared_in_current_scope() {
   table.enter_global_scope();
   table.enter_scope();
   let name = "x";
-  let symbol = table.add_symbol(&name, 0..1);
+  let symbol = table.add_symbol(name, 0..1);
 
-  assert_eq!(table.declared_in_scope(&name), Some(symbol));
+  assert_eq!(table.declared_in_scope(name), Some(symbol));
   table.exit_scope();
-  assert!(table.declared_in_scope(&name).is_none());
+  assert!(table.declared_in_scope(name).is_none());
   table.enter_scope();
-  assert!(table.declared_in_scope(&name).is_none());
+  assert!(table.declared_in_scope(name).is_none());
 }
 
 proptest! {

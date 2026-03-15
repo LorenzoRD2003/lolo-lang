@@ -20,7 +20,7 @@ impl Stage for IrStage {
     let result = LoweringCtx::lower_to_ir(
       ctx.program.as_ref().unwrap(),
       ctx.ast.as_ref().unwrap(),
-      &ctx.semantic.as_ref().unwrap(),
+      ctx.semantic.as_ref().unwrap(),
       &mut ctx.diagnostics,
     );
 

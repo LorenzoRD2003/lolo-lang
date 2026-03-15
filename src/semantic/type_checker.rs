@@ -184,7 +184,7 @@ impl AstVisitor for TypeChecker<'_> {
         }
       }
       Expr::Block(block_id) => self.block_type(*block_id),
-      Expr::If(if_expr) => self.infer_if_expr_type(expr_id, &if_expr),
+      Expr::If(if_expr) => self.infer_if_expr_type(expr_id, if_expr),
     };
     self.type_info.insert_expr_type(expr_id, ty);
   }
