@@ -14,7 +14,43 @@ use crate::{
   },
 };
 
-pub(crate) type CompileTimeConstantInfo = FxHashMap<ExprId, ConstValue>;
+#[derive(Debug, Clone, PartialEq, Default)]
+pub(crate) struct CompileTimeConstantInfo {
+  expr_constants: FxHashMap<ExprId, ConstValue>,
+  const_bindings_by_symbol: FxHashMap<SymbolId, ConstValue>,
+}
+
+impl CompileTimeConstantInfo {
+  pub(crate) fn get(&self, expr_id: &ExprId) -> Option<&ConstValue> {
+    self.expr_constants.get(expr_id)
+  }
+
+  pub(crate) fn contains_key(&self, expr_id: &ExprId) -> bool {
+    self.expr_constants.contains_key(expr_id)
+  }
+
+  fn insert_expr_constant(&mut self, expr_id: ExprId, value: ConstValue) {
+    self.expr_constants.insert(expr_id, value);
+  }
+
+  fn insert_const_binding(&mut self, symbol_id: SymbolId, value: ConstValue) {
+    self.const_bindings_by_symbol.insert(symbol_id, value);
+  }
+
+  pub(crate) fn symbol_constant(&self, symbol_id: SymbolId) -> Option<&ConstValue> {
+    self.const_bindings_by_symbol.get(&symbol_id)
+  }
+  
+  #[cfg(test)]
+  pub(crate) fn iter_constants(&self) -> impl Iterator<Item = (&ExprId, &ConstValue)> {
+    self.expr_constants.iter()
+  }
+
+  #[cfg(test)]
+  pub(crate) fn is_empty(&self) -> bool {
+    self.expr_constants.is_empty()
+  }
+}
 
 #[derive(Debug)]
 pub(crate) struct CompileTimeConstantChecker<'a> {
@@ -38,7 +74,7 @@ impl<'a> CompileTimeConstantChecker<'a> {
       resolution_info,
       diagnostics: Vec::new(),
       const_bindings: FxHashMap::default(),
-      compile_time_constant_info: FxHashMap::default(),
+      compile_time_constant_info: CompileTimeConstantInfo::default(),
     }
   }
 
@@ -78,6 +114,9 @@ impl AstVisitor for CompileTimeConstantChecker<'_> {
       && let Some(symbol_id) = self.resolution_info.symbol_of(*var)
     {
       self.const_bindings.insert(symbol_id, value.clone());
+      self
+        .compile_time_constant_info
+        .insert_const_binding(symbol_id, value.clone());
     }
   }
 
@@ -197,7 +236,11 @@ impl AstVisitor for CompileTimeConstantChecker<'_> {
         }
       }
     };
-    ctc_value.and_then(|const_value| self.compile_time_constant_info.insert(expr_id, const_value));
+    if let Some(const_value) = ctc_value {
+      self
+        .compile_time_constant_info
+        .insert_expr_constant(expr_id, const_value);
+    }
   }
 }
 

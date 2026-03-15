@@ -309,3 +309,80 @@ fn if_expression_with_non_constant_condition_is_not_constant() {
     assert!(info.get(&expr_id).is_none());
   }
 }
+
+#[test]
+fn const_bindings_are_exposed_by_symbol() {
+  let source = r#"
+    main {
+      const x = 5;
+      let y = 7;
+      const z = x + 3;
+    }
+  "#;
+
+  let (ast, program) = parse_program(source);
+  let mut resolver = NameResolver::new(&ast);
+  resolver.visit_program(&program);
+  let (resolution_info, _) = resolver.into_semantic_info();
+
+  let mut checker = CompileTimeConstantChecker::new(&ast, &resolution_info);
+  checker.visit_program(&program);
+  let info = checker.into_compile_time_constant_info();
+
+  let block = ast.block(program.main_block(&ast));
+  let [x_stmt, y_stmt, z_stmt] = block.stmts() else {
+    panic!("se esperaban 3 statements");
+  };
+
+  let x_symbol = match ast.stmt(*x_stmt) {
+    Stmt::ConstBinding { var, .. } => resolution_info
+      .symbol_of(*var)
+      .expect("x debe tener simbolo resuelto"),
+    _ => panic!("primer statement debe ser const"),
+  };
+  let y_symbol = match ast.stmt(*y_stmt) {
+    Stmt::LetBinding { var, .. } => resolution_info
+      .symbol_of(*var)
+      .expect("y debe tener simbolo resuelto"),
+    _ => panic!("segundo statement debe ser let"),
+  };
+  let z_symbol = match ast.stmt(*z_stmt) {
+    Stmt::ConstBinding { var, .. } => resolution_info
+      .symbol_of(*var)
+      .expect("z debe tener simbolo resuelto"),
+    _ => panic!("tercer statement debe ser const"),
+  };
+
+  assert_eq!(info.symbol_constant(x_symbol), Some(&ConstValue::Int32(5)));
+  assert_eq!(info.symbol_constant(z_symbol), Some(&ConstValue::Int32(8)));
+  assert!(info.symbol_constant(y_symbol).is_none());
+}
+
+#[test]
+fn const_binding_with_non_constant_initializer_is_not_exposed_by_symbol() {
+  let source = r#"
+    main {
+      let y = 2;
+      const x = y + 1;
+    }
+  "#;
+
+  let (ast, program) = parse_program(source);
+  let mut resolver = NameResolver::new(&ast);
+  resolver.visit_program(&program);
+  let (resolution_info, _) = resolver.into_semantic_info();
+
+  let mut checker = CompileTimeConstantChecker::new(&ast, &resolution_info);
+  checker.visit_program(&program);
+  let info = checker.into_compile_time_constant_info();
+
+  let block = ast.block(program.main_block(&ast));
+  let x_symbol = match ast.stmt(block.stmts()[1]) {
+    Stmt::ConstBinding { var, .. } => resolution_info
+      .symbol_of(*var)
+      .expect("x debe tener simbolo resuelto"),
+    _ => panic!("segundo statement debe ser const"),
+  };
+
+  assert!(info.symbol_constant(x_symbol).is_none());
+}

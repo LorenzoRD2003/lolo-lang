@@ -83,6 +83,65 @@ fn lower_unary_and_binary_emit_expected_instruction_kinds() {
 }
 
 #[test]
+fn lower_const_binding_uses_compile_time_value_instead_of_runtime_expression() {
+  let source = r#"
+    main {
+      const x = (5 + 3) * 2;
+      print x;
+    }
+  "#;
+  let (ir, diagnostics) = lower_source(source);
+  assert!(diagnostics.is_empty());
+
+  let binary_insts = ir.count_insts_by_kind(|kind| matches!(kind, InstKind::Binary { .. }));
+  assert_eq!(binary_insts, 0);
+
+  let const_16 = ir.const_results(IrConstant::Int32(16));
+  assert_eq!(const_16.len(), 1);
+  let prints = ir.print_operands();
+  assert_eq!(prints, const_16);
+}
+
+#[test]
+fn lower_const_propagation_chain_materializes_only_final_const_value() {
+  let source = r#"
+    main {
+      const x = 5;
+      const y = x + 3;
+      const z = 2 * y;
+      return z;
+    }
+  "#;
+  let (ir, diagnostics) = lower_source(source);
+  assert!(diagnostics.is_empty());
+
+  let int32_consts =
+    ir.count_insts_by_kind(|kind| matches!(kind, InstKind::Const(IrConstant::Int32(_))));
+  assert_eq!(int32_consts, 1);
+  assert_eq!(ir.const_results(IrConstant::Int32(16)).len(), 1);
+}
+
+#[test]
+fn lower_const_binding_without_compile_time_value_keeps_runtime_expression() {
+  let source = r#"
+    main {
+      let y = 2;
+      const x = y + 1;
+      print x;
+    }
+  "#;
+  let (ir, diagnostics) = lower_source(source);
+  assert!(
+    diagnostics
+      .iter()
+      .any(|d| d.msg().contains("se esperaba una constant expression")),
+  );
+
+  let binary_insts = ir.count_insts_by_kind(|kind| matches!(kind, InstKind::Binary { .. }));
+  assert_eq!(binary_insts, 1);
+}
+
+#[test]
 fn lower_if_else_expression_emits_result_phi() {
   let source = r#"
     main {

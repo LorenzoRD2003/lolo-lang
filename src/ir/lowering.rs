@@ -102,12 +102,28 @@ impl<'a> LoweringCtx<'a> {
   /// Baja un statement del AST a instrucciones IR.
   fn lower_stmt(&mut self, stmt_id: StmtId) {
     match self.ast.stmt(stmt_id) {
-      Stmt::LetBinding { var, initializer } | Stmt::ConstBinding { var, initializer } => {
+      Stmt::LetBinding { var, initializer } => {
         let Some(symbol) = self.lower_lvalue(*var) else {
           return;
         };
         let value = self.lower_expr(*initializer);
         self.bind_symbol(symbol, value);
+      }
+      Stmt::ConstBinding { var, initializer } => {
+        let Some(symbol) = self.lower_lvalue(*var) else {
+          return;
+        };
+        // Si el simbolo es compile-time constant, diferimos emitir el `const`
+        // hasta su primer uso para no generar valores muertos.
+        if self
+          .semantic
+          .compile_time_constant_info
+          .symbol_constant(symbol)
+          .is_none()
+        {
+          let value = self.lower_expr(*initializer);
+          self.bind_symbol(symbol, value);
+        }
       }
       Stmt::Assign { var, value_expr } => {
         let Some(symbol) = self.lower_lvalue(*var) else {
@@ -143,6 +159,13 @@ impl<'a> LoweringCtx<'a> {
         match self.env.get(symbol) {
           Some(value_id) => value_id,
           None => {
+            // Fallback para `const`: si no hay SSA aun, lo materializamos aca y lo cacheamos.
+            if let Some(const_value) = self.semantic.compile_time_constant_info.symbol_constant(symbol)
+            {
+              let value_id = self.builder.emit_const(const_value.into());
+              self.bind_symbol(symbol, value_id);
+              return value_id;
+            }
             self.emit_error(&LoweringError::MissingSsaValueForSymbol {
               symbol,
               span: self.ast.expr_span(expr_id),
