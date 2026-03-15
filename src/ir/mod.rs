@@ -20,7 +20,6 @@ mod test_helpers;
 mod types;
 mod value;
 mod verify;
-mod visitor;
 
 pub(crate) use lowering::LoweringCtx;
 pub(crate) use module::IrModule;
