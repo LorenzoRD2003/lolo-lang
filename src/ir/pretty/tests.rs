@@ -18,8 +18,9 @@ fn pretty_renders_module_header_and_entry_block() {
 fn pretty_renders_control_flow_and_phi_nodes() {
   let source = r#"
     main {
+      let c = true;
       let x = 0;
-      if true {
+      if c {
         x = 1;
       } else {
         x = 2;

@@ -56,8 +56,10 @@ fn lower_let_assign_and_print_use_latest_ssa_value() {
 fn lower_unary_and_binary_emit_expected_instruction_kinds() {
   let source = r#"
     main {
-      let x = -5;
-      let y = 1 + 2;
+      let a = 5;
+      let b = 1;
+      let x = -a;
+      let y = a + b;
     }
   "#;
   let (ir, diagnostics) = lower_source(source);
@@ -145,7 +147,8 @@ fn lower_const_binding_without_compile_time_value_keeps_runtime_expression() {
 fn lower_if_else_expression_emits_result_phi() {
   let source = r#"
     main {
-      let y = if true {
+      let c = true;
+      let y = if c {
         return 1;
       } else {
         return 2;
@@ -168,7 +171,8 @@ fn lower_if_else_expression_emits_result_phi() {
 fn lower_if_without_else_does_not_emit_result_phi() {
   let source = r#"
     main {
-      let y = if true {
+      let c = true;
+      let y = if c {
         return 1;
       };
     }
@@ -178,17 +182,40 @@ fn lower_if_without_else_does_not_emit_result_phi() {
 
   let phis = ir.phi_results_with_types();
   assert_eq!(phis.len(), 0);
-  let unit_consts =
-    ir.count_insts_by_kind(|kind| matches!(kind, InstKind::Const(IrConstant::Unit)));
-  assert_eq!(unit_consts, 2);
+  let branch_insts = ir.count_insts_by_kind(|kind| matches!(kind, InstKind::Branch { .. }));
+  assert_eq!(branch_insts, 1);
+}
+
+#[test]
+fn lower_if_with_constant_condition_prunes_cfg_construction() {
+  let source = r#"
+    main {
+      let y = if true {
+        return 1;
+      } else {
+        return 2;
+      };
+      print y;
+    }
+  "#;
+  let (ir, diagnostics) = lower_source(source);
+  assert!(diagnostics.is_empty());
+
+  let branch_insts = ir.count_insts_by_kind(|kind| matches!(kind, InstKind::Branch { .. }));
+  let jump_insts = ir.count_insts_by_kind(|kind| matches!(kind, InstKind::Jump { .. }));
+  let phi_insts = ir.count_insts_by_kind(|kind| matches!(kind, InstKind::Phi { .. }));
+  assert_eq!(branch_insts, 0);
+  assert_eq!(jump_insts, 0);
+  assert_eq!(phi_insts, 0);
 }
 
 #[test]
 fn lower_if_statement_merges_symbol_and_print_uses_phi_value() {
   let source = r#"
     main {
+      let c = true;
       let x = 0;
-      if true {
+      if c {
         x = 1;
       } else {
         x = 2;
@@ -280,7 +307,8 @@ fn lower_emits_missing_ssa_value_for_symbol_diagnostic() {
 fn lower_emits_cannot_lower_error_typed_expr_diagnostic_for_if_expression() {
   let source = r#"
     main {
-      let x = if true {
+      let c = true;
+      let x = if c {
         return 1;
       } else {
         return false;

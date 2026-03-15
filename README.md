@@ -62,6 +62,9 @@ Current lowering includes integration with semantic compile-time constants:
 - `const` bindings that have compile-time values are materialized lazily on first `Expr::Var` use.
 - This avoids emitting dead IR constants for intermediate const chains.
 - Example: `const x = 5; const y = x + 3; const z = 2 * y; return z;` lowers to a single `const 16` + `return`.
+- `if` expressions with compile-time constant condition are pruned during lowering.
+- In those pruned cases, lowering does not emit `branch`, `jump`, or `phi`.
+- `branch`/`phi` are emitted only when the condition is not compile-time constant.
 
 ## CLI Usage
 

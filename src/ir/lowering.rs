@@ -5,8 +5,8 @@
 use crate::{
   Diagnostic,
   ast::{
-    Ast, BinaryExpr, BinaryOp, BlockId as AstBlockId, Expr, ExprId, IfExpr, Program as AstProgram,
-    Stmt, StmtId, UnaryExpr, UnaryOp,
+    Ast, BinaryExpr, BinaryOp, BlockId as AstBlockId, ConstValue, Expr, ExprId, IfExpr,
+    Program as AstProgram, Stmt, StmtId, UnaryExpr, UnaryOp,
   },
   diagnostics::Diagnosable,
   ir::{
@@ -146,6 +146,9 @@ impl<'a> LoweringCtx<'a> {
 
   /// Evalua una expresion y devuelve el ValueId resultante.
   fn lower_expr(&mut self, expr_id: ExprId) -> ValueId {
+    if let Some(c) = self.semantic.compile_time_constant_info.get(&expr_id) {
+      return self.builder.emit_const(c.into());
+    }
     match self.ast.expr(expr_id) {
       Expr::Var(_) => {
         let Some(symbol) = self.semantic.resolution_info.symbol_of(expr_id) else {
@@ -160,7 +163,10 @@ impl<'a> LoweringCtx<'a> {
           Some(value_id) => value_id,
           None => {
             // Fallback para `const`: si no hay SSA aun, lo materializamos aca y lo cacheamos.
-            if let Some(const_value) = self.semantic.compile_time_constant_info.symbol_constant(symbol)
+            if let Some(const_value) = self
+              .semantic
+              .compile_time_constant_info
+              .symbol_constant(symbol)
             {
               let value_id = self.builder.emit_const(const_value.into());
               self.bind_symbol(symbol, value_id);
@@ -233,6 +239,17 @@ impl<'a> LoweringCtx<'a> {
         span: self.ast.expr_span(expr_id),
       });
     }
+
+    match self.semantic.compile_time_constant_info.get(&cond) {
+      Some(ConstValue::Bool(true)) => return self.lower_block(ast_if_block),
+      Some(ConstValue::Bool(false)) => {
+        return else_branch
+          .map(|else_expr| self.lower_expr(else_expr))
+          .unwrap_or_else(|| self.builder.emit_const(IrConstant::Unit));
+      }
+      _ => {}
+    };
+
     let has_else_branch = else_branch.is_some();
 
     let env_before = self.env.clone();
