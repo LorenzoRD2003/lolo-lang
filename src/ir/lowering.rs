@@ -3,7 +3,6 @@
 // El lowering debería decir “emiti un add”, no “push a este vec, construi un ValueData, acordate del span, etc.”
 
 use crate::{
-  Diagnostic,
   ast::{
     Ast, BinaryExpr, BinaryOp, BlockId as AstBlockId, Expr, ExprId, IfExpr, Program as AstProgram,
     Stmt, StmtId, UnaryExpr, UnaryOp,
@@ -11,14 +10,15 @@ use crate::{
   diagnostics::Diagnosable,
   ir::{
     builder::ProgramBuilder,
-    lowering_error::LoweringError,
     ids::{BlockId, ValueId},
     inst::PhiInput,
+    lowering_error::LoweringError,
     module::IrModule,
     ssa_env::SsaEnv,
     value::IrConstant,
   },
   semantic::{SemanticResult, SymbolId},
+  Diagnostic,
 };
 
 #[derive(Debug)]
@@ -225,6 +225,7 @@ impl<'a> LoweringCtx<'a> {
     self.env = env_before.clone_for_branch();
     self.builder.switch_to_block(if_block);
     let if_val = self.lower_block(ast_if_block);
+    let if_out_block = self.builder.current_block_id();
     self.builder.emit_jump(merge_block);
     let if_env_out = self.env.clone();
 
@@ -232,6 +233,7 @@ impl<'a> LoweringCtx<'a> {
     self.env = env_before.clone_for_branch();
     self.builder.switch_to_block(else_block);
     let else_val = else_branch.map(|else_expr| self.lower_expr(else_expr));
+    let else_out_block = self.builder.current_block_id();
     self.builder.emit_jump(merge_block);
     let else_env_out = self.env.clone();
 
@@ -239,9 +241,9 @@ impl<'a> LoweringCtx<'a> {
     self.builder.switch_to_block(merge_block);
     self.env = self.merge_envs_with_phis(
       &env_before,
-      if_block,
+      if_out_block,
       &if_env_out,
-      else_block,
+      else_out_block,
       &else_env_out,
     );
 
@@ -249,9 +251,9 @@ impl<'a> LoweringCtx<'a> {
       self.builder.emit_phi(
         branch_ty.into(),
         vec![
-          PhiInput::new(if_block, if_val),
+          PhiInput::new(if_out_block, if_val),
           PhiInput::new(
-            else_block,
+            else_out_block,
             else_val.expect("debe existir valor de rama else para construir el phi"),
           ),
         ],
@@ -264,9 +266,9 @@ impl<'a> LoweringCtx<'a> {
   fn merge_envs_with_phis(
     &mut self,
     env_before: &SsaEnv,
-    if_block: BlockId,
+    if_out_block: BlockId,
     if_env: &SsaEnv,
-    else_block: BlockId,
+    else_out_block: BlockId,
     else_env: &SsaEnv,
   ) -> SsaEnv {
     let mut merged = SsaEnv::new();
@@ -279,8 +281,8 @@ impl<'a> LoweringCtx<'a> {
       } else {
         let ty = self.builder.get_value_type(if_val);
         let phi_inputs = vec![
-          PhiInput::new(if_block, if_val),
-          PhiInput::new(else_block, else_val),
+          PhiInput::new(if_out_block, if_val),
+          PhiInput::new(else_out_block, else_val),
         ];
         let phi_val = self.builder.emit_phi(ty, phi_inputs);
         merged.set(symbol, phi_val);

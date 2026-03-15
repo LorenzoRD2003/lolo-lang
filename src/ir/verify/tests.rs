@@ -1,5 +1,4 @@
 use crate::{
-  Diagnostic,
   ast::{BinaryOp, UnaryOp},
   ir::{
     block::BlockData,
@@ -10,6 +9,7 @@ use crate::{
     types::IrType,
     value::IrConstant,
   },
+  Diagnostic,
 };
 
 fn block(id: usize) -> BlockId {
@@ -133,6 +133,28 @@ fn verify_accepts_module_lowered_by_frontend() {
   let (ir, lower_diags) =
     lower_source("main { let x = 1; if true { x = 2; } else { x = 3; }; print x; }");
   assert!(lower_diags.is_empty());
+  let diagnostics = verify_diagnostics(&ir);
+  assert!(diagnostics.is_empty());
+}
+
+#[test]
+fn verify_accepts_module_with_else_if_expression_returns() {
+  let (ir, lower_diags) = lower_source(
+    r#"
+    main {
+      const x = if true {
+        return 10;
+      } else if false {
+        return 20;
+      } else {
+        return 30;
+      };
+      print x;
+    }
+  "#,
+  );
+  assert!(lower_diags.is_empty());
+
   let diagnostics = verify_diagnostics(&ir);
   assert!(diagnostics.is_empty());
 }

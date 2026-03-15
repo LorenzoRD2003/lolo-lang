@@ -69,6 +69,11 @@ impl ProgramBuilder {
     self.current_block = Some(id)
   }
 
+  /// Devuelve el bloque actual de emision.
+  pub(crate) fn current_block_id(&self) -> BlockId {
+    self.current_block()
+  }
+
   // pub(crate) fn current_block_has_terminator(&self) -> bool {
   //   self
   //     .current_block
