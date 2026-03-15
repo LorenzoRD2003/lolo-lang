@@ -1,14 +1,7 @@
 use super::*;
 use crate::{
   diagnostics::Diagnosable,
-  ir::{
-    block::BlockData,
-    ids::{BlockId, InstId, ValueId},
-    inst::{InstData, InstKind},
-    ir_invariant_error::IrInvariantError,
-    types::IrType,
-    value::IrConstant,
-  },
+  ir::{BlockData, BlockId, InstData, InstId, InstKind, IrConstant, IrInvariantError, IrType, ValueId},
 };
 
 fn block(id: usize) -> BlockId {

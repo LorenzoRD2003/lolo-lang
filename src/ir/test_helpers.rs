@@ -1,11 +1,13 @@
 use std::collections::BTreeSet;
 
 #[cfg(test)]
-use crate::ir::{
-  cfg::Cfg,
-  ids::{BlockId, ValueId},
-  types::IrType,
-  value::IrConstant,
+use crate::{
+  analysis::cfg::Cfg,
+  ir::{
+    ids::{BlockId, ValueId},
+    types::IrType,
+    value::IrConstant,
+  },
 };
 use crate::{
   ast::{Ast, Program},

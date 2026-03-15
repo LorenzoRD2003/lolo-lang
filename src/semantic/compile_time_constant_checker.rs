@@ -40,7 +40,7 @@ impl CompileTimeConstantInfo {
   pub(crate) fn symbol_constant(&self, symbol_id: SymbolId) -> Option<&ConstValue> {
     self.const_bindings_by_symbol.get(&symbol_id)
   }
-  
+
   #[cfg(test)]
   pub(crate) fn iter_constants(&self) -> impl Iterator<Item = (&ExprId, &ConstValue)> {
     self.expr_constants.iter()

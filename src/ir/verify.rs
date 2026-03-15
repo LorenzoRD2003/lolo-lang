@@ -8,10 +8,10 @@
 use std::collections::BTreeSet;
 
 use crate::{
+  analysis::cfg::Cfg,
   ast::{BinaryOp, UnaryOp},
   diagnostics::{Diagnosable, Diagnostic},
   ir::{
-    cfg::Cfg,
     ids::{BlockId, InstId, ValueId},
     inst::{InstKind, PhiInput},
     ir_invariant_error::IrInvariantError,

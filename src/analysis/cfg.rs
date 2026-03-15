@@ -1,8 +1,6 @@
 use std::collections::VecDeque;
 
-use crate::ir::{
-  ids::BlockId, inst::InstKind, ir_invariant_error::IrInvariantError, module::IrModule,
-};
+use crate::ir::{BlockId, InstKind, IrInvariantError, IrModule};
 
 /// Control Flow Graph (CFG) para un IrModule
 #[derive(Debug, Clone)]
