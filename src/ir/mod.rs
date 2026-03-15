@@ -15,7 +15,7 @@ mod module;
 mod pretty;
 mod ssa_env;
 #[cfg(test)]
-mod test_helpers;
+pub(crate) mod test_helpers;
 mod types;
 mod value;
 mod verify;

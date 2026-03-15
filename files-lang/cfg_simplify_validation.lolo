@@ -1,0 +1,34 @@
+main {
+  let seed = 1;
+
+  let x = if seed > 0 {
+    return 10;
+  } else {
+    return 20;
+  };
+
+  let y = if true {
+    return x + 1;
+  } else {
+    return x + 1000;
+  };
+
+  let z = if y > 5 {
+    return if false {
+      return y + 100;
+    } else {
+      return y + 2;
+    };
+  } else {
+    return 0;
+  };
+
+  if z > 0 {
+    seed = z;
+  } else {
+    seed = 0;
+  }
+
+  print seed;
+  return seed;
+}

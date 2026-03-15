@@ -8,7 +8,7 @@
 use std::collections::BTreeSet;
 
 use crate::{
-  analysis::cfg::Cfg,
+  analysis::Cfg,
   ast::{BinaryOp, UnaryOp},
   diagnostics::{Diagnosable, Diagnostic},
   ir::{

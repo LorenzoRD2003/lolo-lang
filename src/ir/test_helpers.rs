@@ -1,18 +1,13 @@
 use std::collections::BTreeSet;
 
-#[cfg(test)]
 use crate::{
-  analysis::cfg::Cfg,
-  ir::{
-    ids::{BlockId, ValueId},
-    types::IrType,
-    value::IrConstant,
-  },
-};
-use crate::{
+  analysis::Cfg,
   ast::{Ast, Program},
   diagnostics::Diagnostic,
-  ir::{LoweringCtx, ids::InstId, inst::InstKind, module::IrModule},
+  ir::{
+    BlockData, BlockId, InstData, InstId, InstKind, IrConstant, IrInvariantError, IrModule,
+    IrType, LoweringCtx, ValueId,
+  },
   parser::parse_program,
   semantic::{PhaseGraph, SemanticAnalyzer, SemanticResult},
 };
@@ -115,4 +110,61 @@ impl IrModule {
   fn test_cfg(&self) -> Cfg {
     Cfg::build(self, self.entry_block(), &mut vec![])
   }
+}
+
+pub(crate) fn base_test_module_with_blocks(block_count: usize) -> IrModule {
+  let mut module = IrModule::new("m".into(), IrType::Unit);
+  for _ in 0..block_count {
+    module.add_block(BlockData::new_block());
+  }
+  module.set_entry_block(BlockId(0));
+  module
+}
+
+pub(crate) fn add_bool_const(module: &mut IrModule, block_id: BlockId, value: bool) -> ValueId {
+  let value_id = ValueId(module.value_count());
+  module.add_value(IrConstant::Bool(value).as_value());
+
+  let inst_id = InstId(module.inst_count());
+  module.add_inst(InstData::with_result(
+    value_id,
+    InstKind::Const(IrConstant::Bool(value)),
+  ));
+  module.block_mut(block_id).add_inst(inst_id);
+
+  value_id
+}
+
+pub(crate) fn set_jump_terminator(module: &mut IrModule, block_id: BlockId, target: BlockId) {
+  let term_id = InstId(module.inst_count());
+  module.add_inst(InstData::without_result(InstKind::Jump { target }));
+  module.block_mut(block_id).set_terminator(term_id);
+}
+
+pub(crate) fn set_branch_terminator(
+  module: &mut IrModule,
+  block_id: BlockId,
+  condition: ValueId,
+  if_block: BlockId,
+  else_block: BlockId,
+) {
+  let term_id = InstId(module.inst_count());
+  module.add_inst(InstData::without_result(InstKind::Branch {
+    condition,
+    if_block,
+    else_block,
+  }));
+  module.block_mut(block_id).set_terminator(term_id);
+}
+
+pub(crate) fn set_return_terminator(module: &mut IrModule, block_id: BlockId) {
+  let term_id = InstId(module.inst_count());
+  module.add_inst(InstData::without_result(InstKind::Return { value: None }));
+  module.block_mut(block_id).set_terminator(term_id);
+}
+
+pub(crate) fn build_test_cfg(module: &IrModule, entry: BlockId) -> (Cfg, Vec<IrInvariantError>) {
+  let mut errors = Vec::new();
+  let cfg = Cfg::build(module, entry, &mut errors);
+  (cfg, errors)
 }

@@ -1,1 +1,4 @@
-pub(crate) mod cfg;
+mod cfg;
+mod dominators;
+
+pub(crate) use cfg::Cfg;
