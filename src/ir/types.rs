@@ -1,5 +1,7 @@
 // Responsabilidad: Definir el sitema de tipos de la IR.
 
+use std::fmt::Display;
+
 use crate::semantic::SemanticType;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -8,6 +10,18 @@ pub(crate) enum IrType {
   Int32,
   Bool,
   Never,
+}
+
+impl Display for IrType {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    let str = match self {
+      IrType::Unit => "()",
+      IrType::Int32 => "Int32",
+      IrType::Bool => "Bool",
+      IrType::Never => "Never",
+    };
+    write!(f, "{str}")
+  }
 }
 
 impl IrType {

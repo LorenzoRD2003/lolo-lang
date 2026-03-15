@@ -3,6 +3,7 @@
 // El lowering debería decir “emiti un add”, no “push a este vec, construi un ValueData, acordate del span, etc.”
 
 use crate::{
+  Diagnostic,
   ast::{
     Ast, BinaryExpr, BinaryOp, BlockId as AstBlockId, Expr, ExprId, IfExpr, Program as AstProgram,
     Stmt, StmtId, UnaryExpr, UnaryOp,
@@ -18,7 +19,6 @@ use crate::{
     value::IrConstant,
   },
   semantic::{SemanticResult, SymbolId},
-  Diagnostic,
 };
 
 #[derive(Debug)]

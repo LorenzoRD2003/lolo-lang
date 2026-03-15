@@ -9,14 +9,12 @@ use crate::ir::{
   value::ValueData,
 };
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub(crate) struct IrModule {
-  #[allow(dead_code)]
   name: String,
   entry_block: Option<BlockId>,
   // params: Vec<...> en un futuro
   /// tipo de los valores de retorno del programa
-  #[allow(dead_code)]
   return_type: IrType,
   /// instrucciones del programa
   insts: Vec<InstData>,
@@ -38,7 +36,6 @@ impl IrModule {
     }
   }
 
-  #[allow(dead_code)]
   pub(crate) fn entry_block(&self) -> BlockId {
     self
       .entry_block
@@ -95,5 +92,9 @@ impl IrModule {
 
   pub(crate) fn return_type(&self) -> IrType {
     self.return_type
+  }
+
+  pub(crate) fn name(&self) -> &str {
+    &self.name
   }
 }

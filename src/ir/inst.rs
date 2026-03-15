@@ -1,16 +1,17 @@
 // Responsabilidad: Definir las instrucciones de la IR.
 
-use std::fmt;
+use std::fmt::{self, Display};
 
 use crate::{
   ast::{BinaryOp, UnaryOp},
   ir::{
     ids::{BlockId, ValueId},
+    types::IrType,
     value::IrConstant,
   },
 };
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub(crate) struct InstData {
   pub(crate) result: Option<ValueId>,
   pub(crate) kind: InstKind,
@@ -37,11 +38,26 @@ impl InstData {
   }
 }
 
-#[allow(dead_code)]
-#[derive(Debug, Clone)]
+impl Display for InstData {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    match self.result {
+      Some(v) => {
+        let ty = self
+          .kind
+          .produced_value_type()
+          .map_or_else(|| "<?>".to_string(), |ty| ty.to_string());
+        write!(f, "{v}: {ty} = {}", self.kind)
+      }
+      None => write!(f, "{}", self.kind),
+    }
+  }
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub(crate) enum InstKind {
   // valores
   Const(IrConstant),
+  #[allow(dead_code)]
   Copy(ValueId),
 
   // operaciones unarias
@@ -94,26 +110,43 @@ impl InstKind {
     )
   }
 
-  #[allow(dead_code)]
-  pub(crate) fn is_phi(&self) -> bool {
-    matches!(&self, Self::Phi { .. })
+  fn produced_value_type(&self) -> Option<IrType> {
+    match self {
+      Self::Const(IrConstant::Unit) => Some(IrType::Unit),
+      Self::Const(IrConstant::Int32(_)) => Some(IrType::Int32),
+      Self::Const(IrConstant::Bool(_)) => Some(IrType::Bool),
+      Self::Unary { op, .. } => Some(op.result_type().into()),
+      Self::Binary { op, .. } => Some(op.result_type().into()),
+      Self::Copy(_) | Self::Phi { .. } => None,
+      Self::Jump { .. } | Self::Branch { .. } | Self::Return { .. } | Self::Print(_) => None,
+    }
   }
 }
 
 impl fmt::Display for InstKind {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    let out = match self {
-      InstKind::Const(_) => "const",
-      InstKind::Copy(_) => "copy",
-      InstKind::Unary { op, .. } => &op.to_string(),
-      InstKind::Binary { op, .. } => &op.to_string(),
-      InstKind::Phi { .. } => "phi",
-      InstKind::Jump { .. } => "jump",
-      InstKind::Branch { .. } => "branch",
-      InstKind::Print(_) => "print",
-      InstKind::Return { .. } => "return",
-    };
-    write!(f, "{out}")
+    match self {
+      InstKind::Const(c) => write!(f, "const {c}"),
+      InstKind::Copy(v) => write!(f, "copy {v}"),
+      InstKind::Unary { op, .. } => write!(f, "{op}"),
+      InstKind::Binary { op, .. } => write!(f, "{op}"),
+      InstKind::Phi { inputs } => {
+        let mut out = String::from("phi");
+        for input in inputs {
+          out.push_str(&input.to_string());
+        }
+        write!(f, "{out}")
+      }
+      InstKind::Jump { target } => write!(f, "jump {target}"),
+      InstKind::Branch {
+        condition,
+        if_block,
+        else_block,
+      } => write!(f, "branch {condition}, {if_block}, {else_block}"),
+      InstKind::Print(v) => write!(f, "print {v}"),
+      InstKind::Return { value: Some(v) } => write!(f, "return {v}"),
+      InstKind::Return { .. } => write!(f, "return"),
+    }
   }
 }
 
@@ -121,6 +154,12 @@ impl fmt::Display for InstKind {
 pub(crate) struct PhiInput {
   pred_block: BlockId,
   value: ValueId,
+}
+
+impl Display for PhiInput {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    write!(f, "[{} -> {}]", self.pred_block, self.value)
+  }
 }
 
 impl PhiInput {

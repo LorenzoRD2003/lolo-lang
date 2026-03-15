@@ -43,6 +43,7 @@ impl FrontendPipeline {
       }
     }
 
-    FrontendResult::from(ctx.ast, ctx.semantic, ctx.diagnostics)
+    let ir = if config.show_ir { ctx.ir } else { None };
+    FrontendResult::from(ctx.ast, ctx.semantic, ir, ctx.diagnostics)
   }
 }

@@ -1,5 +1,7 @@
 // Responsabilidad: representar los valores de la IR.
 
+use std::fmt::Display;
+
 use crate::{ast::ConstValue, ir::types::IrType};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -51,5 +53,16 @@ impl IrConstant {
 
   pub(crate) fn as_value(&self) -> ValueData {
     ValueData::new(self.ty(), ValueKind::Const(self.clone()))
+  }
+}
+
+impl Display for IrConstant {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    let str = match self {
+      IrConstant::Unit => "",
+      IrConstant::Int32(x) => &x.to_string(),
+      IrConstant::Bool(b) => &b.to_string(),
+    };
+    write!(f, "{str}")
   }
 }

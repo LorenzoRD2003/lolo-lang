@@ -1,12 +1,12 @@
 use crate::{
   ast::Stmt,
   ir::{
+    LoweringCtx,
     ids::ValueId,
     inst::InstKind,
     test_helpers::{lower_source, parse_and_analyze},
     types::IrType,
     value::IrConstant,
-    LoweringCtx,
   },
   semantic::SymbolId,
 };
@@ -210,9 +210,11 @@ fn lower_emits_missing_ssa_value_for_symbol_diagnostic() {
     .insert_expr_symbol(usage_expr_id, SymbolId(999_999));
 
   let _ir = LoweringCtx::lower_to_ir(&program, &ast, &semantic, &mut diagnostics);
-  assert!(diagnostics
-    .iter()
-    .any(|d| d.msg().contains("no se pudo bajar a IR: el simbolo")),);
+  assert!(
+    diagnostics
+      .iter()
+      .any(|d| d.msg().contains("no se pudo bajar a IR: el simbolo")),
+  );
 }
 
 #[test]
@@ -227,9 +229,11 @@ fn lower_emits_cannot_lower_error_typed_expr_diagnostic_for_if_expression() {
     }
   "#;
   let (_ir, diagnostics) = lower_source(source);
-  assert!(diagnostics
-    .iter()
-    .any(|d| d.msg().contains("no se pudo bajar a IR: la expresion")),);
+  assert!(
+    diagnostics
+      .iter()
+      .any(|d| d.msg().contains("no se pudo bajar a IR: la expresion")),
+  );
 }
 
 #[test]
@@ -240,9 +244,11 @@ fn lowering_should_not_panic_on_unresolved_variable_expression() {
     }
   "#;
   let (ast, program, semantic, mut diagnostics) = parse_and_analyze(source);
-  assert!(diagnostics
-    .iter()
-    .any(|d| d.msg().contains("variable 'x' indefinida")),);
+  assert!(
+    diagnostics
+      .iter()
+      .any(|d| d.msg().contains("variable 'x' indefinida")),
+  );
 
   let lowering_result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
     let _ = LoweringCtx::lower_to_ir(&program, &ast, &semantic, &mut diagnostics);
@@ -261,9 +267,11 @@ fn lowering_should_not_panic_on_unresolved_assignment_lvalue() {
     }
   "#;
   let (ast, program, semantic, mut diagnostics) = parse_and_analyze(source);
-  assert!(diagnostics
-    .iter()
-    .any(|d| d.msg().contains("variable 'x' indefinida")),);
+  assert!(
+    diagnostics
+      .iter()
+      .any(|d| d.msg().contains("variable 'x' indefinida")),
+  );
 
   let lowering_result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
     let _ = LoweringCtx::lower_to_ir(&program, &ast, &semantic, &mut diagnostics);

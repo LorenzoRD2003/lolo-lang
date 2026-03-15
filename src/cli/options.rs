@@ -4,11 +4,12 @@ use std::env;
 pub struct CliOptions {
   pub filename: String,
   pub show_stage_timings: bool,
+  pub show_ir: bool,
 }
 
 impl CliOptions {
   fn correct_use() -> &'static str {
-    "Uso: cargo run -- <archivo.lolo> [--timings]"
+    "Uso: cargo run -- <archivo.lolo> [--timings] [--dump-ir]"
   }
 
   pub fn parse() -> Result<Self, String> {
@@ -20,10 +21,12 @@ impl CliOptions {
 
     let mut filename: Option<String> = None;
     let mut show_stage_timings = false;
+    let mut show_ir = false;
 
     for arg in args {
       match arg.as_str() {
         "--timings" => show_stage_timings = true,
+        "--dump-ir" => show_ir = true,
         s if !s.starts_with("--") && filename.is_none() => {
           filename = Some(s.to_string());
         }
@@ -41,6 +44,7 @@ impl CliOptions {
     Ok(Self {
       filename,
       show_stage_timings,
+      show_ir,
     })
   }
 }

@@ -2,7 +2,7 @@ use std::collections::BTreeSet;
 
 use crate::{
   ast::{BinaryOp, UnaryOp},
-  diagnostics::{Diagnostic,Diagnosable},
+  diagnostics::{Diagnosable, Diagnostic},
   ir::{
     ids::{BlockId, InstId, ValueId},
     types::IrType,

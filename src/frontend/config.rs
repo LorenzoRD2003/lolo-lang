@@ -8,6 +8,8 @@ pub struct FrontendConfig {
   /// Seria el --dump-semantic.
   #[allow(dead_code)]
   pub(crate) show_semantic_result: bool,
+  /// Seria el --dump-ir.
+  pub(crate) show_ir: bool,
   /// Deja de compilar si encuentra errores en la fase de Parsing.
   pub(crate) stop_after_parse_errors: bool,
   /// Deja de compilar si encuentra errores en la fase de analisis semantico.
@@ -25,6 +27,7 @@ impl FrontendConfig {
       stop_after_parse_errors: false,
       stop_after_semantic_errors: false,
       show_stage_timings: false,
+      show_ir: false,
     }
   }
 
@@ -36,6 +39,7 @@ impl FrontendConfig {
       stop_after_parse_errors: true,
       stop_after_semantic_errors: true,
       show_stage_timings: false,
+      show_ir: false,
     }
   }
 
@@ -47,11 +51,17 @@ impl FrontendConfig {
       stop_after_parse_errors: false,
       stop_after_semantic_errors: false,
       show_stage_timings: false,
+      show_ir: false,
     }
   }
 
   pub fn with_stage_timings(mut self, enabled: bool) -> Self {
     self.show_stage_timings = enabled;
+    self
+  }
+
+  pub fn with_ir_dump(mut self, enabled: bool) -> Self {
+    self.show_ir = enabled;
     self
   }
 }

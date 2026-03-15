@@ -3,7 +3,7 @@
 
 use crate::ir::ids::InstId;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub(crate) struct BlockData {
   /// Instrucciones PHI del bloque
   phis: Vec<InstId>,

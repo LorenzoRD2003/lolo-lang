@@ -1,4 +1,5 @@
 use crate::{
+  Diagnostic,
   ast::{BinaryOp, UnaryOp},
   ir::{
     block::BlockData,
@@ -9,7 +10,6 @@ use crate::{
     types::IrType,
     value::IrConstant,
   },
-  Diagnostic,
 };
 
 fn block(id: usize) -> BlockId {

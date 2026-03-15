@@ -1,5 +1,7 @@
 // Responsabilidad: Definir todos los IDs nominales de la IR.
 
+use std::fmt::Display;
+
 use crate::common::IncrementalId;
 
 /// ID para indexar valores.
@@ -9,6 +11,12 @@ pub(crate) struct ValueId(pub(crate) usize);
 impl IncrementalId for ValueId {
   fn from_usize(value: usize) -> Self {
     Self(value)
+  }
+}
+
+impl Display for ValueId {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(f, "%v{}", self.0)
   }
 }
 
@@ -29,5 +37,11 @@ pub(crate) struct BlockId(pub(crate) usize);
 impl IncrementalId for BlockId {
   fn from_usize(value: usize) -> Self {
     Self(value)
+  }
+}
+
+impl Display for BlockId {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(f, "bb{}", self.0)
   }
 }
