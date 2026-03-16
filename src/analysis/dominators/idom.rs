@@ -1,5 +1,7 @@
 use crate::{analysis::cfg::Cfg, ir::BlockId};
 
+pub(crate) type Idom = Vec<Option<BlockId>>;
+
 /// Calcula el immediate dominator (`idom`) de cada bloque.
 ///
 /// Un bloque `d` domina a `n` si todo camino desde `entry` hasta `n`
@@ -8,7 +10,7 @@ use crate::{analysis::cfg::Cfg, ir::BlockId};
 /// El immediate dominator de `n` es su dominador mas cercano.
 /// Convencion: `idom[entry] = Some(entry)`
 /// Bloques inalcanzables => `None`
-pub(crate) fn compute_idom(cfg: &Cfg) -> Vec<Option<BlockId>> {
+pub(crate) fn compute_idom(cfg: &Cfg) -> Idom {
   // Orden de recorrido: usamos reverse-postorder (RPO) de bloques alcanzables.
   let rpo = reverse_postorder_reachable(cfg);
 
@@ -64,7 +66,7 @@ pub(crate) fn compute_idom(cfg: &Cfg) -> Vec<Option<BlockId>> {
 fn intersect(
   mut left: BlockId,
   mut right: BlockId,
-  idom: &[Option<BlockId>],
+  idom: &Idom,
   rpo_index: &[usize],
 ) -> BlockId {
   // Recorremos ambos nodos "hacia arriba" por la cadena de immediate dominators

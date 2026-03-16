@@ -25,7 +25,7 @@ impl Dominators {
   /// Construye dominadores + frontera de dominancia para un CFG.
   pub(crate) fn compute(cfg: &Cfg) -> Self {
     let idom = compute_idom(cfg);
-    let tree = DominatorTree::from_idom(cfg.block_count(), cfg.entry(), idom);
+    let tree = DominatorTree::from_idom(cfg.entry(), idom);
     let frontier = DominanceFrontier::compute(cfg, &tree);
     Self { tree, frontier }
   }
