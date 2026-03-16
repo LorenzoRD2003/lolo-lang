@@ -3,7 +3,7 @@ use std::collections::VecDeque;
 use crate::{
   analysis::Cfg,
   ir::{InstId, InstKind, IrModule, ValueId},
-  passes::{IrPass, PassStats},
+  passes::{IrPass, PassContext, PassStats},
 };
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
@@ -15,22 +15,16 @@ pub(crate) struct DceStats {
 pub(crate) struct DcePass;
 
 impl DcePass {
-  fn run(module: &mut IrModule) -> DceStats {
+  fn run(module: &mut IrModule, cfg: &Cfg) -> DceStats {
     // Instrucciones vivas segun DCE
     let mut live_insts = vec![false; module.inst_count()];
     // Cola de instrucciones pendientes de procesar: es un backward analysis
     let mut worklist: VecDeque<InstId> = VecDeque::new();
-    let mut errors = Vec::new();
-    let cfg = Cfg::build(module, module.entry_block(), &mut errors);
-
-    if !errors.is_empty() {
-      return DceStats::default();
-    }
 
     let value_def = Self::build_value_def(module);
-    Self::seed_roots(module, &cfg, &mut live_insts, &mut worklist);
+    Self::seed_roots(module, cfg, &mut live_insts, &mut worklist);
     Self::propagate(module, &value_def, &mut live_insts, &mut worklist);
-    Self::sweep(module, &cfg, &live_insts)
+    Self::sweep(module, cfg, &live_insts)
   }
 
   /// Construye un mapa ValueId -> InstId. En que instruccion fue definido cada valor.
@@ -153,8 +147,8 @@ impl IrPass for DcePass {
     "dce"
   }
 
-  fn run(&self, module: &mut IrModule) -> PassStats {
-    let stats = Self::run(module);
+  fn run(&self, module: &mut IrModule, ctx: &PassContext) -> PassStats {
+    let stats = Self::run(module, ctx.cfg());
     PassStats::Dce(stats)
   }
 }

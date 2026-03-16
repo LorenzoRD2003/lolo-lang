@@ -55,6 +55,10 @@ impl IrModule {
     &self.insts[id.0]
   }
 
+  pub(crate) fn inst_mut(&mut self, id: InstId) -> &mut InstData {
+    &mut self.insts[id.0]
+  }
+
   pub(crate) fn add_inst(&mut self, data: InstData) {
     self.insts.push(data);
   }
@@ -73,6 +77,10 @@ impl IrModule {
 
   pub(crate) fn add_block(&mut self, data: BlockData) {
     self.blocks.push(data);
+  }
+
+  pub(crate) fn replace_blocks(&mut self, blocks: Vec<BlockData>) {
+    self.blocks = blocks;
   }
 
   pub(crate) fn block_count(&self) -> usize {

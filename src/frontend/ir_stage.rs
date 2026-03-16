@@ -5,7 +5,7 @@ use crate::{
     stage::{Stage, StageResult},
   },
   ir::LoweringCtx,
-  passes::{DcePass, IrPass},
+  passes::{DcePass, IrPass, PassContext, UcePass},
 };
 
 #[derive(Debug, Clone)]
@@ -25,10 +25,13 @@ impl Stage for IrStage {
       &mut ctx.diagnostics,
     );
 
-    let dce = DcePass;
-    let dce_stats = dce.run(&mut result);
-    if config.show_pass_stats {
-      ctx.pass_stats.push(dce_stats);
+    if let Ok(pass_ctx) = PassContext::from_module(&result) {
+      let uce_stats = UcePass.run(&mut result, &pass_ctx);
+      let dce_stats = DcePass.run(&mut result, &pass_ctx);
+      if config.show_pass_stats {
+        ctx.pass_stats.push(uce_stats);
+        ctx.pass_stats.push(dce_stats);
+      }
     }
 
     // Verificacion estructural/tipada de IR habilitada por feature de compilacion.

@@ -3,7 +3,6 @@ mod cfg;
 mod dominators;
 
 pub(crate) use cfg::Cfg;
-#[cfg(any(test, feature = "ir-verify"))]
 pub(crate) use cfg::CfgError;
 #[cfg(any(test, feature = "ir-verify"))]
 pub(crate) use dominators::Dominators;

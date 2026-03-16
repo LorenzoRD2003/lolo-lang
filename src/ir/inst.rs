@@ -186,7 +186,6 @@ impl PhiInput {
     Self { pred_block, value }
   }
 
-  #[cfg(any(test, feature = "ir-verify"))]
   pub(crate) fn pred_block(&self) -> BlockId {
     self.pred_block
   }

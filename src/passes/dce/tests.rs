@@ -1,4 +1,5 @@
 use crate::{
+  analysis::Cfg,
   ir::{InstKind, IrConstant, IrModule, test_helpers::lower_source},
   passes::dce::DcePass,
 };
@@ -9,7 +10,10 @@ fn run_dce(source: &str) -> (IrModule, crate::passes::dce::DceStats) {
     diagnostics.is_empty(),
     "el programa de test debe bajar a IR sin diagnosticos: {diagnostics:?}"
   );
-  let stats = DcePass::run(&mut ir);
+  let mut cfg_errors = Vec::new();
+  let cfg = Cfg::build(&ir, ir.entry_block(), &mut cfg_errors);
+  assert!(cfg_errors.is_empty(), "el CFG de test debe ser valido");
+  let stats = DcePass::run(&mut ir, &cfg);
   (ir, stats)
 }
 
@@ -72,7 +76,10 @@ fn dce_removes_dead_phis_when_merge_value_is_not_used() {
   );
 
   let mut ir_after = ir_before.clone();
-  let stats = DcePass::run(&mut ir_after);
+  let mut cfg_errors = Vec::new();
+  let cfg = Cfg::build(&ir_after, ir_after.entry_block(), &mut cfg_errors);
+  assert!(cfg_errors.is_empty(), "el CFG de test debe ser valido");
+  let stats = DcePass::run(&mut ir_after, &cfg);
 
   assert_eq!(
     ir_after.count_insts_by_kind(|k| matches!(k, InstKind::Phi { .. })),
