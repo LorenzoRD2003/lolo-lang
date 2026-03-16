@@ -5,7 +5,7 @@ use crate::{
     stage::{Stage, StageResult},
   },
   ir::LoweringCtx,
-  passes::{DcePass, IrPass, PassContext, UcePass},
+  passes::PassManager,
 };
 
 #[derive(Debug, Clone)]
@@ -25,12 +25,9 @@ impl Stage for IrStage {
       &mut ctx.diagnostics,
     );
 
-    if let Ok(pass_ctx) = PassContext::from_module(&result) {
-      let uce_stats = UcePass.run(&mut result, &pass_ctx);
-      let dce_stats = DcePass.run(&mut result, &pass_ctx);
+    if let Ok(stats) = PassManager::run(&mut result, config.pass_plan()) {
       if config.show_pass_stats {
-        ctx.pass_stats.push(uce_stats);
-        ctx.pass_stats.push(dce_stats);
+        ctx.pass_stats.extend(stats);
       }
     }
 

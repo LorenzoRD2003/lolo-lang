@@ -1,3 +1,5 @@
+use crate::passes::PassPlan;
+
 // Responsabilidad: controlar la politica del frontend
 
 #[derive(Debug, Clone)]
@@ -18,6 +20,8 @@ pub struct FrontendConfig {
   pub(crate) stop_after_semantic_errors: bool,
   /// Indica cuanto tiempo tardo cada stage.
   pub(crate) show_stage_timings: bool,
+  /// Plan de passes de optimizacion para IR (orden + repeticiones).
+  pub(crate) pass_plan: PassPlan,
 }
 
 impl FrontendConfig {
@@ -31,6 +35,7 @@ impl FrontendConfig {
       show_stage_timings: false,
       show_ir: false,
       show_pass_stats: false,
+      pass_plan: PassPlan::default(),
     }
   }
 
@@ -44,6 +49,7 @@ impl FrontendConfig {
       show_stage_timings: false,
       show_ir: false,
       show_pass_stats: false,
+      pass_plan: PassPlan::default(),
     }
   }
 
@@ -57,6 +63,7 @@ impl FrontendConfig {
       show_stage_timings: false,
       show_ir: false,
       show_pass_stats: false,
+      pass_plan: PassPlan::default(),
     }
   }
 
@@ -73,5 +80,42 @@ impl FrontendConfig {
   pub fn with_pass_stats(mut self, enabled: bool) -> Self {
     self.show_pass_stats = enabled;
     self
+  }
+
+  pub fn with_passes_spec(mut self, spec: &str) -> Result<Self, String> {
+    self.pass_plan = PassPlan::parse(spec)?;
+    Ok(self)
+  }
+
+  pub(crate) fn pass_plan(&self) -> &PassPlan {
+    &self.pass_plan
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::FrontendConfig;
+
+  #[test]
+  fn with_passes_spec_overrides_default_order() {
+    let config = FrontendConfig::cli_mode()
+      .with_passes_spec("dce*2,uce")
+      .expect("spec valida");
+
+    let expanded: Vec<_> = config
+      .pass_plan()
+      .expanded_passes()
+      .map(|id| id.name())
+      .collect();
+
+    assert_eq!(expanded, vec!["dce", "dce", "uce"]);
+  }
+
+  #[test]
+  fn with_passes_spec_rejects_invalid_spec() {
+    let err = FrontendConfig::cli_mode()
+      .with_passes_spec("foo")
+      .expect_err("debe fallar");
+    assert!(err.contains("pass desconocida"));
   }
 }

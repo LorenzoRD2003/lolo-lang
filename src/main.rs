@@ -9,13 +9,19 @@ fn compile(
   show_stage_timings: bool,
   show_ir: bool,
   show_pass_stats: bool,
-) -> FrontendResult {
-  let config = FrontendConfig::cli_mode()
+  passes_spec: Option<&str>,
+) -> Result<FrontendResult, String> {
+  let mut config = FrontendConfig::cli_mode()
     .with_stage_timings(show_stage_timings)
     .with_ir_dump(show_ir)
     .with_pass_stats(show_pass_stats);
+
+  if let Some(passes_spec) = passes_spec {
+    config = config.with_passes_spec(passes_spec)?;
+  }
+
   let frontend = Frontend::new(config);
-  frontend.compile(source_code)
+  Ok(frontend.compile(source_code))
 }
 
 fn render_diagnostics(
@@ -39,6 +45,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     show_stage_timings,
     show_ir,
     show_pass_stats,
+    passes_spec,
   } = match CliOptions::parse() {
     Ok(v) => v,
     Err(e) => {
@@ -50,7 +57,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
   let path = format!("files-lang/{}", filename);
   let source_code = fs::read_to_string(path)?;
 
-  let result = compile(&source_code, show_stage_timings, show_ir, show_pass_stats);
+  let result = match compile(
+    &source_code,
+    show_stage_timings,
+    show_ir,
+    show_pass_stats,
+    passes_spec.as_deref(),
+  ) {
+    Ok(result) => result,
+    Err(err) => {
+      eprintln!("Error en --passes: {err}");
+      std::process::exit(1);
+    }
+  };
   if show_ir && let Some(ir_pretty) = result.ir_pretty() {
     println!("--- IR (debug) ---");
     println!("{ir_pretty}");

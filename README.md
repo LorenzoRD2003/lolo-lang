@@ -15,7 +15,7 @@ Implemented and tested:
 - Semantic analysis pipeline
 - IR model + pretty printer
 - AST -> IR lowering
-- IR optimization pass: DCE (Dead Code Elimination)
+- IR optimization passes: UCE (Unreachable Code Elimination), DCE (Dead Code Elimination)
 - IR verification and CFG utilities
 
 ## Language Features
@@ -72,7 +72,7 @@ Current lowering includes integration with semantic compile-time constants:
 Input files are read from `files-lang/`.
 
 ```bash
-cargo run -- <archivo.lolo> [--timings] [--dump-ir] [--pass-stats]
+cargo run -- <archivo.lolo> [--timings] [--dump-ir] [--pass-stats] [--passes <plan>]
 ```
 
 Examples:
@@ -81,6 +81,7 @@ Examples:
 cargo run -- const_propagation_chain.lolo
 cargo run -- const_propagation_chain.lolo --timings --dump-ir
 cargo run -- cfg_simplify_validation.lolo --dump-ir --pass-stats
+cargo run -- cfg_simplify_validation.lolo --pass-stats --passes 'dce,uce,dce*2'
 cargo run --features ir-verify -- const_propagation_chain.lolo
 ```
 
@@ -88,7 +89,11 @@ Flags:
 
 - `--timings`: prints stage timings
 - `--dump-ir`: prints the generated IR (debug format)
-- `--pass-stats`: prints optimization pass stats (for example, DCE removed instructions/phis)
+- `--pass-stats`: prints optimization pass stats (one line per pass run)
+- `--passes <plan>`: overrides optimization order/repetitions. Default plan is `uce,dce`.
+  - Supported passes: `uce`, `dce`
+  - Repetition syntax: `pass*N` (for example `dce*3`)
+  - It is advised to quote plans that include `*` (for example `'dce*2,uce'`)
 
 Compile-time feature flags:
 
@@ -114,6 +119,7 @@ Optional coverage:
 ```bash
 cargo install cargo-llvm-cov
 cargo llvm-cov
+cargo +nightly llvm-cov --html --branch # for branch coverage
 ```
 
 ## Public API (crate)
