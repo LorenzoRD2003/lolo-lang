@@ -110,7 +110,7 @@ impl InstKind {
     )
   }
 
-  pub(crate) fn for_each_operand(&self, mut f: impl FnMut(ValueId)) {
+  pub(crate) fn for_each_operand(&self, f: impl FnMut(ValueId)) {
     self.operands().iter().copied().for_each(f);
   }
 

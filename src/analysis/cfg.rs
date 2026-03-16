@@ -121,7 +121,6 @@ impl Cfg {
   }
 
   /// Devuelve un iterador sobre los bloques alcanzables en el CFG
-  #[cfg(test)]
   pub(crate) fn reachable_blocks(&self) -> impl Iterator<Item = BlockId> + '_ {
     (0..self.reachable.len())
       .filter(|&index| self.reachable[index])
