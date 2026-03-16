@@ -54,6 +54,10 @@ impl FrontendResult {
           "dce: removed_phis={}, removed_insts={}\n",
           dce.removed_phis, dce.removed_insts
         )),
+        PassStats::Uce(uce) => out.push_str(&format!(
+          "uce: removed_blocks={}, rewritten_jumps={}, rewritten_branches={}, removed_phi_inputs={}\n",
+          uce.removed_blocks, uce.rewritten_jumps, uce.rewritten_branches, uce.removed_phi_inputs
+        )),
       }
     }
     Some(out)

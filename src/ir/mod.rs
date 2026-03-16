@@ -27,7 +27,7 @@ pub(crate) use block::BlockData;
 pub(crate) use ids::{BlockId, InstId, ValueId};
 #[cfg(test)]
 pub(crate) use inst::InstData;
-pub(crate) use inst::InstKind;
+pub(crate) use inst::{InstKind, PhiInput};
 pub(crate) use lowering::LoweringCtx;
 pub(crate) use module::IrModule;
 #[cfg(test)]
