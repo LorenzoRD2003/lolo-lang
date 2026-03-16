@@ -8,7 +8,7 @@
 use std::collections::BTreeSet;
 
 use crate::{
-  analysis::{Cfg, Dominators},
+  analysis::{Cfg, CfgError, Dominators},
   ast::{BinaryOp, UnaryOp},
   diagnostics::{Diagnosable, Diagnostic},
   ir::{
@@ -98,7 +98,9 @@ impl IrModule {
       self.check_inst_operands_and_types(term_id, &mut errors);
     }
 
-    let cfg = Cfg::build(self, entry_block, &mut errors);
+    let mut cfg_errors: Vec<CfgError> = Vec::new();
+    let cfg = Cfg::build(self, entry_block, &mut cfg_errors);
+    errors.extend(cfg_errors.into_iter().map(IrInvariantError::Cfg));
     let dominators = Dominators::compute(&cfg);
 
     for block_index in 0..self.block_count() {

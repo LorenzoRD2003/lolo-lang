@@ -1,9 +1,7 @@
 use super::*;
 use crate::{
   diagnostics::Diagnosable,
-  ir::{
-    BlockData, BlockId, InstData, InstId, InstKind, IrConstant, IrInvariantError, IrType, ValueId,
-  },
+  ir::{BlockData, BlockId, InstData, InstId, InstKind, IrConstant, IrType, ValueId},
 };
 
 fn block(id: usize) -> BlockId {
@@ -59,13 +57,13 @@ fn set_return_terminator(module: &mut IrModule, block_id: BlockId) {
   module.block_mut(block_id).set_terminator(term_id);
 }
 
-fn build_cfg(module: &IrModule) -> (Cfg, Vec<IrInvariantError>) {
+fn build_cfg(module: &IrModule) -> (Cfg, Vec<CfgError>) {
   let mut errors = Vec::new();
   let cfg = Cfg::build(module, block(0), &mut errors);
   (cfg, errors)
 }
 
-fn has_error(errors: &[IrInvariantError], pattern: &str) -> bool {
+fn has_error(errors: &[CfgError], pattern: &str) -> bool {
   errors
     .iter()
     .any(|err| err.to_diagnostic().msg().contains(pattern))

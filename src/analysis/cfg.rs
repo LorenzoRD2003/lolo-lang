@@ -1,6 +1,9 @@
+mod error;
+pub(crate) use error::CfgError;
+
 use std::collections::VecDeque;
 
-use crate::ir::{BlockId, InstKind, IrInvariantError, IrModule};
+use crate::ir::{BlockId, InstKind, IrModule};
 
 /// Control Flow Graph (CFG) para un IrModule
 #[derive(Debug, Clone)]
@@ -14,11 +17,7 @@ pub(crate) struct Cfg {
 
 impl Cfg {
   /// Construye un CFG a partir de un modulo
-  pub(crate) fn build(
-    module: &IrModule,
-    entry: BlockId,
-    errors: &mut Vec<IrInvariantError>,
-  ) -> Self {
+  pub(crate) fn build(module: &IrModule, entry: BlockId, errors: &mut Vec<CfgError>) -> Self {
     let block_count = module.block_count();
     let mut cfg = Self {
       entry,
@@ -46,7 +45,7 @@ impl Cfg {
             cfg.succs[block_id.0].push(*target);
             cfg.preds[target.0].push(block_id);
           } else {
-            errors.push(IrInvariantError::CfgJumpTargetMissing {
+            errors.push(CfgError::JumpTargetMissing {
               terminator_id,
               target: *target,
             });
@@ -62,7 +61,7 @@ impl Cfg {
             cfg.succs[block_id.0].push(*if_block);
             cfg.preds[if_block.0].push(block_id);
           } else {
-            errors.push(IrInvariantError::CfgBranchIfTargetMissing {
+            errors.push(CfgError::BranchIfTargetMissing {
               terminator_id,
               if_block: *if_block,
             });
@@ -71,7 +70,7 @@ impl Cfg {
             cfg.succs[block_id.0].push(*else_block);
             cfg.preds[else_block.0].push(block_id);
           } else {
-            errors.push(IrInvariantError::CfgBranchElseTargetMissing {
+            errors.push(CfgError::BranchElseTargetMissing {
               terminator_id,
               else_block: *else_block,
             });
@@ -86,6 +85,7 @@ impl Cfg {
     cfg
   }
 
+  #[allow(dead_code)]
   /// Bloques predecesores en el CFG para cada bloque
   pub(crate) fn predecessors(&self, block: BlockId) -> &[BlockId] {
     &self.preds[block.0]

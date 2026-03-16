@@ -43,7 +43,10 @@ fn dce_keeps_print_and_its_operand_definition() {
 
   let (ir, _stats) = run_dce(source);
 
-  assert_eq!(ir.count_insts_by_kind(|k| matches!(k, InstKind::Print(_))), 1);
+  assert_eq!(
+    ir.count_insts_by_kind(|k| matches!(k, InstKind::Print(_))),
+    1
+  );
   assert_eq!(ir.const_results(IrConstant::Int32(42)).len(), 1);
 }
 
@@ -98,7 +101,10 @@ fn dce_keeps_live_phi_when_value_flows_to_print() {
 
   let (ir, _stats) = run_dce(source);
 
-  assert_eq!(ir.count_insts_by_kind(|k| matches!(k, InstKind::Print(_))), 1);
+  assert_eq!(
+    ir.count_insts_by_kind(|k| matches!(k, InstKind::Print(_))),
+    1
+  );
   assert!(
     ir.count_insts_by_kind(|k| matches!(k, InstKind::Phi { .. })) >= 1,
     "debe sobrevivir al menos el phi que alimenta al print"
@@ -123,7 +129,13 @@ fn dce_handles_repeated_mark_live_for_same_definition() {
 
   let (ir, _stats) = run_dce(source);
 
-  assert_eq!(ir.count_insts_by_kind(|k| matches!(k, InstKind::Branch { .. })), 1);
-  assert_eq!(ir.count_insts_by_kind(|k| matches!(k, InstKind::Print(_))), 1);
+  assert_eq!(
+    ir.count_insts_by_kind(|k| matches!(k, InstKind::Branch { .. })),
+    1
+  );
+  assert_eq!(
+    ir.count_insts_by_kind(|k| matches!(k, InstKind::Print(_))),
+    1
+  );
   assert_eq!(ir.const_results(IrConstant::Bool(true)).len(), 1);
 }

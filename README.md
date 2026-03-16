@@ -15,6 +15,7 @@ Implemented and tested:
 - Semantic analysis pipeline
 - IR model + pretty printer
 - AST -> IR lowering
+- IR optimization pass: DCE (Dead Code Elimination)
 - IR verification and CFG utilities
 
 ## Language Features
@@ -71,7 +72,7 @@ Current lowering includes integration with semantic compile-time constants:
 Input files are read from `files-lang/`.
 
 ```bash
-cargo run -- <archivo.lolo> [--timings] [--dump-ir]
+cargo run -- <archivo.lolo> [--timings] [--dump-ir] [--pass-stats]
 ```
 
 Examples:
@@ -79,6 +80,7 @@ Examples:
 ```bash
 cargo run -- const_propagation_chain.lolo
 cargo run -- const_propagation_chain.lolo --timings --dump-ir
+cargo run -- cfg_simplify_validation.lolo --dump-ir --pass-stats
 cargo run --features ir-verify -- const_propagation_chain.lolo
 ```
 
@@ -86,6 +88,7 @@ Flags:
 
 - `--timings`: prints stage timings
 - `--dump-ir`: prints the generated IR (debug format)
+- `--pass-stats`: prints optimization pass stats (for example, DCE removed instructions/phis)
 
 Compile-time feature flags:
 

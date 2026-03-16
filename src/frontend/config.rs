@@ -10,6 +10,8 @@ pub struct FrontendConfig {
   pub(crate) show_semantic_result: bool,
   /// Seria el --dump-ir.
   pub(crate) show_ir: bool,
+  /// Seria el --pass-stats.
+  pub(crate) show_pass_stats: bool,
   /// Deja de compilar si encuentra errores en la fase de Parsing.
   pub(crate) stop_after_parse_errors: bool,
   /// Deja de compilar si encuentra errores en la fase de analisis semantico.
@@ -28,6 +30,7 @@ impl FrontendConfig {
       stop_after_semantic_errors: false,
       show_stage_timings: false,
       show_ir: false,
+      show_pass_stats: false,
     }
   }
 
@@ -40,6 +43,7 @@ impl FrontendConfig {
       stop_after_semantic_errors: true,
       show_stage_timings: false,
       show_ir: false,
+      show_pass_stats: false,
     }
   }
 
@@ -52,6 +56,7 @@ impl FrontendConfig {
       stop_after_semantic_errors: false,
       show_stage_timings: false,
       show_ir: false,
+      show_pass_stats: false,
     }
   }
 
@@ -62,6 +67,11 @@ impl FrontendConfig {
 
   pub fn with_ir_dump(mut self, enabled: bool) -> Self {
     self.show_ir = enabled;
+    self
+  }
+
+  pub fn with_pass_stats(mut self, enabled: bool) -> Self {
+    self.show_pass_stats = enabled;
     self
   }
 }

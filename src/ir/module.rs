@@ -58,7 +58,7 @@ impl IrModule {
   pub(crate) fn add_inst(&mut self, data: InstData) {
     self.insts.push(data);
   }
-  
+
   pub(crate) fn inst_count(&self) -> usize {
     self.insts.len()
   }

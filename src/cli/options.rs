@@ -5,11 +5,12 @@ pub struct CliOptions {
   pub filename: String,
   pub show_stage_timings: bool,
   pub show_ir: bool,
+  pub show_pass_stats: bool,
 }
 
 impl CliOptions {
   fn correct_use() -> &'static str {
-    "Uso: cargo run -- <archivo.lolo> [--timings] [--dump-ir]"
+    "Uso: cargo run -- <archivo.lolo> [--timings] [--dump-ir] [--pass-stats]"
   }
 
   pub fn parse() -> Result<Self, String> {
@@ -22,11 +23,13 @@ impl CliOptions {
     let mut filename: Option<String> = None;
     let mut show_stage_timings = false;
     let mut show_ir = false;
+    let mut show_pass_stats = false;
 
     for arg in args {
       match arg.as_str() {
         "--timings" => show_stage_timings = true,
         "--dump-ir" => show_ir = true,
+        "--pass-stats" => show_pass_stats = true,
         s if !s.starts_with("--") && filename.is_none() => {
           filename = Some(s.to_string());
         }
@@ -45,6 +48,7 @@ impl CliOptions {
       filename,
       show_stage_timings,
       show_ir,
+      show_pass_stats,
     })
   }
 }

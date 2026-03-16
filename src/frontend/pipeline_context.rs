@@ -4,6 +4,7 @@ use crate::{
   ast::{Ast, Program},
   diagnostics::Diagnostic,
   ir::IrModule,
+  passes::PassStats,
   semantic::SemanticResult,
 };
 
@@ -13,6 +14,7 @@ pub(crate) struct PipelineContext {
   pub(crate) program: Option<Program>,
   pub(crate) semantic: Option<SemanticResult>,
   pub(crate) ir: Option<IrModule>,
+  pub(crate) pass_stats: Vec<PassStats>,
   pub(crate) diagnostics: Vec<Diagnostic>,
 }
 
@@ -24,6 +26,7 @@ impl PipelineContext {
       program: None,
       semantic: None,
       ir: None,
+      pass_stats: Vec::new(),
       diagnostics: Vec::new(),
     }
   }

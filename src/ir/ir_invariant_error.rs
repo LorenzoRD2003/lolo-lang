@@ -1,6 +1,7 @@
 use std::collections::BTreeSet;
 
 use crate::{
+  analysis::CfgError,
   ast::{BinaryOp, UnaryOp},
   diagnostics::{Diagnosable, Diagnostic},
   ir::{
@@ -121,18 +122,7 @@ pub(crate) enum IrInvariantError {
     phi_id: InstId,
     block_id: BlockId,
   },
-  CfgJumpTargetMissing {
-    terminator_id: InstId,
-    target: BlockId,
-  },
-  CfgBranchIfTargetMissing {
-    terminator_id: InstId,
-    if_block: BlockId,
-  },
-  CfgBranchElseTargetMissing {
-    terminator_id: InstId,
-    else_block: BlockId,
-  },
+  Cfg(CfgError),
 }
 
 impl Diagnosable for IrInvariantError {
@@ -278,27 +268,7 @@ impl Diagnosable for IrInvariantError {
         "Phi {:?} en {:?} no cae en la dominance frontier de ningun predecesor",
         phi_id, block_id
       )),
-      Self::CfgJumpTargetMissing {
-        terminator_id,
-        target,
-      } => Diagnostic::error(format!(
-        "Jump {:?} referencia bloque inexistente {:?}",
-        terminator_id, target
-      )),
-      Self::CfgBranchIfTargetMissing {
-        terminator_id,
-        if_block,
-      } => Diagnostic::error(format!(
-        "Branch {:?} referencia if_block inexistente {:?}",
-        terminator_id, if_block
-      )),
-      Self::CfgBranchElseTargetMissing {
-        terminator_id,
-        else_block,
-      } => Diagnostic::error(format!(
-        "Branch {:?} referencia else_block inexistente {:?}",
-        terminator_id, else_block
-      )),
+      Self::Cfg(error) => error.to_diagnostic(),
     }
   }
 }

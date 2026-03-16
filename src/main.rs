@@ -4,10 +4,16 @@ use std::fs;
 use lolo_lang::CliOptions;
 use lolo_lang::{Frontend, FrontendConfig, FrontendResult, Renderer};
 
-fn compile(source_code: &str, show_stage_timings: bool, show_ir: bool) -> FrontendResult {
+fn compile(
+  source_code: &str,
+  show_stage_timings: bool,
+  show_ir: bool,
+  show_pass_stats: bool,
+) -> FrontendResult {
   let config = FrontendConfig::cli_mode()
     .with_stage_timings(show_stage_timings)
-    .with_ir_dump(show_ir);
+    .with_ir_dump(show_ir)
+    .with_pass_stats(show_pass_stats);
   let frontend = Frontend::new(config);
   frontend.compile(source_code)
 }
@@ -32,6 +38,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     filename,
     show_stage_timings,
     show_ir,
+    show_pass_stats,
   } = match CliOptions::parse() {
     Ok(v) => v,
     Err(e) => {
@@ -43,10 +50,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
   let path = format!("files-lang/{}", filename);
   let source_code = fs::read_to_string(path)?;
 
-  let result = compile(&source_code, show_stage_timings, show_ir);
+  let result = compile(&source_code, show_stage_timings, show_ir, show_pass_stats);
   if show_ir && let Some(ir_pretty) = result.ir_pretty() {
     println!("--- IR (debug) ---");
     println!("{ir_pretty}");
+  }
+  if show_pass_stats && let Some(pass_stats) = result.pass_stats_pretty() {
+    println!("--- Pass Stats ---");
+    print!("{pass_stats}");
   }
 
   let out = render_diagnostics(&source_code, &filename, &result)?;

@@ -7,6 +7,7 @@ mod block;
 mod builder;
 mod ids;
 mod inst;
+#[cfg(any(test, feature = "ir-verify"))]
 mod ir_invariant_error;
 mod ir_source_map;
 mod lowering;
@@ -27,7 +28,6 @@ pub(crate) use ids::{BlockId, InstId, ValueId};
 #[cfg(test)]
 pub(crate) use inst::InstData;
 pub(crate) use inst::InstKind;
-pub(crate) use ir_invariant_error::IrInvariantError;
 pub(crate) use lowering::LoweringCtx;
 pub(crate) use module::IrModule;
 #[cfg(test)]

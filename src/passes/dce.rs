@@ -96,8 +96,9 @@ impl DcePass {
       let inst = module.inst(next);
       inst.kind.for_each_operand(|operand| {
         // Busco la instruccion donde fue definido el operando, y la encolo
-        value_def[operand.0]
-          .and_then(|def_inst| Some(Self::mark_live(def_inst, live_insts, worklist)));
+        if let Some(def_inst) = value_def[operand.0] {
+          Self::mark_live(def_inst, live_insts, worklist)
+        }
       });
     }
   }

@@ -1,12 +1,12 @@
 use std::collections::BTreeSet;
 
 use crate::{
-  analysis::Cfg,
+  analysis::{Cfg, CfgError},
   ast::{Ast, Program},
   diagnostics::Diagnostic,
   ir::{
-    BlockData, BlockId, InstData, InstId, InstKind, IrConstant, IrInvariantError, IrModule, IrType,
-    LoweringCtx, ValueId,
+    BlockData, BlockId, InstData, InstId, InstKind, IrConstant, IrModule, IrType, LoweringCtx,
+    ValueId,
   },
   parser::parse_program,
   semantic::{PhaseGraph, SemanticAnalyzer, SemanticResult},
@@ -163,7 +163,7 @@ pub(crate) fn set_return_terminator(module: &mut IrModule, block_id: BlockId) {
   module.block_mut(block_id).set_terminator(term_id);
 }
 
-pub(crate) fn build_test_cfg(module: &IrModule, entry: BlockId) -> (Cfg, Vec<IrInvariantError>) {
+pub(crate) fn build_test_cfg(module: &IrModule, entry: BlockId) -> (Cfg, Vec<CfgError>) {
   let mut errors = Vec::new();
   let cfg = Cfg::build(module, entry, &mut errors);
   (cfg, errors)

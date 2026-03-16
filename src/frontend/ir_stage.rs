@@ -5,6 +5,7 @@ use crate::{
     stage::{Stage, StageResult},
   },
   ir::LoweringCtx,
+  passes::{DcePass, IrPass},
 };
 
 #[derive(Debug, Clone)]
@@ -17,12 +18,18 @@ impl Stage for IrStage {
 
   fn run(&self, ctx: &mut PipelineContext, config: &FrontendConfig) -> StageResult {
     let before_errors = ctx.diagnostics.len();
-    let result = LoweringCtx::lower_to_ir(
+    let mut result = LoweringCtx::lower_to_ir(
       ctx.program.as_ref().unwrap(),
       ctx.ast.as_ref().unwrap(),
       ctx.semantic.as_ref().unwrap(),
       &mut ctx.diagnostics,
     );
+
+    let dce = DcePass;
+    let dce_stats = dce.run(&mut result);
+    if config.show_pass_stats {
+      ctx.pass_stats.push(dce_stats);
+    }
 
     // Verificacion estructural/tipada de IR habilitada por feature de compilacion.
     #[cfg(feature = "ir-verify")]
