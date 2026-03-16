@@ -114,6 +114,13 @@ pub(crate) enum IrInvariantError {
     expected_preds: BTreeSet<usize>,
     obtained_preds: BTreeSet<usize>,
   },
+  DominatorsMissingImmediateDominator {
+    block_id: BlockId,
+  },
+  PhiBlockNotInDominanceFrontier {
+    phi_id: InstId,
+    block_id: BlockId,
+  },
   CfgJumpTargetMissing {
     terminator_id: InstId,
     target: BlockId,
@@ -262,6 +269,14 @@ impl Diagnosable for IrInvariantError {
       } => Diagnostic::error(format!(
         "Phi {:?} en {:?} no cubre exactamente los predecesores del bloque: esperados {:?}, obtenidos {:?}",
         phi_id, block_id, expected_preds, obtained_preds
+      )),
+      Self::DominatorsMissingImmediateDominator { block_id } => Diagnostic::error(format!(
+        "Dominators invalido: bloque alcanzable {:?} no tiene immediate dominator",
+        block_id
+      )),
+      Self::PhiBlockNotInDominanceFrontier { phi_id, block_id } => Diagnostic::error(format!(
+        "Phi {:?} en {:?} no cae en la dominance frontier de ningun predecesor",
+        phi_id, block_id
       )),
       Self::CfgJumpTargetMissing {
         terminator_id,

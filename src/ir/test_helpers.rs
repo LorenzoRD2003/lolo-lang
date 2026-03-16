@@ -5,8 +5,8 @@ use crate::{
   ast::{Ast, Program},
   diagnostics::Diagnostic,
   ir::{
-    BlockData, BlockId, InstData, InstId, InstKind, IrConstant, IrInvariantError, IrModule,
-    IrType, LoweringCtx, ValueId,
+    BlockData, BlockId, InstData, InstId, InstKind, IrConstant, IrInvariantError, IrModule, IrType,
+    LoweringCtx, ValueId,
   },
   parser::parse_program,
   semantic::{PhaseGraph, SemanticAnalyzer, SemanticResult},

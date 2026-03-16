@@ -79,12 +79,17 @@ Examples:
 ```bash
 cargo run -- const_propagation_chain.lolo
 cargo run -- const_propagation_chain.lolo --timings --dump-ir
+cargo run --features ir-verify -- const_propagation_chain.lolo
 ```
 
 Flags:
 
 - `--timings`: prints stage timings
 - `--dump-ir`: prints the generated IR (debug format)
+
+Compile-time feature flags:
+
+- `ir-verify`: enables expensive IR invariants verification (useful for debugging)
 
 ## Testing
 

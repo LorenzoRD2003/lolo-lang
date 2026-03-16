@@ -8,7 +8,7 @@
 use std::collections::BTreeSet;
 
 use crate::{
-  analysis::Cfg,
+  analysis::{Cfg, Dominators},
   ast::{BinaryOp, UnaryOp},
   diagnostics::{Diagnosable, Diagnostic},
   ir::{
@@ -99,9 +99,17 @@ impl IrModule {
     }
 
     let cfg = Cfg::build(self, entry_block, &mut errors);
+    let dominators = Dominators::compute(&cfg);
 
     for block_index in 0..self.block_count() {
       let block_id = BlockId(block_index);
+      if cfg.is_reachable(block_id)
+        && block_id != entry_block
+        && dominators.tree().idom(block_id).is_none()
+      {
+        errors.push(IrInvariantError::DominatorsMissingImmediateDominator { block_id });
+      }
+
       let block = self.block(block_id);
       let expected_preds: BTreeSet<usize> =
         cfg.predecessors(block_id).iter().map(|b| b.0).collect();
@@ -114,6 +122,14 @@ impl IrModule {
           continue;
         };
         self.check_phi_predecessors(phi_id, block_id, inputs, &expected_preds, &mut errors);
+        self.check_phi_frontier_membership(
+          phi_id,
+          block_id,
+          &expected_preds,
+          &cfg,
+          &dominators,
+          &mut errors,
+        );
       }
     }
 
@@ -533,6 +549,31 @@ impl IrModule {
         expected_preds: expected_preds.clone(),
         obtained_preds: seen_input_preds,
       });
+    }
+  }
+
+  /// Valida que un bloque con `phi` y multiples predecesores sea un punto de
+  /// merge observado por el analisis de dominancia.
+  fn check_phi_frontier_membership(
+    &self,
+    phi_id: InstId,
+    block_id: BlockId,
+    expected_preds: &BTreeSet<usize>,
+    cfg: &Cfg,
+    dominators: &Dominators,
+    errors: &mut Vec<IrInvariantError>,
+  ) {
+    if expected_preds.len() < 2 || !cfg.is_reachable(block_id) {
+      return;
+    }
+
+    let in_some_frontier = expected_preds.iter().copied().any(|pred_idx| {
+      let pred = BlockId(pred_idx);
+      cfg.is_reachable(pred) && dominators.frontier().for_block(pred).contains(&block_id)
+    });
+
+    if !in_some_frontier {
+      errors.push(IrInvariantError::PhiBlockNotInDominanceFrontier { phi_id, block_id });
     }
   }
 }

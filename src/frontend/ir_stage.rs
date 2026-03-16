@@ -24,8 +24,8 @@ impl Stage for IrStage {
       &mut ctx.diagnostics,
     );
 
-    // Integrar la verificacion estructural/tipada de IR
-    // esto se podria cambiar a opcional
+    // Verificacion estructural/tipada de IR habilitada por feature de compilacion.
+    #[cfg(feature = "ir-verify")]
     result.verify(&mut ctx.diagnostics);
 
     ctx.ir = Some(result);

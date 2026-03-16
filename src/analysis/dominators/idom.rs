@@ -63,12 +63,7 @@ pub(crate) fn compute_idom(cfg: &Cfg) -> Idom {
   idom
 }
 
-fn intersect(
-  mut left: BlockId,
-  mut right: BlockId,
-  idom: &Idom,
-  rpo_index: &[usize],
-) -> BlockId {
+fn intersect(mut left: BlockId, mut right: BlockId, idom: &Idom, rpo_index: &[usize]) -> BlockId {
   // Recorremos ambos nodos "hacia arriba" por la cadena de immediate dominators
   // hasta que converjan en el mismo bloque.
   while left != right {

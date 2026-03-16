@@ -46,6 +46,7 @@ impl IrModule {
     self.entry_block = Some(main_block);
   }
 
+  #[cfg(any(test, feature = "ir-verify"))]
   pub(crate) fn entry_block_opt(&self) -> Option<BlockId> {
     self.entry_block
   }
@@ -58,6 +59,7 @@ impl IrModule {
     self.insts.push(data);
   }
 
+  #[cfg(any(test, feature = "ir-verify"))]
   pub(crate) fn inst_count(&self) -> usize {
     self.insts.len()
   }
@@ -86,6 +88,7 @@ impl IrModule {
     self.values.push(data);
   }
 
+  #[cfg(any(test, feature = "ir-verify"))]
   pub(crate) fn value_count(&self) -> usize {
     self.values.len()
   }

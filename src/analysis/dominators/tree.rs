@@ -2,12 +2,14 @@ use crate::{analysis::dominators::idom::Idom, ir::BlockId};
 
 /// Arbol de dominadores construido desde `idom`.
 #[derive(Debug, Clone)]
+#[cfg_attr(not(test), allow(dead_code))]
 pub(crate) struct DominatorTree {
   entry: BlockId,
   idom: Idom,
   children: Vec<Vec<BlockId>>,
 }
 
+#[cfg_attr(not(test), allow(dead_code))]
 impl DominatorTree {
   pub(crate) fn from_idom(entry: BlockId, idom: Idom) -> Self {
     let mut children = vec![Vec::new(); idom.len()];

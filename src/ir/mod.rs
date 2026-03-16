@@ -7,6 +7,7 @@ mod block;
 mod builder;
 mod ids;
 mod inst;
+#[cfg(any(test, feature = "ir-verify"))]
 mod ir_invariant_error;
 mod ir_source_map;
 mod lowering;
@@ -18,18 +19,22 @@ mod ssa_env;
 pub(crate) mod test_helpers;
 mod types;
 mod value;
+#[cfg(any(test, feature = "ir-verify"))]
 mod verify;
 
-pub(crate) use lowering::LoweringCtx;
 #[cfg(test)]
 pub(crate) use block::BlockData;
+#[cfg(any(test, feature = "ir-verify"))]
 pub(crate) use ids::BlockId;
 #[cfg(test)]
 pub(crate) use ids::{InstId, ValueId};
 #[cfg(test)]
 pub(crate) use inst::InstData;
+#[cfg(any(test, feature = "ir-verify"))]
 pub(crate) use inst::InstKind;
+#[cfg(any(test, feature = "ir-verify"))]
 pub(crate) use ir_invariant_error::IrInvariantError;
+pub(crate) use lowering::LoweringCtx;
 pub(crate) use module::IrModule;
 #[cfg(test)]
 pub(crate) use types::IrType;
