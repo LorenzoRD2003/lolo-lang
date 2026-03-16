@@ -115,12 +115,6 @@ impl ScopeArena {
   }
 
   pub(crate) fn declared_in_scope(&self, name: &str, scope: ScopeId) -> Option<SymbolId> {
-    let symbol = self.resolve(name, scope)?;
-    let declared_in_parent = self.resolve(name, self.parent_of(scope)?).is_some();
-    if declared_in_parent {
-      None
-    } else {
-      Some(symbol)
-    }
+    self.scope(scope).symbols().get(name).copied()
   }
 }
