@@ -110,6 +110,10 @@ impl InstKind {
     )
   }
 
+  pub(crate) fn for_each_operand(&self, mut f: impl FnMut(ValueId)) {
+    self.operands().iter().copied().for_each(f);
+  }
+
   fn produced_value_type(&self) -> Option<IrType> {
     match self {
       Self::Const(IrConstant::Unit) => Some(IrType::Unit),
@@ -119,6 +123,21 @@ impl InstKind {
       Self::Binary { op, .. } => Some(op.result_type().into()),
       Self::Copy(_) | Self::Phi { .. } => None,
       Self::Jump { .. } | Self::Branch { .. } | Self::Return { .. } | Self::Print(_) => None,
+    }
+  }
+
+  fn operands(&self) -> Vec<ValueId> {
+    match self {
+      InstKind::Const(_) => vec![],
+      InstKind::Copy(value_id) => vec![*value_id],
+      InstKind::Unary { operand, .. } => vec![*operand],
+      InstKind::Binary { lhs, rhs, .. } => vec![*lhs, *rhs],
+      InstKind::Jump { .. } => vec![],
+      InstKind::Branch { condition, .. } => vec![*condition],
+      InstKind::Phi { inputs } => inputs.iter().map(|phi| phi.value()).collect(),
+      InstKind::Print(value_id) => vec![*value_id],
+      InstKind::Return { value: Some(v) } => vec![*v],
+      InstKind::Return { value: None } => vec![],
     }
   }
 }
@@ -172,8 +191,10 @@ impl PhiInput {
     self.pred_block
   }
 
-  #[cfg(any(test, feature = "ir-verify"))]
   pub(crate) fn value(&self) -> ValueId {
     self.value
   }
 }
+
+#[cfg(test)]
+mod tests;

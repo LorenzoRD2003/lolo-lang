@@ -30,12 +30,20 @@ impl BlockData {
     self.phis.push(phi);
   }
 
+  pub(crate) fn retain_phis(&mut self, mut pred: impl FnMut(InstId) -> bool) {
+    self.phis.retain(|&phi| pred(phi));
+  }
+
   pub(crate) fn insts(&self) -> &[InstId] {
     &self.insts
   }
 
   pub(crate) fn add_inst(&mut self, inst: InstId) {
     self.insts.push(inst);
+  }
+
+  pub(crate) fn retain_insts(&mut self, mut pred: impl FnMut(InstId) -> bool) {
+    self.insts.retain(|&inst| pred(inst));
   }
 
   pub(crate) fn has_terminator(&self) -> bool {
