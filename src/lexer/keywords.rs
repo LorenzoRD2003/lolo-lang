@@ -1,13 +1,13 @@
 use crate::lexer::token::TokenKind;
 use once_cell::sync::Lazy;
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 
 // Queremos un lookup O(1) para keywords en vez de iterar por un slice.
 // Como es estatico y conocido en tiempo de compilacion, podemos usar `once_cell::sync::Lazy`.
 
 /// Tabla de keywords estatica
-pub(crate) static KEYWORDS: Lazy<HashMap<&'static str, TokenKind>> = Lazy::new(|| {
-  let mut m = HashMap::new();
+pub(crate) static KEYWORDS: Lazy<FxHashMap<&'static str, TokenKind>> = Lazy::new(|| {
+  let mut m = FxHashMap::default();
 
   // Boolean literals
   m.insert("true", TokenKind::BooleanLiteral);
