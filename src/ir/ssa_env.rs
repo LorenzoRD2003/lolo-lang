@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 
 use crate::{ir::ids::ValueId, semantic::SymbolId};
 
@@ -8,7 +8,7 @@ use crate::{ir::ids::ValueId, semantic::SymbolId};
 #[derive(Debug, Clone)]
 pub(crate) struct SsaEnv {
   // mapa de simbolos del codigo fuente a valores SSA
-  current_values: HashMap<SymbolId, ValueId>,
+  current_values: FxHashMap<SymbolId, ValueId>,
 }
 
 // Por ejemplo, cuando entro a un If, el SSA-env representa el estado actual antes del branch.
@@ -17,7 +17,7 @@ pub(crate) struct SsaEnv {
 impl SsaEnv {
   pub(crate) fn new() -> Self {
     Self {
-      current_values: HashMap::new(),
+      current_values: FxHashMap::default(),
     }
   }
 

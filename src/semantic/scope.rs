@@ -4,7 +4,7 @@
 // - Shadowing rules
 // Por ejemplo, aca viven el scope padre, las variables visibles y el lookup jerarquico.
 
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 
 use crate::{
   common::{IdGenerator, IncrementalId, IncrementalIdGenerator},
@@ -20,7 +20,7 @@ pub(crate) struct Scope {
   /// Puede tener un padre para permitir scopes anidados.
   parent: Option<ScopeId>,
   /// Referencias a los simbolos declarados en este scope
-  symbols: HashMap<String, SymbolId>,
+  symbols: FxHashMap<String, SymbolId>,
 }
 
 impl IncrementalId for ScopeId {
@@ -43,7 +43,7 @@ impl Scope {
     self.parent
   }
 
-  pub(crate) fn symbols(&self) -> &HashMap<String, SymbolId> {
+  pub(crate) fn symbols(&self) -> &FxHashMap<String, SymbolId> {
     &self.symbols
   }
 }
@@ -69,7 +69,7 @@ impl ScopeArena {
     let scope = Scope {
       id: scope_id,
       parent,
-      symbols: HashMap::<String, SymbolId>::new(),
+      symbols: FxHashMap::default(),
     };
     self.scopes.push(scope);
     scope_id
