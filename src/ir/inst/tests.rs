@@ -173,52 +173,6 @@ fn produced_value_type_matches_expected() {
 }
 
 #[test]
-fn operands_returns_expected_values_for_each_kind() {
-  assert_eq!(InstKind::Const(IrConstant::Unit).operands(), vec![]);
-  assert_eq!(InstKind::Copy(v(9)).operands(), vec![v(9)]);
-  assert_eq!(
-    InstKind::Unary {
-      op: UnaryOp::Not,
-      operand: v(4),
-    }
-    .operands(),
-    vec![v(4)]
-  );
-  assert_eq!(
-    InstKind::Binary {
-      op: BinaryOp::Sub,
-      lhs: v(1),
-      rhs: v(2),
-    }
-    .operands(),
-    vec![v(1), v(2)]
-  );
-  assert_eq!(InstKind::Jump { target: b(3) }.operands(), vec![]);
-  assert_eq!(
-    InstKind::Branch {
-      condition: v(6),
-      if_block: b(1),
-      else_block: b(2),
-    }
-    .operands(),
-    vec![v(6)]
-  );
-  assert_eq!(
-    InstKind::Phi {
-      inputs: vec![PhiInput::new(b(1), v(7)), PhiInput::new(b(2), v(8))],
-    }
-    .operands(),
-    vec![v(7), v(8)]
-  );
-  assert_eq!(
-    InstKind::Return { value: Some(v(5)) }.operands(),
-    vec![v(5)]
-  );
-  assert_eq!(InstKind::Return { value: None }.operands(), vec![]);
-  assert_eq!(InstKind::Print(v(11)).operands(), vec![v(11)]);
-}
-
-#[test]
 fn for_each_operand_visits_operands_in_order() {
   let kind = InstKind::Binary {
     op: BinaryOp::Mul,

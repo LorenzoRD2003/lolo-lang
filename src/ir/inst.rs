@@ -110,8 +110,22 @@ impl InstKind {
     )
   }
 
-  pub(crate) fn for_each_operand(&self, f: impl FnMut(ValueId)) {
-    self.operands().iter().copied().for_each(f);
+  pub(crate) fn for_each_operand(&self, mut f: impl FnMut(ValueId)) {
+    match self {
+      InstKind::Const(_) | InstKind::Jump { .. } | InstKind::Return { value: None } => {}
+      InstKind::Copy(v) | InstKind::Print(v) | InstKind::Return { value: Some(v) } => f(*v),
+      InstKind::Unary { operand, .. } => f(*operand),
+      InstKind::Binary { lhs, rhs, .. } => {
+        f(*lhs);
+        f(*rhs);
+      }
+      InstKind::Branch { condition, .. } => f(*condition),
+      InstKind::Phi { inputs } => {
+        for input in inputs {
+          f(input.value());
+        }
+      }
+    }
   }
 
   fn produced_value_type(&self) -> Option<IrType> {
@@ -123,21 +137,6 @@ impl InstKind {
       Self::Binary { op, .. } => Some(op.result_type().into()),
       Self::Copy(_) | Self::Phi { .. } => None,
       Self::Jump { .. } | Self::Branch { .. } | Self::Return { .. } | Self::Print(_) => None,
-    }
-  }
-
-  fn operands(&self) -> Vec<ValueId> {
-    match self {
-      InstKind::Const(_) => vec![],
-      InstKind::Copy(value_id) => vec![*value_id],
-      InstKind::Unary { operand, .. } => vec![*operand],
-      InstKind::Binary { lhs, rhs, .. } => vec![*lhs, *rhs],
-      InstKind::Jump { .. } => vec![],
-      InstKind::Branch { condition, .. } => vec![*condition],
-      InstKind::Phi { inputs } => inputs.iter().map(|phi| phi.value()).collect(),
-      InstKind::Print(value_id) => vec![*value_id],
-      InstKind::Return { value: Some(v) } => vec![*v],
-      InstKind::Return { value: None } => vec![],
     }
   }
 }

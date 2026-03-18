@@ -95,7 +95,6 @@ impl IrModule {
     self.values.push(data);
   }
 
-  #[cfg(any(test, feature = "ir-verify"))]
   pub(crate) fn value_count(&self) -> usize {
     self.values.len()
   }

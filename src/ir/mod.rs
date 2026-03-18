@@ -24,7 +24,9 @@ mod verify;
 
 #[cfg(test)]
 pub(crate) use block::BlockData;
-pub(crate) use ids::{BlockId, InstId, ValueId};
+#[cfg(any(test, feature = "ir-verify"))]
+pub(crate) use ids::ValueId;
+pub(crate) use ids::{BlockId, InstId};
 #[cfg(test)]
 pub(crate) use inst::InstData;
 pub(crate) use inst::{InstKind, PhiInput};
