@@ -15,8 +15,9 @@ Implemented and tested:
 - Semantic analysis pipeline
 - IR model + pretty printer
 - AST -> IR lowering
+- Generic dataflow analysis framework over IR CFGs
 - IR optimization passes: UCE (Unreachable Code Elimination), DCE (Dead Code Elimination)
-- IR verification and CFG utilities
+- IR verification, CFG utilities, and dominator analysis
 
 ## Language Features
 
@@ -67,6 +68,18 @@ Current lowering includes integration with semantic compile-time constants:
 - In those pruned cases, lowering does not emit `branch`, `jump`, or `phi`.
 - `branch`/`phi` are emitted only when the condition is not compile-time constant.
 
+## IR Analysis Infrastructure
+
+Current IR analysis support includes:
+
+- Explicit CFG construction over IR basic blocks
+- Dominators + dominance frontier
+- A generic forward/backward dataflow solver over CFGs
+- Reusable abstractions for lattice, problem, result, and worklist
+
+This framework is intended to support future analyses such as reaching definitions,
+liveness, and other classic dataflow analyses.
+
 ## CLI Usage
 
 Input files are read from `files-lang/`.
@@ -112,6 +125,7 @@ Useful focused suites:
 ```bash
 cargo test semantic::
 cargo test ir::lowering::tests
+cargo test analysis::dataflow::tests
 ```
 
 Optional coverage:
@@ -121,6 +135,9 @@ cargo install cargo-llvm-cov
 cargo llvm-cov
 cargo +nightly llvm-cov --html --branch # for branch coverage
 ```
+
+At the moment, the whole `analysis/dataflow` module is covered at 100% line/branch
+coverage.
 
 ## Public API (crate)
 
@@ -133,6 +150,7 @@ cargo +nightly llvm-cov --html --branch # for branch coverage
 ## Roadmap
 
 - Optimization passes over IR
+- Concrete dataflow analyses built on top of the generic framework
 - Optional backend / interpreter exploration
 - Continued semantic and IR invariants hardening
 

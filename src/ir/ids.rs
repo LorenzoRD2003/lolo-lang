@@ -31,7 +31,7 @@ impl IncrementalId for InstId {
 }
 
 /// ID para indexar bloques.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub(crate) struct BlockId(pub(crate) usize);
 
 impl IncrementalId for BlockId {

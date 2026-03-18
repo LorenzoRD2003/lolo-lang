@@ -25,10 +25,10 @@ impl Stage for IrStage {
       &mut ctx.diagnostics,
     );
 
-    if let Ok(stats) = PassManager::run(&mut result, config.pass_plan()) {
-      if config.show_pass_stats {
-        ctx.pass_stats.extend(stats);
-      }
+    if let Ok(stats) = PassManager::run(&mut result, config.pass_plan())
+      && config.show_pass_stats
+    {
+      ctx.pass_stats.extend(stats);
     }
 
     // Verificacion estructural/tipada de IR habilitada por feature de compilacion.

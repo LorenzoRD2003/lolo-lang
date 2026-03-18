@@ -1,4 +1,5 @@
 mod cfg;
+mod dataflow;
 #[cfg(any(test, feature = "ir-verify"))]
 mod dominators;
 

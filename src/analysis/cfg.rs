@@ -85,34 +85,29 @@ impl Cfg {
     cfg
   }
 
-  #[allow(dead_code)]
-  /// Bloques predecesores en el CFG para cada bloque
-  pub(crate) fn predecessors(&self, block: BlockId) -> &[BlockId] {
-    &self.preds[block.0]
-  }
-
   /// Bloque de entrada del CFG.
-  #[allow(dead_code)]
   pub(crate) fn entry(&self) -> BlockId {
     self.entry
   }
 
   /// Cantidad total de bloques del CFG.
-  #[allow(dead_code)]
   pub(crate) fn block_count(&self) -> usize {
     self.succs.len()
   }
 
   /// `true` si el bloque es alcanzable desde `entry`.
-  #[allow(dead_code)]
   pub(crate) fn is_reachable(&self, block: BlockId) -> bool {
     self.reachable[block.0]
   }
 
   /// Iterador sobre todos los bloques del CFG (alcanzables o no).
-  #[allow(dead_code)]
   pub(crate) fn blocks(&self) -> impl Iterator<Item = BlockId> + '_ {
     (0..self.block_count()).map(BlockId)
+  }
+
+  /// Bloques predecesores en el CFG para cada bloque
+  pub(crate) fn predecessors(&self, block: BlockId) -> &[BlockId] {
+    &self.preds[block.0]
   }
 
   /// Bloques sucesores en el CFG para cada bloque
@@ -145,6 +140,14 @@ impl Cfg {
       }
     }
   }
+
+  // fn reverse_post_order() -> impl Iterator<Item = BlockId> {
+  //   todo!()
+  // }
+
+  // fn post_order() -> impl Iterator<Item = BlockId> {
+  //   todo!()
+  // }
 }
 
 #[cfg(test)]
