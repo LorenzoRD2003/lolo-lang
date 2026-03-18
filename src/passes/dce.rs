@@ -2,7 +2,7 @@ use std::collections::VecDeque;
 
 use crate::{
   analysis::Cfg,
-  ir::{InstId, InstKind, IrModule, ValueId},
+  ir::{InstId, InstKind, IrModule},
   passes::{IrPass, PassContext, PassStats},
 };
 
@@ -29,10 +29,7 @@ impl DcePass {
 
   /// Construye un mapa ValueId -> InstId. En que instruccion fue definido cada valor.
   fn build_value_def(module: &IrModule) -> Vec<Option<InstId>> {
-    let Some(max_value_id) = Self::find_max_value_id(module) else {
-      return vec![];
-    };
-    let mut value_def = vec![None; max_value_id.0 + 1];
+    let mut value_def = vec![None; module.value_count()];
 
     // Guarda en la instruccion asociada al valor, para cada instruccion que define_valor
     for i in 0..module.inst_count() {
@@ -122,23 +119,6 @@ impl DcePass {
   /// Por ahora solo tenemos `InstKind::Print`
   fn is_side_effecting(kind: &InstKind) -> bool {
     matches!(kind, InstKind::Print(_))
-  }
-
-  /// Devuelve el `ValueId` maximo observado entre resultados y operandos de instrucciones
-  fn find_max_value_id(module: &IrModule) -> Option<ValueId> {
-    let mut max_value_id: Option<usize> = None;
-    for i in 0..module.inst_count() {
-      let inst_id = InstId(i);
-      let inst = module.inst(inst_id);
-
-      if let Some(result) = inst.result {
-        max_value_id = Some(max_value_id.map_or(result.0, |m| m.max(result.0)));
-      }
-      inst.kind.for_each_operand(|operand| {
-        max_value_id = Some(max_value_id.map_or(operand.0, |m| m.max(operand.0)));
-      });
-    }
-    max_value_id.map(ValueId)
   }
 }
 
