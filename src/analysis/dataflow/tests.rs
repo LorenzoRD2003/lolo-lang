@@ -127,7 +127,7 @@ fn lattice_helpers_cover_empty_and_non_empty_meet_all() {
 
 #[test]
 fn dataflow_result_helper_methods_work() {
-  let mut result = DataflowResult::new();
+  let mut result = DataflowResult::new(2, 0);
   result.set_in_fact(BlockId(0), 10);
   result.set_out_fact(BlockId(0), 11);
   result.set_in_fact(BlockId(1), 20);
@@ -144,9 +144,9 @@ fn dataflow_result_helper_methods_work() {
   assert!(collected.contains(&(0, 10, 11)));
   assert!(collected.contains(&(1, 20, 21)));
 
-  let (in_map, out_map) = result.into_parts();
-  assert_eq!(in_map.get(&BlockId(0)), Some(&10));
-  assert_eq!(out_map.get(&BlockId(1)), Some(&21));
+  let (in_vec, out_vec) = result.into_parts();
+  assert_eq!(in_vec[0], 10);
+  assert_eq!(out_vec[1], 21);
 }
 
 #[test]
