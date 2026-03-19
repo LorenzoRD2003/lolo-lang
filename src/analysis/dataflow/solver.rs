@@ -32,7 +32,7 @@ impl DataflowSolver {
   where
     DFP: DataflowProblem,
   {
-    let mut result = DataflowResult::new();
+    let mut result = DataflowResult::new(cfg.block_count(), problem.bottom());
     for block in cfg.blocks() {
       let mut in_fact = problem.initial_in(block);
       let mut out_fact = problem.initial_out(block);
