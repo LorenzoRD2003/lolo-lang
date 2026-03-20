@@ -1,4 +1,4 @@
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxHashMap, FxHashSet};
 
 use crate::{ir::ids::ValueId, semantic::SymbolId};
 
@@ -9,6 +9,8 @@ use crate::{ir::ids::ValueId, semantic::SymbolId};
 pub(crate) struct SsaEnv {
   // mapa de simbolos del codigo fuente a valores SSA
   current_values: FxHashMap<SymbolId, ValueId>,
+  // simbolos modificados desde el ultimo checkpoint (util para optimizar merge de phis)
+  modified: FxHashSet<SymbolId>,
 }
 
 // Por ejemplo, cuando entro a un If, el SSA-env representa el estado actual antes del branch.
@@ -18,6 +20,7 @@ impl SsaEnv {
   pub(crate) fn new() -> Self {
     Self {
       current_values: FxHashMap::default(),
+      modified: FxHashSet::default(),
     }
   }
 
@@ -27,10 +30,21 @@ impl SsaEnv {
 
   pub(crate) fn set(&mut self, symbol: SymbolId, value: ValueId) {
     self.current_values.insert(symbol, value);
+    self.modified.insert(symbol);
+  }
+
+  pub(crate) fn clear_modified(&mut self) {
+    self.modified.clear();
+  }
+
+  pub(crate) fn modified(&self) -> &FxHashSet<SymbolId> {
+    &self.modified
   }
 
   pub(crate) fn clone_for_branch(&self) -> Self {
-    self.clone()
+    let mut cloned = self.clone();
+    cloned.clear_modified();
+    cloned
   }
 
   pub(crate) fn iter(&self) -> impl Iterator<Item = (&SymbolId, &ValueId)> {
