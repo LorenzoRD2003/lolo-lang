@@ -333,14 +333,27 @@ impl<'a> LoweringCtx<'a> {
     else_out_block: BlockId,
     else_env: &SsaEnv,
   ) -> SsaEnv {
-    let mut merged = SsaEnv::new();
-    // El merge se hace sobre los simbolos visibles antes del if
-    for (symbol, before_val) in env_before.iter().map(|(a, b)| (*a, *b)) {
+    let mut merged = env_before.clone();
+
+    // Solo necesitamos procesar los simbolos que fueron modificados en alguna de las ramas.
+    // Si un simbolo no fue modificado en ninguna rama, mantiene su valor original de `env_before`.
+    let mut to_merge = if_env.modified_symbols().clone();
+    for &sym in else_env.modified_symbols() {
+      to_merge.insert(sym);
+    }
+
+    for symbol in to_merge {
+      // Importante: un simbolo modificado en una rama podria no estar en `env_before`
+      // si fue declarado dentro de esa rama. Pero el merge se hace sobre los simbolos
+      // que existian ANTES del if para propagar sus nuevos valores SSA.
+      let Some(before_val) = env_before.get(symbol) else {
+        continue;
+      };
+
       let if_val = if_env.get(symbol).unwrap_or(before_val);
       let else_val = else_env.get(symbol).unwrap_or(before_val);
-      if if_val == else_val {
-        merged.set(symbol, if_val);
-      } else {
+
+      if if_val != else_val {
         let ty = self.builder.get_value_type(if_val);
         let phi_inputs = vec![
           PhiInput::new(if_out_block, if_val),
@@ -348,6 +361,8 @@ impl<'a> LoweringCtx<'a> {
         ];
         let phi_val = self.builder.emit_phi(ty, phi_inputs);
         merged.set(symbol, phi_val);
+      } else {
+        merged.set(symbol, if_val);
       }
     }
     merged
@@ -356,3 +371,6 @@ impl<'a> LoweringCtx<'a> {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod optimization_tests;
