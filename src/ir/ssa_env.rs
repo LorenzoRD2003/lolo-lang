@@ -47,6 +47,7 @@ impl SsaEnv {
     cloned
   }
 
+  #[allow(dead_code)]
   pub(crate) fn iter(&self) -> impl Iterator<Item = (&SymbolId, &ValueId)> {
     self.current_values.iter()
   }

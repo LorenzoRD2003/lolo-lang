@@ -356,15 +356,17 @@ impl<'a> LoweringCtx<'a> {
       let else_val = else_env.get(symbol).unwrap_or(before_val);
 
       if if_val != else_val {
-        let ty = self.builder.get_value_type(if_val);
-        let phi_inputs = vec![
-          PhiInput::new(if_out_block, if_val),
-          PhiInput::new(else_out_block, else_val),
-        ];
-        let phi_val = self.builder.emit_phi(ty, phi_inputs);
-        merged.set(symbol, phi_val);
-      } else {
-        merged.set(symbol, if_val);
+        if if_val != else_val {
+          let ty = self.builder.get_value_type(if_val);
+          let phi_inputs = vec![
+            PhiInput::new(if_out_block, if_val),
+            PhiInput::new(else_out_block, else_val),
+          ];
+          let phi_val = self.builder.emit_phi(ty, phi_inputs);
+          merged.set(symbol, phi_val);
+        } else {
+          merged.set(symbol, if_val);
+        }
       }
     }
     merged
@@ -373,3 +375,6 @@ impl<'a> LoweringCtx<'a> {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod optimization_tests;
