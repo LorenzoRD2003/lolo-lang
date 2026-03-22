@@ -2,8 +2,6 @@
 // el lowering no debe conocer detalles de almacenamiento interno de la IR: de eso se encarga el Builder.
 // El lowering debería decir “emiti un add”, no “push a este vec, construi un ValueData, acordate del span, etc.”
 
-use rustc_hash::FxHashSet;
-
 use crate::{
   Diagnostic,
   ast::{
@@ -335,38 +333,28 @@ impl<'a> LoweringCtx<'a> {
     else_out_block: BlockId,
     else_env: &SsaEnv,
   ) -> SsaEnv {
-    let mut merged = env_before.clone();
-    merged.clear_modified();
+    let mut merged = env_before.clone_for_branch();
 
     // Solo recorremos los simbolos que fueron modificados en alguna de las dos ramas.
-    let modified_union: FxHashSet<_> = if_env
-      .modified()
-      .union(else_env.modified())
-      .copied()
-      .collect();
-
-    for symbol in modified_union {
-      let before_val = env_before.get(symbol).unwrap_or(ValueId(usize::MAX));
-
-      if before_val == ValueId(usize::MAX) {
+    for symbol in if_env.modified().union(else_env.modified()).copied() {
+      let Some(before_val) = env_before.get(symbol) else {
         continue;
-      }
+      };
 
       let if_val = if_env.get(symbol).unwrap_or(before_val);
       let else_val = else_env.get(symbol).unwrap_or(before_val);
 
       if if_val != else_val {
-        if if_val != else_val {
-          let ty = self.builder.get_value_type(if_val);
-          let phi_inputs = vec![
-            PhiInput::new(if_out_block, if_val),
-            PhiInput::new(else_out_block, else_val),
-          ];
-          let phi_val = self.builder.emit_phi(ty, phi_inputs);
-          merged.set(symbol, phi_val);
-        } else {
-          merged.set(symbol, if_val);
-        }
+        let ty = self.builder.get_value_type(if_val);
+        let phi_inputs = vec![
+          PhiInput::new(if_out_block, if_val),
+          PhiInput::new(else_out_block, else_val),
+        ];
+        let phi_val = self.builder.emit_phi(ty, phi_inputs);
+        merged.set(symbol, phi_val);
+      } else if if_val != before_val {
+        // Ambas ramas convergen al mismo valor, pero es distinto al original.
+        merged.set(symbol, if_val);
       }
     }
     merged
