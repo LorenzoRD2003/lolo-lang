@@ -33,18 +33,15 @@ impl SsaEnv {
     self.modified.insert(symbol);
   }
 
-  pub(crate) fn clear_modified(&mut self) {
-    self.modified.clear();
-  }
-
   pub(crate) fn modified(&self) -> &FxHashSet<SymbolId> {
     &self.modified
   }
 
   pub(crate) fn clone_for_branch(&self) -> Self {
-    let mut cloned = self.clone();
-    cloned.clear_modified();
-    cloned
+    Self {
+      current_values: self.current_values.clone(),
+      modified: FxHashSet::default(),
+    }
   }
 
   #[allow(dead_code)]
