@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use rustc_hash::{FxHashMap, FxHashSet};
 
 use crate::{ir::ids::ValueId, semantic::SymbolId};
@@ -7,8 +9,8 @@ use crate::{ir::ids::ValueId, semantic::SymbolId};
 /// No es "la variable" en abstracto, sino su version viva en este punto.
 #[derive(Debug, Clone)]
 pub(crate) struct SsaEnv {
-  // mapa de simbolos del codigo fuente a valores SSA
-  current_values: FxHashMap<SymbolId, ValueId>,
+  // mapa de simbolos del codigo fuente a valores SSA. Optimizado con COW via Rc.
+  current_values: Rc<FxHashMap<SymbolId, ValueId>>,
   // simbolos modificados desde el ultimo checkpoint (util para optimizar merge de phis)
   modified: FxHashSet<SymbolId>,
 }
@@ -19,7 +21,7 @@ pub(crate) struct SsaEnv {
 impl SsaEnv {
   pub(crate) fn new() -> Self {
     Self {
-      current_values: FxHashMap::default(),
+      current_values: Rc::new(FxHashMap::default()),
       modified: FxHashSet::default(),
     }
   }
@@ -29,7 +31,9 @@ impl SsaEnv {
   }
 
   pub(crate) fn set(&mut self, symbol: SymbolId, value: ValueId) {
-    self.current_values.insert(symbol, value);
+    // Si el Rc esta compartido, Rc::make_mut clonara el mapa interno antes de modificarlo.
+    // De lo contrario, modificara el mapa in-place.
+    Rc::make_mut(&mut self.current_values).insert(symbol, value);
     self.modified.insert(symbol);
   }
 
@@ -39,7 +43,8 @@ impl SsaEnv {
 
   pub(crate) fn clone_for_branch(&self) -> Self {
     Self {
-      current_values: self.current_values.clone(),
+      // Clonar el Rc es O(1). El mapa se clonara recien en el primer `set` si es necesario.
+      current_values: Rc::clone(&self.current_values),
       modified: FxHashSet::default(),
     }
   }
