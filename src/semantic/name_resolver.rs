@@ -57,11 +57,11 @@ impl<'a> NameResolver<'a> {
   }
 
   /// Resuelve el nombre de una expresion de identificador.
-  fn resolve_var_expr(&mut self, expr_id: ExprId, name: String) {
-    match self.symbol_table.resolve(&name) {
+  fn resolve_var_expr(&mut self, expr_id: ExprId, name: &str) {
+    match self.symbol_table.resolve(name) {
       Some(symbol_id) => self.resolution_info.insert_expr_symbol(expr_id, symbol_id),
       None => self.emit_error(&ResolverError::UndefinedVariable {
-        name,
+        name: name.to_string(),
         span: self.ast.expr_span(expr_id),
       }),
     }
@@ -155,7 +155,7 @@ impl AstVisitor for NameResolver<'_> {
     self.resolution_info.insert_expr_scope(expr_id, scope);
 
     if let Expr::Var(name) = self.ast.expr(expr_id) {
-      self.resolve_var_expr(expr_id, name.to_string());
+      self.resolve_var_expr(expr_id, name);
     }
 
     walk_expr(self, self.ast, expr_id);
