@@ -122,6 +122,18 @@ pub(crate) enum IrInvariantError {
     phi_id: InstId,
     block_id: BlockId,
   },
+  OperandDoesNotDominateUse {
+    inst_id: InstId,
+    operand: ValueId,
+    def_block: BlockId,
+    use_block: BlockId,
+  },
+  PhiOperandDoesNotDominatePredecessor {
+    phi_id: InstId,
+    operand: ValueId,
+    def_block: BlockId,
+    pred_block: BlockId,
+  },
   Cfg(CfgError),
 }
 
@@ -267,6 +279,24 @@ impl Diagnosable for IrInvariantError {
       Self::PhiBlockNotInDominanceFrontier { phi_id, block_id } => Diagnostic::error(format!(
         "Phi {:?} en {:?} no cae en la dominance frontier de ningun predecesor",
         phi_id, block_id
+      )),
+      Self::OperandDoesNotDominateUse {
+        inst_id,
+        operand,
+        def_block,
+        use_block,
+      } => Diagnostic::error(format!(
+        "Inst {:?} usa operando {:?} definido en {:?}, pero {:?} no domina al bloque de uso {:?}",
+        inst_id, operand, def_block, def_block, use_block
+      )),
+      Self::PhiOperandDoesNotDominatePredecessor {
+        phi_id,
+        operand,
+        def_block,
+        pred_block,
+      } => Diagnostic::error(format!(
+        "Phi {:?} usa operando {:?} definido en {:?}, pero {:?} no domina al bloque predecesor {:?}",
+        phi_id, operand, def_block, def_block, pred_block
       )),
       Self::Cfg(error) => error.to_diagnostic(),
     }

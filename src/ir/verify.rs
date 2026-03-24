@@ -102,6 +102,7 @@ impl IrModule {
     let cfg = Cfg::build(self, entry_block, &mut cfg_errors);
     errors.extend(cfg_errors.into_iter().map(IrInvariantError::Cfg));
     let dominators = Dominators::compute(&cfg);
+    let value_def = self.build_value_def();
 
     for block_index in 0..self.block_count() {
       let block_id = BlockId(block_index);
@@ -113,6 +114,31 @@ impl IrModule {
       }
 
       let block = self.block(block_id);
+
+      for &phi_id in block.phis() {
+        if !self.is_valid_inst_id(phi_id) {
+          continue;
+        }
+        self.check_phi_operands_dominance(phi_id, block_id, &dominators, &value_def, &mut errors);
+      }
+
+      for &inst_id in block.insts() {
+        if !self.is_valid_inst_id(inst_id) {
+          continue;
+        }
+        self.check_inst_operands_dominance(inst_id, block_id, &dominators, &value_def, &mut errors);
+      }
+
+      if block.has_terminator() && self.is_valid_inst_id(block.terminator()) {
+        self.check_inst_operands_dominance(
+          block.terminator(),
+          block_id,
+          &dominators,
+          &value_def,
+          &mut errors,
+        );
+      }
+
       let expected_preds: BTreeSet<usize> =
         cfg.predecessors(block_id).iter().map(|b| b.0).collect();
 
@@ -552,6 +578,98 @@ impl IrModule {
         obtained_preds: seen_input_preds,
       });
     }
+  }
+
+  /// Valida que el valor de cada operando domine su uso.
+  fn check_inst_operands_dominance(
+    &self,
+    inst_id: InstId,
+    block_id: BlockId,
+    dominators: &Dominators,
+    value_def: &[Option<InstId>],
+    errors: &mut Vec<IrInvariantError>,
+  ) {
+    let inst = self.inst(inst_id);
+
+    inst.kind.for_each_operand(|operand| {
+      if self.is_valid_value_id(operand)
+        && let Some(def_inst) = value_def[operand.0]
+      {
+        if let Some(def_block) = self.find_block_of_inst(def_inst) {
+          if !dominators.tree().dominates(def_block, block_id) {
+            errors.push(IrInvariantError::OperandDoesNotDominateUse {
+              inst_id,
+              operand,
+              def_block,
+              use_block: block_id,
+            });
+          }
+        }
+      }
+    });
+  }
+
+  /// Valida que para cada entrada del phi, el bloque predecesor este dominado
+  /// por la definicion del valor.
+  fn check_phi_operands_dominance(
+    &self,
+    phi_id: InstId,
+    _block_id: BlockId,
+    dominators: &Dominators,
+    value_def: &[Option<InstId>],
+    errors: &mut Vec<IrInvariantError>,
+  ) {
+    let InstKind::Phi { inputs } = &self.inst(phi_id).kind else {
+      return;
+    };
+
+    for input in inputs {
+      if self.is_valid_value_id(input.value())
+        && let Some(def_inst) = value_def[input.value().0]
+      {
+        if let Some(def_block) = self.find_block_of_inst(def_inst) {
+          if !dominators.tree().dominates(def_block, input.pred_block()) {
+            errors.push(IrInvariantError::PhiOperandDoesNotDominatePredecessor {
+              phi_id,
+              operand: input.value(),
+              def_block,
+              pred_block: input.pred_block(),
+            });
+          }
+        }
+      }
+    }
+  }
+
+  fn build_value_def(&self) -> Vec<Option<InstId>> {
+    let mut value_def = vec![None; self.value_count()];
+    for i in 0..self.inst_count() {
+      let inst_id = InstId(i);
+      let inst = self.inst(inst_id);
+      if let Some(result) = inst.result {
+        if result.0 < value_def.len() {
+          value_def[result.0] = Some(inst_id);
+        }
+      }
+    }
+    value_def
+  }
+
+  fn find_block_of_inst(&self, inst_id: InstId) -> Option<BlockId> {
+    if !self.is_valid_inst_id(inst_id) {
+      return None;
+    }
+    for i in 0..self.block_count() {
+      let block_id = BlockId(i);
+      let block = self.block(block_id);
+      if block.phis().contains(&inst_id)
+        || block.insts().contains(&inst_id)
+        || (block.has_terminator() && block.terminator() == inst_id)
+      {
+        return Some(block_id);
+      }
+    }
+    None
   }
 
   /// Valida que un bloque con `phi` y multiples predecesores sea un punto de
