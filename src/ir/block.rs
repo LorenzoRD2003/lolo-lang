@@ -42,6 +42,10 @@ impl BlockData {
     self.insts.push(inst);
   }
 
+  pub(crate) fn insert_inst_at_start(&mut self, inst: InstId) {
+    self.insts.insert(0, inst);
+  }
+
   pub(crate) fn retain_insts(&mut self, mut pred: impl FnMut(InstId) -> bool) {
     self.insts.retain(|&inst| pred(inst));
   }

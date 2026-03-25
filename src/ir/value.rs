@@ -26,7 +26,7 @@ pub(crate) enum ValueKind {
   InstResult,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub(crate) enum IrConstant {
   Unit,
   Int32(i32),
