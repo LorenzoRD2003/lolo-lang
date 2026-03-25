@@ -1,5 +1,7 @@
 // Responsabilidad: Dar una API ergonomica para construir IR sin andar manipulando todos los `Vec` a mano.
 
+use rustc_hash::FxHashMap;
+
 use crate::{
   ast::{BinaryOp, UnaryOp},
   common::{IdGenerator, IncrementalIdGenerator},
@@ -25,6 +27,8 @@ pub(crate) struct ProgramBuilder {
   #[allow(dead_code)]
   /// mapa entre la IR y el codigo fuente
   ir_source_map: IrSourceMap,
+  /// cache de constantes para deduplicacion
+  const_cache: FxHashMap<IrConstant, ValueId>,
 }
 
 impl ProgramBuilder {
@@ -37,6 +41,7 @@ impl ProgramBuilder {
       block_id_generator: IncrementalIdGenerator::new(),
       value_id_generator: IncrementalIdGenerator::new(),
       ir_source_map: IrSourceMap::new(),
+      const_cache: FxHashMap::default(),
     };
 
     let entry_block = program_builder.create_block();
@@ -85,12 +90,23 @@ impl ProgramBuilder {
   // ========================================
 
   pub(crate) fn emit_const(&mut self, c: IrConstant) -> ValueId {
+    if let Some(&value_id) = self.const_cache.get(&c) {
+      return value_id;
+    }
+
     let value_id = self.value_id_generator.next_id();
     self.program.add_value(c.as_value());
 
-    let inst_data = InstData::with_result(value_id, InstKind::Const(c));
-    self.add_inst_to_program(inst_data);
+    let inst_data = InstData::with_result(value_id, InstKind::Const(c.clone()));
+    let inst_id = self.inst_id_generator.next_id();
+    self.program.add_inst(inst_data);
 
+    // Para garantizar que la constante domina todos sus usos, la insertamos al comienzo del bloque de entrada.
+    // Esto asegura que estara antes de cualquier uso y antes de cualquier terminador que pudiera tener el bloque.
+    let entry_block_id = self.program.entry_block();
+    self.program.block_mut(entry_block_id).insert_inst_at_start(inst_id);
+
+    self.const_cache.insert(c, value_id);
     value_id
   }
 
